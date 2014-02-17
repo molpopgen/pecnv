@@ -91,10 +91,10 @@ system(qq{samtools sort -n -m 10000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorte
 unlink(qq{$OUTDIR/temp.bam});
 
 #Get distr. of mapping distances
-system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTFILE/mdist.gz});
+system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
 
 #Get 99.9th quantileof mapping distances
-system(qq{R --no-save --slave --args $OUTFILE/mdist.gz $OUTFILE/mquant.txt < mquant.R});
+system(qq{R --no-save --slave --args $OUTDIR/mdist.gz $OUTDIR/mquant.txt < mquant.R});
 
 #Identify unusual read pairings
 system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/cnv_mappings $OUTDIR/um});
