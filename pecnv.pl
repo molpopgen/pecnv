@@ -60,8 +60,8 @@ while(my $line = <I>)
 my $READ_DIR = 0;
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-    system(qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $OUTDIR/readfile.$i.fastq.gz});
-    system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
+      system(qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
+      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
     $READ_DIR = int(!$READ_DIR);
   }
 
