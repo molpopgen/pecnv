@@ -74,6 +74,7 @@ for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
 
     #Make position-sorted bamfile
     system(qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 10000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    unlink(qq{$sai1 $sai2});
   }
 
 ##Merge bam files
@@ -96,6 +97,7 @@ system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OU
 system(qq{R --no-save --slave --args $OUTFILE/mdist.gz $OUTFILE/mquant.txt < mquant.R});
 
 #Identify unusual read pairings
-system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/structural $OUTDIR/um});
+system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/cnv_mappings $OUTDIR/um});
 
 #Finally, cluster the CNVs
+system(qq{cluster_cnv $MINQUAL $MISMATCHES $GAPS $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings_left.gz $OUTDIR/cnv_mappings_right.gz});
