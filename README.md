@@ -25,7 +25,7 @@ On most systems, simply type "make" to compile the programs.  On systems where t
 
 Either copy the binaries to somewhere in your user's path, or add the directory where you compiled them to your user's path.  To copy them into your user's ~/bin directory on a Linux machine, this will do the trick:
 
-find . -perm -111 -type f -maxdepth 1 -exec cp "{}" ~/bin \
+find . -perm -111 -type f -maxdepth 1 -exec cp "{}" ~/bin \;
 
 #Using the programs to detect CNVs (not TEs, though -- see above for our pipeline to do that).
 
