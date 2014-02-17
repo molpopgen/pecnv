@@ -91,10 +91,10 @@ void process_files(streamtype & in,
 int main(int argc, char ** argv)
 {
   int argn=1;
-  if( argc < 7 )
+  if( argc < 6 )
     {
       cerr << "usage: " << argv[0]
-	   << " line_id lane_id read_id fastqfile table_file_name new_fastq_file_name\n";
+	   << " line_id lane_id read_id fastqfile new_fastq_file_name\n";
       exit(10);
     }
   const unsigned line_id = atoi(argv[argn++]);
