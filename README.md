@@ -33,6 +33,8 @@ Either copy the binaries to somewhere in your user's path, or add the directory 
 
 find . -perm -111 -type f -maxdepth 1 -exec cp "{}" ~/bin \;
 
+The above command is executed via the install2home.sh script included with this package
+
 ##Using the programs to detect CNVs (not TEs, though -- see above for our pipeline to do that).
 
 The easiest way to use the programs will be to run the master script, _pecnv.pl_, on your data.  This script requires that the following software be in your user's path:
