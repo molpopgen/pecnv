@@ -73,17 +73,15 @@ The above correspond to clusters of reads mapping in divergent orientation, para
 
 The format of the output files is as follows:
 
-chromo = chromosome
-nplus = # of reads on the + strand supporting the TE
-nminus = # of reads on the - strand supporting the TE
-pfirst = first mapping position of cluster on + strand
-plast = last mapping position of cluster on + strand
-pdist = distance to closest TE in the reference for the + strand cluster
-pin = BOOLEAN.  TRUE if + strand cluster is within a reference TE, false otherwise
-mfirst
-mlast
-mdist
-min
+id = Event identification number (arb. integer)<br>
+chrom1 = Chromosome number in reference where the first read cluster is<br>
+coverage = Number of read pairs supporting the event<br>
+strand1 = Strand of first read cluster.  0 = plus, 1 = minus<br>
+start1 = Start position of first read cluster.  
+stop1 = Stop position of second read cluster. 
+chrom2 = Chromosome number in reference where the second read cluster is<br>
+start2 = Start position of second read cluster.  
+stop2 = Stop position of second read cluster. 
+reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
 
-The last 4 columns are analagous as the previous 4, but for the - strand
 
