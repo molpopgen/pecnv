@@ -80,9 +80,10 @@ pfirst = first mapping position of cluster on + strand
 plast = last mapping position of cluster on + strand
 pdist = distance to closest TE in the reference for the + strand cluster
 pin = BOOLEAN.  TRUE if + strand cluster is within a reference TE, false otherwise
-#The columns below are analagous as the previous 4, but for the - strand
 mfirst
 mlast
 mdist
 min
+
+The last 4 columns are analagous as the previous 4, but for the - strand
 
