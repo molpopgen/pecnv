@@ -83,6 +83,8 @@ This script is known to produce a workflow that runs successfuly on the UCI clus
 
 If you don't understand any of the above, talk to your IT support people.  If they don't understand, then get new IT support people and repeat the process until all is OK with your world.
 
+There is a variable at the top of the script called GEGENERIC.  This variable is a string where the user can place any command that must go in her OGE scripts.  For example, many clusters use the [module](http://modules.sourceforge.net/) system to make programs, libraries, etc., available to the user.  You will see that I've put the command that I need to load various programs for proper execution of these scripts.  Edit this appropriately for your system.  At the very least, make it a blank string so that my command which won't work on your system are no longer there.
+
 To run the script
 
 > gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
@@ -122,7 +124,7 @@ chrom1 = Chromosome number in reference where the first read cluster is<br>
 coverage = Number of read pairs supporting the event<br>
 strand1 = Strand of first read cluster.  0 = plus, 1 = minus<br>
 start1 = Start position of first read cluster.<br>  
-stop1 = Stop position of second read cluster. <br>
+stop1 = Stop position of second read cluster.<br>
 chrom2 = Chromosome number in reference where the second read cluster is<br>
 start2 = Start position of second read cluster.<br>  
 stop2 = Stop position of second read cluster.<br> 
