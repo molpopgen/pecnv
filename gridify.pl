@@ -126,7 +126,7 @@ $HERE=<<HERE;
 #\$ -t 1-$NFQ
 #\$ -pe openmp $CPUMIN-$CPUMAX
 #\$ -N $JNAME_T
-#\$ -hold_jid $JNAME_O;
+#\$ -hold_jid $JNAME_O
 cd $WDIR
 bwa aln -t \$CORES -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.\$SGE_TASK_ID.fastq.gz > $OUTDIR/readfile.\$SGE_TASK_ID.sai 2> $OUTDIR/alignment_stderr.\$SGE_TASK_ID});
 HERE
@@ -153,7 +153,7 @@ $HERE=<<HERE;
 #\$ -t 1-$NBAM
 #\$ -pe openmp $CPUMIN-$CPUMAX
 #\$ -N $JNAME_T
-#\$ -hold_jid $JNAME_O;
+#\$ -hold_jid $JNAME_O
 cd $WDIR
 
 INDEX=\$((\$SGE_TASK_ID-1)
@@ -167,6 +167,39 @@ print O $HERE;
 
 close O;
 
+##Merge bam files and make read name-sorted bamfile
+++$SCRIPTNO;
+$PREFIX = make_prefix($SCRIPTNO);
+$SNAME = join("",$PREFIX,"_merge.sh");
+$JNAME_O=$JNAME_T;
+$JNAME_T = join("",$JNAME,"_merge");
+open O, "> $SNAME";
+$HERE=<<HERE;
+#!sh
 
+#\$ -q $QUEUE
+#\$ -N $JNAME_T
+#\$ -hold_jid $JNAME_O
+cd $WDIR
+HERE
 
+if ($NBAM > 1) {
+$HERE .=<<HERE;
+samtools merge $OUTDIR/merge_pos_sorted.bam $OUTDIR/bamfile.*
+rm -f $OUTDIR/bamfile.*
+HERE
+} else {
+$HERE .=<<HERE;
+mv $OUTDIR/bamfile.1.bam $OUTDIR/merge_pos_sorted.bam
+HERE
+}
 
+$HERE .=<<HERE;
+samtools sort -n -m 10000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp
+samtools sort -n -m 10000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted
+rm -f $OUTDIR/temp.bam
+HERE
+
+print O $HERE;
+
+close O;
