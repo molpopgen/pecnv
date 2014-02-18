@@ -33,7 +33,7 @@ Either copy the binaries to somewhere in your user's path, or add the directory 
 
 find . -perm -111 -type f -maxdepth 1 -exec cp "{}" ~/bin \;
 
-#Using the programs to detect CNVs (not TEs, though -- see above for our pipeline to do that).
+##Using the programs to detect CNVs (not TEs, though -- see above for our pipeline to do that).
 
 The easiest way to use the programs will be to run the master script, _pecnv.pl_, on your data.  This script requires that the following software be in your user's path:
 
@@ -42,7 +42,7 @@ The easiest way to use the programs will be to run the master script, _pecnv.pl_
 
 __Note:__ the _pecnv.pl_ script uses ForkManager to attempt to make more effective use of CPU resources during several of the steps.  Make sure that this perl module is installed on your system!
 
-#Processing the reference genome
+###Processing the reference genome
 
 I assume that you have a reference genome in fasta format.  Let's call it reference.fasta.  Different systems have different conventions for how chromosomes are named, so we'll just rename them 0 through n - 1 using the perl script _processRef.pl_, which works as follows:
 
@@ -50,7 +50,7 @@ processRef.pl reference.fasta new_reference_name.fasta
 
 The script also runs "bwa index" on new_reference_name.fasta.
 
-#Running the master script:
+###Running the master script:
 
 _pecnv.pl_ takes the following options:
 
@@ -67,7 +67,7 @@ In the above line, default values are shown for each option where the exist and 
 7. cpu = number of CPU to use
 8. ref = name of the fasta file containing the renamed reference.  This should be "new_reference_name.fasta" in the above example (or the full path to that reference if it is not present in pwd/cwd).
 
-#The output
+###The output
 
 The (interesting) output from _pecnv.pl_ is the following:
 
