@@ -65,5 +65,24 @@ In the above line, default values are shown for each option where the exist and 
 
 The (interesting) output from _pecnv.pl_ is the following:
 
-1. 
+1. div.gz
+2. par.gz
+3. ul.gz
+
+The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.
+
+The format of the output files is as follows:
+
+chromo = chromosome
+nplus = # of reads on the + strand supporting the TE
+nminus = # of reads on the - strand supporting the TE
+pfirst = first mapping position of cluster on + strand
+plast = last mapping position of cluster on + strand
+pdist = distance to closest TE in the reference for the + strand cluster
+pin = BOOLEAN.  TRUE if + strand cluster is within a reference TE, false otherwise
+#The columns below are analagous as the previous 4, but for the - strand
+mfirst
+mlast
+mdist
+min
 
