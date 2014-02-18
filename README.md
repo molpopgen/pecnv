@@ -79,6 +79,31 @@ This script is known to produce a workflow that runs successfuly on the UCI clus
 
 1. If an OGE scripts assumes that cwd and pwd are the same as the directory from which the script was submitted, unless the script specifically executes a _cd_ command
 2. The system allows for name-based job dependencies via the -N and -hold_jid options to the OGE _qsub_ command
+3. The openmp module for requesting the number of cores for a job is enabled on the GE system.
+
+If you don't understand any of the above, talk to your IT support people.  If they don't understand, then get new IT support people and repeat the process until all is OK with your world.
+
+To run the script
+
+> gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
+
+As with the master script, option values not in parentheses reflect defaults.  Option values shown in parentheses reflect mandatory options that the user must provide.
+
+The options for this script that differ from the master script are:
+
+1. -N = the prefix of the name to be assigned for each job.  The default is pecnv.  If you are dealing w/multiple samples, you should provide a meaningful, and unique, name for each sample.  sample0, sample1, etc., are good choices.  Also, you should change the -sample value for each sample, too, so that they are all unique.
+2. -q = the name of the OGE queue(s) you wish to send your jobs to.
+
+Here is how I run the pipeline on the UCI cluster:
+
+> gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
+
+The output of the script is a series of shell scripts.  Their names are such that they will be lexically sorted by the Linux shell automatically.  Therefore, one way to submit them is simply to say:
+
+for i in *.sh<br>
+do<br>
+qsub $i<br>
+done
 
 ###The output
 
@@ -96,11 +121,11 @@ id = Event identification number (arb. integer)<br>
 chrom1 = Chromosome number in reference where the first read cluster is<br>
 coverage = Number of read pairs supporting the event<br>
 strand1 = Strand of first read cluster.  0 = plus, 1 = minus<br>
-start1 = Start position of first read cluster.  
-stop1 = Stop position of second read cluster. 
+start1 = Start position of first read cluster.<br>  
+stop1 = Stop position of second read cluster. <br>
 chrom2 = Chromosome number in reference where the second read cluster is<br>
-start2 = Start position of second read cluster.  
-stop2 = Stop position of second read cluster. 
+start2 = Start position of second read cluster.<br>  
+stop2 = Stop position of second read cluster.<br> 
 reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
 
 
