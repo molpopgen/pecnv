@@ -222,3 +222,43 @@ HERE
 print O $HERE;
 
 close O;
+
+##Steps for PE clustering
+
+++$SCRIPTNO;
+$PREFIX = make_prefix($SCRIPTNO);
+$SNAME = join("",$PREFIX,"_cluster.sh");
+$JNAME_O=$JNAME_T;
+$JNAME_T = join("",$JNAME,"_cluster");
+open O, "> $SNAME";
+$HERE=<<HERE;
+#!sh
+
+#\$ -q $QUEUE
+#\$ -N $JNAME_T
+#\$ -hold_jid $JNAME_O
+
+$GEGENERIC
+
+cd $WDIR
+samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
+
+R --no-save --slave --args $OUTDIR/mdist.gz $OUTDIR/mquant.txt <<TEST
+n=commandArgs(trailing=TRUE)
+x=read.table(n[1],header=T)
+z=which(x\\\$cprob >= 0.999)
+y=x\\\$distance[z[1]]
+write(y,n[2])
+TEST
+
+samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/cnv_mappings $OUTDIR/um
+
+MD=`cat bwa_mapdistance $OUTDIR/mdist.gz`
+
+cluster_cnv $MINQUAL $MISMATCHES $GAPS \$MD $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings_left.gz $OUTDIR/cnv_mappings_right.gz
+
+HERE
+
+print O $HERE;
+
+close O;
