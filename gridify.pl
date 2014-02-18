@@ -6,6 +6,13 @@ use Cwd;
 
 my $WDIR = getcwd;
 
+##Edit as needed
+my $GEGENERIC = <<HERE;
+module load bwa;
+module load samtools;
+module load krthornt/libsequence/1.7.8
+HERE
+
 ##Establish options and their default values
 my $OUTDIR = "pecnv_output";
 my $SAMPLEID = 0;
@@ -94,6 +101,9 @@ my $HERE = <<HERE;
 #\$ -t 1-$NFQ
 #\$ -tc $CPUMAX
 #\$ -N $JNAME_T
+
+$GEGENERIC
+
 cd $WDIR
 
 FILE=`head -n \$SGE_TASK_ID $SAMPLES | tail -n 1`
@@ -127,6 +137,9 @@ $HERE=<<HERE;
 #\$ -pe openmp $CPUMIN-$CPUMAX
 #\$ -N $JNAME_T
 #\$ -hold_jid $JNAME_O
+
+$GEGENERIC
+
 cd $WDIR
 bwa aln -t \$CORES -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.\$SGE_TASK_ID.fastq.gz > $OUTDIR/readfile.\$SGE_TASK_ID.sai 2> $OUTDIR/alignment_stderr.\$SGE_TASK_ID});
 HERE
@@ -154,6 +167,9 @@ $HERE=<<HERE;
 #\$ -pe openmp $CPUMIN-$CPUMAX
 #\$ -N $JNAME_T
 #\$ -hold_jid $JNAME_O
+
+$GEGENERIC
+
 cd $WDIR
 
 INDEX=\$((\$SGE_TASK_ID-1)
@@ -180,6 +196,9 @@ $HERE=<<HERE;
 #\$ -q $QUEUE
 #\$ -N $JNAME_T
 #\$ -hold_jid $JNAME_O
+
+$GEGENERIC
+
 cd $WDIR
 HERE
 
