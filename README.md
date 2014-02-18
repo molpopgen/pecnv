@@ -69,6 +69,17 @@ In the above line, default values are shown for each option where the exist and 
 7. cpu = number of CPU to use
 8. ref = name of the fasta file containing the renamed reference.  This should be "new_reference_name.fasta" in the above example (or the full path to that reference if it is not present in pwd/cwd).
 
+###Running the pipeline on an Open Grid Engine (OGE) system (formerly known as Sun Grid Engine, or SGE)
+
+The _pecnv.pl_ master script described above attempts to make the best possible use of CPU resources on a multi-core desktop machine.  However, the pipeline can be sped up dramatically with the use of a proper compute cluster with a good scheduling system.  At UCI, we use Open Grid Engine on our [cluster](http://hpc.oit.uci.edu).  I have written a basic [tutorial](http://hpc.oit.uci.edu/~krthornt/BioClusterGE.pdf) on how to use such a system.  The tutorial is somewhat specific to the UCI cluster in the details, but the main concepts are generic with respect to OGE systems.
+
+The pecnv packages comes with a perl script called _gridify.pl_.  This script creates a set of OGE scripts that will execute the pipeline.  The scripts are designed such that, when submitted to the queue, later steps are held in the queue until previous steps are finished, and each step requests the resources necessary to complete it.  This allows for sample with multiple fastq files to use multiple nodes (or parts of nodes) for alignment, or you can submit the scripts for multiple samples to the queue.
+
+This script is known to produce a workflow that runs successfuly on the UCI cluster, which is maintained by a group of excellent IT guys who have configured the OGE setup nicely.  The script assumes the following about your OGE system (it probably also assumes things that I've forgotten to list here...):
+
+1. If an OGE scripts assumes that cwd and pwd are the same as the directory from which the script was submitted, unless the script specifically executes a _cd_ command
+2. The system allows for name-based job dependencies via the -N and -hold_jid options to the OGE _qsub_ command
+
 ###The output
 
 The (interesting) output from _pecnv.pl_ is the following:
