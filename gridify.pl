@@ -33,7 +33,7 @@ GetOptions("outdir=s" => \$OUTDIR,
 	   "ref=s" => \$REFERENCE,
 	   "sample=i" => \$SAMPLEID,
 	   "cpumin=i" => \$CPUMIN,
-	   "cpumin=i" => \$CPUMAX,
+	   "cpumax=i" => \$CPUMAX,
 	   "q=s" => \$QUEUE,
 	   "N=s" => \$JNAME
 	  );
