@@ -33,3 +33,27 @@ The easiest way to use the programs will be to run the master script, _pecnv.pl_
 
 1. The [bwa](http://bio-bwa.sourceforge.net/) aligner.
 2. [samtools](http://samtools.sourceforge.net/)
+
+__Note:__ the _pecnv.pl_ script uses ForkManager to attempt to make more effective use of CPU resources during several of the steps.  Make sure that this perl module is installed on your system!
+
+#Running the master script:
+
+_pecnv.pl_ takes the following options:
+
+> pecnv.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -infile (infilename) -sample 0 -cpu 32 -ref (reference_fasta_filename)
+
+In the above line, default values are shown for each option where the exist and values in parentheses must be provided by the user.  The definition of each argument is:
+
+1. outdir = the name of the directory to write the pipeline output.  This is ALL files, including bam files, etc.
+2. minqual = minimum mapping quality to consider a read in the CNV clustering
+3. mismatches = max number of mismatches to allow in a read alignment to consider it for CNV clustering
+4. gaps = max number of gaps to allow in a read alignment to consider it for CNV clustering
+5. infile = an input file containing names of FASTQ files.  They must be in order of left read, right read, left read, right read, for all read files from a single sample.
+6. sample = an integer that will be used to identify this sample.  Must be non-negative.
+7. cpu = number of CPU to use
+8. ref = name of the fasta file containing the renamed reference
+
+#The output
+
+The (interesting) output from _pecnv.pl_ is the following:
+
