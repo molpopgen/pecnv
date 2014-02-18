@@ -2,6 +2,7 @@
 
 use strict;
 use Getopt::Long;
+use Parallel::ForkManager;
 
 ##Establish options
 
@@ -56,26 +57,63 @@ while(my $line = <I>)
     ++$DUMMY;
   }
 
-##Rename the reads and align them
+##Rename the reads
 my $READ_DIR = 0;
+my @CONVERTCLI=();
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-      system(qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
+      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
+#      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
+      $READ_DIR = int(!$READ_DIR);
+  }
+
+my $pm = new Parallel::ForkManager($CPU);
+
+foreach my $C (@CONVERTCLI)
+{
+    $pm->start and next;
+    system(qq{$C});
+    $pm->finish;
+}
+
+$pm->wait_all_children;
+
+##Align the reads
+for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
+  {
       system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
-    $READ_DIR = int(!$READ_DIR);
+      $READ_DIR = int(!$READ_DIR);
   }
 
 ##PE resolution step
+my @RESOLVE = ();
+my @SAI=();
 for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
   {
     my $sai1 = "$OUTDIR/readfile.$i.sai";
     my $j = $i+1;
     my $sai2 = "$OUTDIR/readfile.$j.sai";
-
+    push(@SAI,$sai1);
+    push(@SAI,$sai2);
     #Make position-sorted bamfile
-    system(qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 10000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
-    unlink(qq{$sai1 $sai2});
+    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 10000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
   }
+
+my $pm2 = new Parellel::ForkManager(int($CPU/2));
+
+foreach my $R (@RESOLVE)
+{
+    $pm2->start and next;
+    system(qq{$R});
+    $pm2->finish;
+}
+
+$pm2->wait_all_children;
+
+foreach my $S (@SAI)
+{
+    unlink(qq{$S});
+}
 
 ##Merge bam files
 opendir( my $DH, $OUTDIR );
@@ -83,7 +121,6 @@ my @POSBAMS = grep { /\.bam$/ } readdir $DH;
 closedir ($DH);
 
 system(join(" ",qq{samtools merge $OUTDIR/merged_pos_sorted.bam },join(" ",@POSBAMS)));
-
 
 #Make read name sorted bamfile.  We run this 2x b/c sometimes this step doesn't work
 system(qq{samtools sort -n -m 10000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
