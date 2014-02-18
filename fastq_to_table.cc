@@ -78,7 +78,7 @@ void process_files(streamtype & in,
       
       o2 <<'@'<< line_id << ':' << lane_id << ':' << pair_id << ':' << read_id <<'\n'
 	 << seq << '\n'
-	 << '+' << line_id << ':' << lane_id << ':' << pair_id << ':' << read_id <<'\n'
+	 << '+' << line_id << ':' << lane_id << ':' << pair_id++ << ':' << read_id <<'\n'
 	 << qual << endl;
       
       /*
