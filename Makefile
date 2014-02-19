@@ -3,7 +3,6 @@ CXXFLAGS=-O2 -Wall -W -ansi -pedantic -I.
 SEQ=-lsequence
 BIOSTREAMS=-lboost_iostreams
 #Modify LDFLAGS if your system has libraries in non-standard locations
-LDFLAGS=
 targets=fastq_to_table bwa_bam_to_mapfiles bwa_mapdistance rename_reference cluster_cnv teclust umm_te_finder filter_edit get_pair_ids_bwa
 
 all: fastq_to_table.o bwa_bam_to_mapfiles2.o bwa_mapdistance.o bwa_util.o isbinary.o rename_reference.o cluster_cnv2.o string_unsigned_lookup.o file_util.o umm_te_finder.o teclust.o filter_edit.o get_pair_ids_bwa.o
