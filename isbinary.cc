@@ -10,25 +10,11 @@
 using namespace std;
 using namespace boost::iostreams;
 
-  //    ifstream in(filename);
-//     while( (c = in.get()) )
-//       {
-// 	if (! isprint(c))
-// 	  {
-// 	    return true;
-// 	  }
-// 	else
-// 	  {
-// 	    return false;
-// 	  }
-//       }
-
 bool isbz2( const char * filename )
 {
   filtering_istream gzin;
   gzin.push(bzip2_decompressor());
-  gzin.push(file_source(filename));
-
+  gzin.push(file_source(filename),ios_base::in|ios_base::binary);
 
   char c;
   try
@@ -47,8 +33,7 @@ bool isbinary( const char * filename )
 {
   filtering_istream gzin;
   gzin.push(gzip_decompressor());
-  gzin.push(file_source(filename));
-
+  gzin.push(file_source(filename),ios_base::in|ios_base::binary);
 
   char c;
   try
@@ -57,6 +42,7 @@ bool isbinary( const char * filename )
     }
   catch ( gzip_error & e )
     {
+      std::cerr << "caught exception!\n";
       gzin.pop();
       return false;
     }
