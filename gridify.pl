@@ -142,7 +142,7 @@ $HERE=<<HERE;
 $GEGENERIC
 
 cd $WDIR
-bwa aln -t \$CORES -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.\$SGE_TASK_ID.fastq.gz > $OUTDIR/readfile.\$SGE_TASK_ID.sai 2> $OUTDIR/alignment_stderr.\$SGE_TASK_ID});
+bwa aln -t \$CORES -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.\$SGE_TASK_ID.fastq.gz > $OUTDIR/readfile.\$SGE_TASK_ID.sai 2> $OUTDIR/alignment_stderr.\$SGE_TASK_ID
 HERE
     
 print O $HERE;
@@ -242,7 +242,7 @@ $HERE=<<HERE;
 $GEGENERIC
 
 cd $WDIR
-samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
+samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz
 
 R --no-save --slave --args $OUTDIR/mdist.gz $OUTDIR/mquant.txt <<TEST
 n=commandArgs(trailing=TRUE)
