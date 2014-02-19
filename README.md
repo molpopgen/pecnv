@@ -71,6 +71,8 @@ In the above line, default values are shown for each option where the exist and 
 
 ###Running the pipeline on an Open Grid Engine (OGE) system (formerly known as Sun Grid Engine, or SGE)
 
+__The script described here is still in development and is not to be used__
+
 The _pecnv.pl_ master script described above attempts to make the best possible use of CPU resources on a multi-core desktop machine.  However, the pipeline can be sped up dramatically with the use of a proper compute cluster with a good scheduling system.  At UCI, we use Open Grid Engine on our [cluster](http://hpc.oit.uci.edu).  I have written a basic [tutorial](http://hpc.oit.uci.edu/~krthornt/BioClusterGE.pdf) on how to use such a system.  The tutorial is somewhat specific to the UCI cluster in the details, but the main concepts are generic with respect to OGE systems.
 
 The pecnv packages comes with a perl script called _gridify.pl_.  This script creates a set of OGE scripts that will execute the pipeline.  The scripts are designed such that, when submitted to the queue, later steps are held in the queue until previous steps are finished, and each step requests the resources necessary to complete it.  This allows for sample with multiple fastq files to use multiple nodes (or parts of nodes) for alignment, or you can submit the scripts for multiple samples to the queue.
@@ -96,7 +98,7 @@ The options for this script that differ from the master script are:
 1. -N = the prefix of the name to be assigned for each job.  The default is pecnv.  If you are dealing w/multiple samples, you should provide a meaningful, and unique, name for each sample.  sample0, sample1, etc., are good choices.  Also, you should change the -sample value for each sample, too, so that they are all unique.
 2. -q = the name of the OGE queue(s) you wish to send your jobs to.
 
-Here is how I run the pipeline on the UCI cluster:
+Here is how I would run the pipeline on the UCI cluster:
 
 > gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
 
