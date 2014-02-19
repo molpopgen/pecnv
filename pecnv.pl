@@ -61,7 +61,7 @@ my $READ_DIR = 0;
 my @CONVERTCLI=();
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
+#      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
       $READ_DIR = int(!$READ_DIR);
   }
 
@@ -79,7 +79,7 @@ $pm->wait_all_children;
 ##Align the reads
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
+#      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
       $READ_DIR = int(!$READ_DIR);
   }
 
@@ -94,7 +94,7 @@ for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
     push(@SAI,$sai1);
     push(@SAI,$sai2);
     #Make position-sorted bamfile
-    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+#    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
   }
 
 $pm->set_max_procs(int($CPU/2));
@@ -125,14 +125,14 @@ foreach my $P (@POSBAMS)
     $P = join("/",$OUTDIR,$P);
 }
 
-system(join(" ",qq{samtools merge $OUTDIR/merged_pos_sorted.bam },join(" ",@POSBAMS)));
+#system(join(" ",qq{samtools merge $OUTDIR/merged_pos_sorted.bam },join(" ",@POSBAMS)));
 
 ##Clean up
 #unlink(join(" ",@POSBAMS));
 
 #Make read name sorted bamfile.  We run this 2x b/c sometimes this step doesn't work and results in an icompletely-sorted bam file
-system(qq{samtools sort -n -m 10000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
-system(qq{samtools sort -n -m 10000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted});
+system(qq{samtools sort -n -m 500000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
+system(qq{samtools sort -n -m 500000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted});
 unlink(qq{$OUTDIR/temp.bam});
 
 #Get distr. of mapping distances
