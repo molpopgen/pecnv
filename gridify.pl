@@ -172,9 +172,9 @@ $HERE=<<HERE;
 $GEGENERIC
 
 cd $WDIR
-
+##Problems here
 INDEX=\$((\$SGE_TASK_ID-1))
-FIRST=\$((2*(\$INDEX - 1)))
+FIRST=\$((2*(\$SGE_TASK_ID - 1)))
 SECOND=\$((\$FIRST + 1))
 bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $OUTDIR/readfile.\$FIRST.sai $OUTDIR/readfile.\$SECOND.sai $OUTDIR/readfile.\$FIRST.fastq.gz $OUTDIR/readfile.\$SECOND.fastq.gz 2> $OUTDIR/sampe_stderr.\$SGE_TASK_ID | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.\$SGE_TASK_ID
 rm -f $OUTDIR/readfile.\$FIRST.sai $OUTDIR/readfile.\$SECOND.sai
