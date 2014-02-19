@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+die "I don't work yet, sorry\n";
+
 use strict;
 use Getopt::Long;
 use Cwd;
