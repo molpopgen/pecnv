@@ -10,6 +10,7 @@ my $WDIR = getcwd;
 my $GEGENERIC = <<HERE;
 module load bwa;
 module load samtools;
+module load boost/1.53.0
 module load krthornt/libsequence/1.7.8
 HERE
 
