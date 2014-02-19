@@ -39,7 +39,7 @@ The above command is executed via the install2home.sh script included with this 
 
 The easiest way to use the programs will be to run the master script, _pecnv.pl_, on your data.  This script requires that the following software be in your user's path:
 
-1. The [bwa](http://bio-bwa.sourceforge.net/) aligner.
+1. The [bwa](http://bio-bwa.sourceforge.net/) aligner.  __NOTE:__ this pipeline has only been used with bwa version 0.5.9!
 2. [samtools](http://samtools.sourceforge.net/)
 
 __Note:__ the _pecnv.pl_ script uses ForkManager to attempt to make more effective use of CPU resources during several of the steps.  Make sure that this perl module is installed on your system!
