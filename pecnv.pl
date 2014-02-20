@@ -125,7 +125,7 @@ foreach my $P (@POSBAMS)
     $P = join("/",$OUTDIR,$P);
 }
 
-if ($#POSBAMS > 1)
+if ($#POSBAMS > 0)
 {
     system(join(" ",qq{samtools merge $OUTDIR/merged_pos_sorted.bam },join(" ",@POSBAMS)));
 }
