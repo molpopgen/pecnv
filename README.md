@@ -44,7 +44,7 @@ The easiest way to use the programs will be to run the master script, _pecnv.pl_
 
 __Note:__ the _pecnv.pl_ script uses ForkManager to attempt to make more effective use of CPU resources during several of the steps.  Make sure that this perl module is installed on your system!
 
-If you are impatient, run the script run _ test _ data.sh.  It will download a reference genome, 3 lanes of Illumina data, and then go to town.
+If you are impatient, run the script run _ test _ data.sh.  It will download a reference genome, two lanes of Illumina data, and then go to town.  __Ironically, this script cannot be run on a compute node of the UCI HPC.  This is because the compute nodes are networked in such a way that they cannot link back to the main node using hostname resolution__
 
 ###Processing the reference genome
 
