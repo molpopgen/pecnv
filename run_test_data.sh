@@ -4,7 +4,7 @@ wget http://hpc.oit.uci.edu/~krthornt/references/dyak/dyak-all-chromosome-r1.3-n
 
 bwa index dyak-all-chromosome-r1.3-newnames.fasta
 
-wget http://hpc.oit.uci.edu:~/krthornt/dyak_genomic_data/NY4_*
+wget http://hpc.oit.uci.edu:~/krthornt/dyak_genomic_data/NY42_*
 
 ls -1 *.fastq.gz | sort > infile
 
