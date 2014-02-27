@@ -56,14 +56,17 @@ struct linkeddata
 	     const unsigned & __aS, 
 	     const unsigned & __b,
 	     const unsigned & __bS,
-	     const unsigned & line,
-	     const unsigned & lane, const unsigned & pair,
+	     const string & __readname,
+	     /*
+	       const unsigned & line,
+	       const unsigned & lane, const unsigned & pair,
+	     */
 	     const short & _strand1,
 	     const short & _strand2) : a(__a),
 				       aS(__aS),
 				       b(__b),
 				       bS(__bS),
-				       readname( make_readname(line,lane,pair) ),
+				       readname( __readname ), //make_readname(line,lane,pair) ),
 				       strand1(_strand1),strand2(_strand2)
   {
   }
@@ -143,10 +146,10 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       vector<pair<string,unsigned> > * chrom_labels,
 		       unsigned * chrom_index)
 {
-  string chrom_label,chrom_label2;
-  unsigned line,lane,pair,read,
-    mqual,chrom,strand,mm,gap,
-    line2,lane2,pair2,read2,
+  string chrom_label,chrom_label2,pairname,pairname2;
+  //unsigned line,lane,pair,read,
+  unsigned mqual,chrom,strand,mm,gap,
+    //line2,lane2,pair2,read2,
     mqual2,chrom2,strand2,mm2,gap2;
 
   int start,stop,start2,stop2;
@@ -154,22 +157,32 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 
   while(! lin.eof() )
     {
-      lin >> line >> lane >> pair >> read 
+      /*
+	lin >> line >> lane >> pair >> read 
+	>> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type >> ws;
+	rin >> line2 >> lane2 >> pair2 >> read2 
+	>> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
+      */
+      lin >> pairname
 	  >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type >> ws;
-      rin >> line2 >> lane2 >> pair2 >> read2 
+      rin >> pairname2
 	  >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
+      assert(pairname == pairname2);
       chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
       chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
+      /*
       assert(type==type2);
       assert(line==line2);
       assert(lane==lane2);
       assert(pair==pair2);
+      */
       if( mqual >= min_mqual && mqual2 >= min_mqual &&
 	  mm <= max_mm && gap <= max_gap &&
 	  mm2 <= max_mm && gap2 <= max_gap )
 	{
 	  if(type == "DIV")
 	    {
+	      /*
 	      if ( unique_positions_by_lane(raw_div[chrom],
 						(strand==0) ? start2 : start,
 						(strand==0) ? stop2 : stop,
@@ -177,16 +190,21 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 						(strand==0) ? stop : stop2,
 						lane) )
 		    {
-		      assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
-		      raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
-							      (strand==0) ? stop2 : stop,
-							      (strand==0) ? start : start2,
-							      (strand==0) ? stop : stop2,
-							      line,lane,pair,1,0 ) );
-		    }
+	      */
+	      assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
+	      raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
+						    (strand==0) ? stop2 : stop,
+						    (strand==0) ? start : start2,
+						    (strand==0) ? stop : stop2,
+						    pairname,1,0 ) );
+						    //line,lane,pair,1,0 ) );
+		      /*
+			}
+		      */
 	    }
 	  else if (type == "PAR")
 	    {
+	      /*
 	      if ( unique_positions_by_lane(raw_par[chrom],
 					    (start<start2) ? start : start2,
 					    (start<start2) ? stop : stop2,
@@ -194,14 +212,17 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 					    (start<start2) ? stop2 : stop,
 					    lane) )
 		{
+	      */
 		  raw_par[chrom].push_back( linkeddata( (start<start2) ? start : start2,
 						       (start<start2) ? stop : stop2,
 						       (start<start2) ? start2 : start,
 						       (start<start2) ? stop2 : stop,
-						       line,lane,pair,
+							pairname,//line,lane,pair,
 						       (start<start2) ? strand : strand2,
 						       (start<start2) ? strand2 : strand ));
-		}
+		  /*
+		    }
+		  */
 	    }
 	  else if (type == "UL")
 	    {
@@ -213,10 +234,16 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		  swap(stop,stop2);
 		  swap(strand,strand2);
 		}
-	      if ( unique_positions_by_lane(raw_ul[chrom][chrom2],start,stop,start2,stop2,lane) )
+	      /*
+		if ( unique_positions_by_lane(raw_ul[chrom][chrom2],start,stop,start2,stop2,lane) )
 		{
-		  raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,line,lane,pair,strand,strand2) );
+	      */
+	      raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
+							  pairname,strand,strand2) );
+	      //line,lane,pair,strand,strand2) );
+	      /*
 		}
+	      */
 	    }
 #ifndef NDEBUG
 	  else
@@ -376,6 +403,7 @@ int main(int argc, char ** argv)
     }
 }
 
+/*
 bool unique_positions_by_lane(const vector<linkeddata> & data,
 			      const unsigned & start,
 			      const unsigned & stop,
@@ -410,6 +438,7 @@ bool unique_positions_by_lane(const vector<linkeddata> & data,
     }
   return true;
 }
+*/
 
 /*
   OLD VERSION, USED IN DGRP

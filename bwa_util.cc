@@ -4,13 +4,16 @@
 using namespace std;
 using namespace Sequence;
 
-void getLanePair(unsigned * lane,
-		 unsigned * rpair,
-		 const string & name)
+/*
+  void getLanePair(unsigned * lane,
+  unsigned * rpair,
+  const string & name)
+*/
 /*
   format is:
   line:lane:read_pair:dir
 */
+/*
 {
   string::size_type colon1 = name.find(":");
   string::size_type colon2 = name.find(":",colon1+1);
@@ -18,6 +21,7 @@ void getLanePair(unsigned * lane,
   *lane = atoi( string( name.begin()+colon1+1, name.begin()+colon2 ).c_str() );
   *rpair = atoi( string( name.begin()+colon2+1, name.begin()+colon3 ).c_str() );
 }
+*/
 
 bool hasXT(const samrecord & r,const string & value)
 {

@@ -21,6 +21,7 @@
 using namespace std;
 using namespace boost::iostreams;
 
+typedef map<string,unsigned> maptype;
 struct teinfo
 {
   unsigned chrom,start,stop;
@@ -45,18 +46,21 @@ struct iste : public binary_function<teinfo,teinfo,bool>
 
 
 template<typename streamtype>
-void read_data( map<unsigned,unsigned> & umm,
+void read_data( maptype & umm,
 		vector<teinfo> & refdata,
 		streamtype & in,
 		const unsigned & minmqual)
 {
-  unsigned line,lane,pair,read,mq;
+  //unsigned line,lane,pair,read,
+  string readname;
+  unsigned mq;
   unsigned chrom,start,stop;
   string temp;
   while( ! in.eof() )
     {
-      in >> line >> lane >> pair >> read >> mq
-	   >> chrom >> start >> stop;
+      //in >> line >> lane >> pair >> read >> mq
+      in >> readname >> mq
+	 >> chrom >> start >> stop;
       getline(in,temp);
       in >> ws;
 
@@ -71,13 +75,13 @@ void read_data( map<unsigned,unsigned> & umm,
 	      if ( itr != refdata.end() )
 		{
 		  //umm.insert(pair);
-		  umm[pair]=1;
+		  umm[readname]=1;
 		}
 	    }
 	  else
 	    {
 	      //umm.insert(pair);
-	      umm[pair]=1;
+	      umm[readname]=1;
 	    }
 	}
     }
@@ -87,20 +91,24 @@ template<typename istreamtype,
 	 typename ostreamtype>
 void read_umu( istreamtype & in,
 	       ostreamtype & out,
-	       map<unsigned,unsigned> & pairs)
+	       maptype & pairs)
 {
-  unsigned line,lane,pair,read,mq;
+  //unsigned line,lane,pair,read,mq;
+  string readname;
+  unsigned mq;
   unsigned chrom,start,stop,strand;
   string temp;
   unsigned nfound = 0;
   while( ! in.eof() )
     {
-      in >> line >> lane >> pair >> read >> mq
+      //in >> line >> lane >> pair >> read >> mq
+      in >> readname >> mq
 	 >> chrom >> start >> stop >> strand;
       getline(in,temp);
       in >> ws;
       //if( find(pairs.begin(),pairs.end(),pair) != pairs.end() )
-      if(pairs.find(pair) != pairs.end())
+      //if(pairs.find(pair) != pairs.end())
+      if(pairs.find(readname) != pairs.end())
 	{
 	      out << start << '\t'
 		  << chrom << '\t' 
@@ -145,7 +153,7 @@ int main( int argc, char ** argv )
   filtering_ostream out;
   out.push(gzip_compressor());
   out.push(file_sink(outfile,ios_base::binary|ios_base::out));
-  map<unsigned,unsigned> umm;
+  maptype umm;
   if( isbinary(umm_mapfile) )
     {
       filtering_istream gzin;

@@ -174,11 +174,16 @@ void checkMap(const samrecord & r1,
   string name2 = r2.qname();
  
 #ifndef NDEBUG
-  unsigned lane1,rpair1,lane2,rpair2;
-  getLanePair(&lane1,&rpair1,r1.qname());
-  getLanePair(&lane2,&rpair2,r2.qname());
-  assert(lane1==lane2&&rpair1==rpair2);
+  assert( r1.qname() == r2.qname() );
 #endif
+  /*
+    #ifndef NDEBUG
+    unsigned lane1,rpair1,lane2,rpair2;
+    getLanePair(&lane1,&rpair1,r1.qname());
+    getLanePair(&lane2,&rpair2,r2.qname());
+    assert(lane1==lane2&&rpair1==rpair2);
+    #endif
+  */
   bool isU1 = hasXT(r1,"U"),
     isU2 = hasXT(r2,"U"),
     isR1 = hasXT(r1,"R"),
@@ -274,11 +279,20 @@ int main(int argc, char ** argv)
   const char * um_base = argv[argn++];
   struct output_files of(structural_base,um_base);
   
-   samrecord r1,r2;
-  unsigned lane1,rpair1,lane2,rpair2;
+  samrecord r1,r2;
+  //unsigned lane1,rpair1,lane2,rpair2;
   while( !cin.eof())
     {
       cin >> r1 >> ws >> r2 >> ws;
+      //modification to move away from read name changing
+      if ( r1.qname() != r2.qname() )
+	{
+	  cerr << "error: alignment records not properly sorted by read name\n"
+	       << r1 << '\n'
+	       << r2 << '\n';
+	  exit(10);
+	}
+      /*
       getLanePair(&lane1,&rpair1,r1.qname());
       getLanePair(&lane2,&rpair2,r2.qname());
       if ( lane1 != lane2 ||
@@ -289,6 +303,7 @@ int main(int argc, char ** argv)
 	       << r2 << '\n';
 	  exit(10);
 	}
+      */
       samflag rf = r1.flag();
       if(!rf.query_unmapped &&
 	 !rf.mate_unmapped)

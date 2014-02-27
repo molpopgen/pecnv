@@ -28,7 +28,7 @@ int main( int argc, char ** argv )
 
   map<unsigned,unsigned> mdist;
 
-  unsigned lane1,rpair1,lane2,rpair2;
+  //unsigned lane1,rpair1,lane2,rpair2;
   unsigned nproc=0;
   while(!cin.eof())
     {
@@ -38,8 +38,18 @@ int main( int argc, char ** argv )
 	{
 	  cerr << nproc << " processed\n";
 	}
-      getLanePair(&lane1,&rpair1,r1.qname());
-      getLanePair(&lane2,&rpair2,r2.qname());
+      /*
+	getLanePair(&lane1,&rpair1,r1.qname());
+	getLanePair(&lane2,&rpair2,r2.qname());
+      */
+      if ( r1.qname() != r2.qname() )
+	{
+	  cerr << "error: reads appear to not be properly sorted by read name:\n"
+	       << r1 << '\n'
+	       << r2 << '\n';
+	  exit(1);
+	}
+      /*
       if( lane1 != lane2 || rpair1 != rpair2 )
 	{
 	  cerr << "error: lane/pair id mismatch:\n"
@@ -47,6 +57,7 @@ int main( int argc, char ** argv )
 	       << r2 << '\n';
 	  exit(1);
 	}
+      */
       if( r1.rname() == r2.rname() )
 	{
 	  //pair is linked
