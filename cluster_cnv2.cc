@@ -119,6 +119,13 @@ bool pair_should_cluster( vector<linkeddata>::const_iterator & pair,
 			  vector<vector<linkeddata>::const_iterator> & cluster,
 			  const unsigned & mdist);
 
+bool unique_positions(const vector<linkeddata> & data,
+		      const unsigned & start,
+		      const unsigned & stop,
+		      const unsigned & start2,
+		      const unsigned & stop2);
+
+/*
 bool unique_positions_by_lane(const vector<linkeddata> & data,
 			      const unsigned & start,
 			      const unsigned & stop,
@@ -126,6 +133,7 @@ bool unique_positions_by_lane(const vector<linkeddata> & data,
 			      const unsigned & stop2,
 			      const unsigned & lane,
 			      const bool & check_lane = false);
+*/
 
 void write_clusters( filtering_ostream & o,
 		     const string & chrom1,
@@ -191,12 +199,19 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 						lane) )
 		    {
 	      */
-	      assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
-	      raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
-						    (strand==0) ? stop2 : stop,
-						    (strand==0) ? start : start2,
-						    (strand==0) ? stop : stop2,
-						    pairname,1,0 ) );
+	      if ( unique_positions(raw_div[chrom],
+				    (strand==0) ? start2 : start,
+				    (strand==0) ? stop2 : stop,
+				    (strand==0) ? start : start2,
+				    (strand==0) ? stop : stop2 ) )
+		{
+		  assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
+		  raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
+							(strand==0) ? stop2 : stop,
+							(strand==0) ? start : start2,
+							(strand==0) ? stop : stop2,
+							pairname,1,0 ) );
+		}
 						    //line,lane,pair,1,0 ) );
 		      /*
 			}
@@ -213,13 +228,20 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 					    lane) )
 		{
 	      */
+	      if ( unique_positions(raw_par[chrom],
+				    (start<start2) ? start : start2,
+				    (start<start2) ? stop : stop2,
+				    (start<start2) ? start2 : start,
+				    (start<start2) ? stop2 : stop) )
+		{
 		  raw_par[chrom].push_back( linkeddata( (start<start2) ? start : start2,
-						       (start<start2) ? stop : stop2,
-						       (start<start2) ? start2 : start,
-						       (start<start2) ? stop2 : stop,
+							(start<start2) ? stop : stop2,
+							(start<start2) ? start2 : start,
+							(start<start2) ? stop2 : stop,
 							pairname,//line,lane,pair,
-						       (start<start2) ? strand : strand2,
-						       (start<start2) ? strand2 : strand ));
+							(start<start2) ? strand : strand2,
+							(start<start2) ? strand2 : strand ));
+		}
 		  /*
 		    }
 		  */
@@ -238,8 +260,11 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		if ( unique_positions_by_lane(raw_ul[chrom][chrom2],start,stop,start2,stop2,lane) )
 		{
 	      */
-	      raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
-							  pairname,strand,strand2) );
+	      if ( unique_positions(raw_ul[chrom][chrom2],start,stop,start2,stop2) )
+		{
+		  raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
+							      pairname,strand,strand2) );
+		}
 	      //line,lane,pair,strand,strand2) );
 	      /*
 		}
@@ -401,6 +426,23 @@ int main(int argc, char ** argv)
 			  clusters,&eventid );
 	}
     }
+}
+
+bool unique_positions(const vector<linkeddata> & data,
+		      const unsigned & start,
+		      const unsigned & stop,
+		      const unsigned & start2,
+		      const unsigned & stop2)
+{
+  for(unsigned i=0;i<data.size();++i)
+    {
+      if( start == data[i].a && 
+	  start2 == data[i].b )
+	{
+	  return false;
+	}
+    }
+  return true;
 }
 
 /*
