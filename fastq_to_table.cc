@@ -25,7 +25,7 @@ void process_files(streamtype & in,
 		   const unsigned line_id,
 		   const unsigned lane_id,
 		   const unsigned read_id,
-		   //const char * ofn,
+		   const char * ofn,
 		   const char * ofn2,
 		   const bool & revcom)
 {
@@ -34,10 +34,10 @@ void process_files(streamtype & in,
   unsigned pair_id=0;
 
   //ofstream os(ofn,ios_base::out | ios_base::binary);
-  //filtering_ostream o;
-  //o.push(gzip_compressor());
+  filtering_ostream o;
+  o.push(gzip_compressor());
   //o.push(os);
-  //o.push(file_sink(ofn),ios_base::out | ios_base::binary);
+  o.push(file_sink(ofn),ios_base::out | ios_base::binary);
   //ofstream os2(ofn2,ios_base::out | ios_base::binary);
   filtering_ostream o2;
   o2.push(gzip_compressor());
@@ -67,10 +67,30 @@ void process_files(streamtype & in,
 	  i=find_if(j,name2.end(),::isspace);
 	}
 
+ 
+      qual2=qual;
+      //if qual contains '/' character, need to replace
+      if (qual.find('\\') != string::npos)
+	{
+	  string temp="";
+	  for(unsigned i=0;i<qual.size();++i)
+	    {
+	      if(qual[i]!='\\')
+		{
+		  temp += qual[i];
+		}
+	      else
+		{
+		  temp += "\\\\";
+		}
+	    }
+	  qual=temp;
+	}
 
       if( revcom )
 	{
 	  reverse(qual.begin(),qual.end());
+	  reverse(qual2.begin(),qual2.end());
 	  Sequence::Fasta temp("temp",seq);
 	  temp.Revcom();
 	  seq = temp.second;
@@ -79,30 +99,28 @@ void process_files(streamtype & in,
       o2 <<'@'<< line_id << ':' << lane_id << ':' << pair_id << ':' << read_id <<'\n'
 	 << seq << '\n'
 	 << '+' << line_id << ':' << lane_id << ':' << pair_id << ':' << read_id <<'\n'
-	 << qual << endl;
+	 << qual2 << endl;
       
-      ++pair_id;
-      /*
       o << line_id << '\t' << lane_id << '\t' << pair_id++ << '\t'
 	<< read_id << '\t' << name << '\t' << seq << '\t' << qual << endl;
-      */
+
     }
 }
 
 int main(int argc, char ** argv)
 {
   int argn=1;
-  if( argc < 6 )
+  if( argc < 7 )
     {
       cerr << "usage: " << argv[0]
-	   << " line_id lane_id read_id fastqfile new_fastq_file_name\n";
+	   << " line_id lane_id read_id fastqfile table_file_name new_fastq_file_name\n";
       exit(10);
     }
   const unsigned line_id = atoi(argv[argn++]);
   const unsigned lane_id = atoi(argv[argn++]);
   const unsigned read_id = atoi(argv[argn++]);
   const char * fastqfile = argv[argn++];
-  //const char * ofn =  argv[argn++];
+  const char * ofn = argv[argn++];
   const char * ofn2 = argv[argn++];
   bool revcom = false;
   if( argc == 8 )
@@ -114,20 +132,19 @@ int main(int argc, char ** argv)
       filtering_istream in;
       in.push(bzip2_decompressor());
       in.push(file_source(fastqfile,ios_base::in|ios_base::binary));
-      //process_files(in,line_id,lane_id,read_id,ofn,ofn2,revcom);
-      process_files(in,line_id,lane_id,read_id,ofn2,revcom);
+      process_files(in,line_id,lane_id,read_id,ofn,ofn2,revcom);
     }
   else if ( isbinary(fastqfile) )
     {
       filtering_istream in;
       in.push(gzip_decompressor());
       in.push(file_source(fastqfile,ios_base::in|ios_base::binary));
-      process_files(in,line_id,lane_id,read_id,ofn2,revcom);
+      process_files(in,line_id,lane_id,read_id,ofn,ofn2,revcom);
     }
   else
     {
       ifstream in(fastqfile);
-      process_files(in,line_id,lane_id,read_id,ofn2,revcom);
+      process_files(in,line_id,lane_id,read_id,ofn,ofn2,revcom);
     }
 }
 
