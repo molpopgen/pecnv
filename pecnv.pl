@@ -61,7 +61,7 @@ my $READ_DIR = 0;
 my @CONVERTCLI=();
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.fastq.gz});
+      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.csv.gz $OUTDIR/readfile.$i.fastq.gz});
       $READ_DIR = int(!$READ_DIR);
   }
 
