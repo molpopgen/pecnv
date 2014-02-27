@@ -65,7 +65,7 @@ while(my $line = <I>)
 #      $READ_DIR = int(!$READ_DIR);
 #  }
 
-#my $pm = new Parallel::ForkManager($CPU);
+my $pm = new Parallel::ForkManager($CPU);
 
 #foreach my $C (@CONVERTCLI)
 #{
@@ -74,7 +74,7 @@ while(my $line = <I>)
 #    $pm->finish;
 #}
 
-$pm->wait_all_children;
+#$pm->wait_all_children;
 
 ##Align the reads
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
@@ -94,7 +94,7 @@ for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
     push(@SAI,$sai1);
     push(@SAI,$sai2);
     #Make position-sorted bamfile
-    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[$j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
   }
 
 $pm->set_max_procs(int($CPU/2));
