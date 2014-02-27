@@ -57,29 +57,29 @@ while(my $line = <I>)
   }
 
 ##Rename the reads
-my $READ_DIR = 0;
-my @CONVERTCLI=();
-for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
-  {
-      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.csv.gz $OUTDIR/readfile.$i.fastq.gz});
-      $READ_DIR = int(!$READ_DIR);
-  }
+#my $READ_DIR = 0;
+#my @CONVERTCLI=();
+#for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
+#  {
+#      push(@CONVERTCLI,qq{fastq_to_table $SAMPLEID $FASTQIDS[$i] $READ_DIR $FASTQFILES[$i] $OUTDIR/readfile.$i.csv.gz $OUTDIR/readfile.$i.fastq.gz});
+#      $READ_DIR = int(!$READ_DIR);
+#  }
 
-my $pm = new Parallel::ForkManager($CPU);
+#my $pm = new Parallel::ForkManager($CPU);
 
-foreach my $C (@CONVERTCLI)
-{
-    $pm->start and next;
-    system(qq{$C});
-    $pm->finish;
-}
+#foreach my $C (@CONVERTCLI)
+#{
+#    $pm->start and next;
+#    system(qq{$C});
+#    $pm->finish;
+#}
 
 $pm->wait_all_children;
 
 ##Align the reads
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
-      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $OUTDIR/readfile.$i.fastq.gz > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
+      system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $FASTQFILES[$i] > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
       $READ_DIR = int(!$READ_DIR);
   }
 
@@ -94,7 +94,7 @@ for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
     push(@SAI,$sai1);
     push(@SAI,$sai2);
     #Make position-sorted bamfile
-    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $OUTDIR/readfile.$i.fastq.gz $OUTDIR/readfile.$j.fastq.gz 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
   }
 
 $pm->set_max_procs(int($CPU/2));
