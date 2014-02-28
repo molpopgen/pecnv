@@ -34,10 +34,6 @@ int main( int argc, char ** argv )
     {
       cin >> r1 >> ws >> r2 >> ws;
       ++nproc;
-      if(nproc % 1000000 == 0.)
-	{
-	  cerr << nproc << " processed\n";
-	}
       /*
 	getLanePair(&lane1,&rpair1,r1.qname());
 	getLanePair(&lane2,&rpair2,r2.qname());
