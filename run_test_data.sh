@@ -29,17 +29,23 @@ fi
 if [ $WGET -eq 1 ]
 then
     wget http://hpc.oit.uci.edu/~krthornt/references/dyak/dyak-all-chromosome-r1.3-newnames.fasta
+#Download two lanes of data for 1 sample--that's enough to see how things progress
+    wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_1.fastq.gz
+    wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_2.fastq.gz
+    wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_1.fastq.gz
+    wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_2.fastq.gz
 else
     curl http://hpc.oit.uci.edu/~krthornt/references/dyak/dyak-all-chromosome-r1.3-newnames.fasta -o dyak-all-chromosome-r1.3-newnames.fasta
+#Download two lanes of data for 1 sample--that's enough to see how things progress
+    curl http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_1.fastq.gz -o NY42_06_21_2010_54_1.fastq.gz
+    curl http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_2.fastq.gz -o NY42_06_21_2010_54_2.fastq.gz
+    curl http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_1.fastq.gz -o NY42_09_07_2010_75_1.fastq.gz
+    curl http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_2.fastq.gz -o NY42_09_07_2010_75_2.fastq.gz
 fi
 
 bwa index dyak-all-chromosome-r1.3-newnames.fasta
 
-#Download two lanes of data for 1 sample--that's enough to see how things progress
-wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_1.fastq.gz
-wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_06_21_2010_54_2.fastq.gz
-wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_1.fastq.gz
-wget http://hpc.oit.uci.edu/~krthornt/dyak_genomic_reads/NY42_09_07_2010_75_2.fastq.gz
+
 
 ls -1 *.fastq.gz | sort > infile
 
