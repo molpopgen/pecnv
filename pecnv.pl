@@ -14,6 +14,7 @@ my $SAMPLES;
 my $REFERENCE;
 my $CPU=32;
 my $HAVEROCKSORT='';
+my $ROCKMEM="32G";
 GetOptions("outdir=s" => \$OUTDIR,
 	   "minqual=i" => \$MINQUAL,
 	   "mismatches=i" => \$MISMATCHES,
@@ -22,9 +23,14 @@ GetOptions("outdir=s" => \$OUTDIR,
 	   "ref=s" => \$REFERENCE,
 	   "sample=i" => \$SAMPLEID,
 	   "cpu=i" => \$CPU,
-	   "rocksort" => \$HAVEROCKSORT
+	   "rocksort" => \$HAVEROCKSORT,
+	   "m=s" => \$ROCKMEM
 	  );
 
+if (defined($HAVEROCKSORT))
+{
+    die;
+}
 ##Check that options are ok
 if( ! defined( $SAMPLES ) )
   {
@@ -96,7 +102,14 @@ for(my $i = 0 ; $i <= $#FASTQFILES ; $i += 2 )
     push(@SAI,$sai1);
     push(@SAI,$sai2);
     #Make position-sorted bamfile
-    push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[$j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    if ( defined ($HAVEROCKSORT) )
+    {
+	push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[$j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools rocksort -m $ROCKMEM - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    }
+    else
+    {
+	push(@RESOLVE,qq{bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE $sai1 $sai2 $FASTQFILES[$i] $FASTQFILES[$j] 2> $OUTDIR/sampe_stderr.$i | samtools view -bS - 2> /dev/null | samtools sort -m 500000000 - $OUTDIR/bamfile.$FASTQIDS[$i]});
+    }
   }
 
 $pm->set_max_procs(int($CPU/2));
@@ -143,9 +156,16 @@ system(qq{samtools index $OUTDIR/merged_pos_sorted.bam});
 unlink(join(" ",@POSBAMS));
 
 #Make read name sorted bamfile.  We run this 2x b/c sometimes this step doesn't work and results in an icompletely-sorted bam file
-system(qq{samtools sort -n -m 500000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
-system(qq{samtools sort -n -m 500000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted});
-unlink(qq{$OUTDIR/temp.bam});
+if ( defined($HAVEROCKSORT) )
+{
+    system(qq{samtools rocksort -n -m $ROCKMEM -@ $CPU $OUTDIR/merged_pos_sorted.bam $OUTDIR/merged_readsorted});
+}
+else
+{
+    system(qq{samtools sort -n -m 500000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
+    system(qq{samtools sort -n -m 500000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted});
+    unlink(qq{$OUTDIR/temp.bam});
+}
 
 #Get distr. of mapping distances
 system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
