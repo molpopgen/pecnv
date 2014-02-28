@@ -13,7 +13,7 @@ my $GAPS = 0;
 my $SAMPLES;
 my $REFERENCE;
 my $CPU=32;
-my $HAVEROCKSORT='';
+my $HAVEROCKSORT;
 my $ROCKMEM="32G";
 GetOptions("outdir=s" => \$OUTDIR,
 	   "minqual=i" => \$MINQUAL,
@@ -88,7 +88,7 @@ my $pm = new Parallel::ForkManager($CPU);
 for(my $i = 0 ; $i <= $#FASTQFILES ; ++$i )
   {
       system(qq{bwa aln -t $CPU -l 13 -m 5000000 -I -R 5000 $REFERENCE $FASTQFILES[$i] > $OUTDIR/readfile.$i.sai 2> $OUTDIR/alignment_stderr.$i});
-      $READ_DIR = int(!$READ_DIR);
+#      $READ_DIR = int(!$READ_DIR);
   }
 
 ##PE resolution step
