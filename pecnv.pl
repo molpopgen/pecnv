@@ -38,6 +38,14 @@ if (! defined( $REFERENCE ) )
     die "Error, please specify reference fasta file with -ref <filename>\n";
   }
 
+my $ROCKMEMVAL=$ROCKMEM;
+my $ROCKMEMUNIT=$ROCKMEM;
+$ROCKMEMVAL =~ s/[A-Za-z]+//go;
+$ROCKMEMUNIT =~ =s/[0-9]+//go;
+
+my $ROCKMEMCPU = int($ROCKMEMVAL/$CPU);
+
+
 ##Make output dir
 
 if ( ! -d $OUTDIR )
@@ -151,13 +159,14 @@ system(qq{samtools index $OUTDIR/merged_pos_sorted.bam});
 ##Clean up
 unlink(join(" ",@POSBAMS));
 
-#Make read name sorted bamfile.  We run this 2x b/c sometimes this step doesn't work and results in an icompletely-sorted bam file
+#Make read name sorted bamfile.  
 if ( defined($HAVEROCKSORT) )
 {
-    system(qq{samtools rocksort -n -m $ROCKMEM -@ $CPU $OUTDIR/merged_pos_sorted.bam $OUTDIR/merged_readsorted});
+    system(qq{samtools rocksort -n -m $ROCKMEMCPU$ROCKMEMUNIT -@ $CPU $OUTDIR/merged_pos_sorted.bam $OUTDIR/merged_readsorted});
 }
 else
 {
+#We run this 2x b/c sometimes this step doesn't work and results in an icompletely-sorted bam file
     system(qq{samtools sort -n -m 500000000 $OUTDIR/merged_pos_sorted.bam $OUTDIR/temp});
     system(qq{samtools sort -n -m 500000000 $OUTDIR/temp.bam $OUTDIR/merged_readsorted});
     unlink(qq{$OUTDIR/temp.bam});
