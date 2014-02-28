@@ -27,10 +27,6 @@ GetOptions("outdir=s" => \$OUTDIR,
 	   "m=s" => \$ROCKMEM
 	  );
 
-if (defined($HAVEROCKSORT))
-{
-    die;
-}
 ##Check that options are ok
 if( ! defined( $SAMPLES ) )
   {
