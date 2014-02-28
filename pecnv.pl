@@ -13,6 +13,7 @@ my $GAPS = 0;
 my $SAMPLES;
 my $REFERENCE;
 my $CPU=32;
+my $HAVEROCKSORT='';
 GetOptions("outdir=s" => \$OUTDIR,
 	   "minqual=i" => \$MINQUAL,
 	   "mismatches=i" => \$MISMATCHES,
@@ -20,7 +21,8 @@ GetOptions("outdir=s" => \$OUTDIR,
 	   "infile=s" => \$SAMPLES,
 	   "ref=s" => \$REFERENCE,
 	   "sample=i" => \$SAMPLEID,
-	   "cpu=i" => \$CPU
+	   "cpu=i" => \$CPU,
+	   "rocksort" => \$HAVEROCKSORT
 	  );
 
 ##Check that options are ok
