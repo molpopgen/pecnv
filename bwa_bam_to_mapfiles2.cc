@@ -84,8 +84,8 @@ struct output_files
     um_sam.pop();
     um_sam.pop();
   }
-  filtering_ostream & stream(const MAPTYPE & m,
-			     const string & readname)
+  filtering_ostream & stream(const MAPTYPE & m)//,
+  //const string & readname)
   {
     if (m == UMU)
       {
@@ -96,11 +96,14 @@ struct output_files
 	return um_m;
       }
     assert( m == DIV || m == PAR || m == UL );
+    return structural_left;
+    /*
     if(readname[readname.length()-1]=='0')
       {
 	return structural_left;
       }
     return structural_right;
+    */
   }
 };
 
@@ -140,6 +143,7 @@ bool hasXA(const samrecord & r)
   return false;
 }
 
+/*
 string fix_readname( const std::string & n )
 {
   string rv(n);
@@ -151,7 +155,7 @@ string fix_readname( const std::string & n )
     }
   return rv;
 }
-
+*/
 vector< pair<char,
 	     unsigned> > parse_cigar(const string & cigar);
 
@@ -198,8 +202,9 @@ void checkMap(const samrecord & r1,
   if(isU1 && isU2 )
     {
       written = true;
-      of.stream(m,r1.qname()) 
-	<< fix_readname(r1.qname()) << '\t' 
+      of.stream(m)//,r1.qname()) 
+	<< r1.qname() << '\t'
+	//<< fix_readname(r1.qname()) << '\t' 
 	<< r1.mapq() << '\t'
 	<< r1.rname() << '\t'
 	<< r1.pos()-1 << '\t'
@@ -209,8 +214,9 @@ void checkMap(const samrecord & r1,
 	<< ngaps(r1) << '\t'
 	<< mtype2string(m) << '\n';
 
-      of.stream(m,r2.qname()) 
-	<< fix_readname(r2.qname()) << '\t' 
+      of.stream(m)//,r2.qname()) 
+	<< r2.qname() << '\t'
+	//<< fix_readname(r2.qname()) << '\t' 
 	<< r2.mapq() << '\t'
 	<< r2.rname() << '\t'
 	<< r2.pos()-1 << '\t'
@@ -231,8 +237,9 @@ void checkMap(const samrecord & r1,
 	{
 	  written = true;
 	  
-	  of.stream(output_files::UMU,r1.qname()) 
-	    << fix_readname(r1.qname()) << '\t' 
+	  of.stream(output_files::UMU)//,r1.qname()) 
+	    << r1.qname() << '\t'
+	    //<< fix_readname(r1.qname()) << '\t' 
 	    << r1.mapq() << '\t'
 	    << r1.rname() << '\t'
 	    << r1.pos()-1 << '\t'
@@ -241,7 +248,7 @@ void checkMap(const samrecord & r1,
 	    << mismatches(r1) << '\t'
 	    << ngaps(r1) << '\n';
 	  
-	  outputM( of.stream(output_files::UMM,r2.qname()),
+	  outputM( of.stream(output_files::UMM),//r2.qname()),
 		   r2 );
 	  of.um_sam << r1 << '\n'
 		    << r2 << '\n';
@@ -252,11 +259,12 @@ void checkMap(const samrecord & r1,
 	  //cerr << r2 << '\n' << r2.pos() <<'\n';
 	  //cerr << r1.pos() << '\n';
 	  written = true;
-	  outputM( of.stream(output_files::UMM,r1.qname()),
+	  outputM( of.stream(output_files::UMM),//r1.qname()),
 		   r1 );
 	  
-	  of.stream(output_files::UMU,r2.qname()) 
-	    << fix_readname(r2.qname()) << '\t' 
+	  of.stream(output_files::UMU)//,r2.qname()) 
+	    << r2.qname() << '\t'
+	    //<< fix_readname(r2.qname()) << '\t' 
 	    << r2.mapq() << '\t'
 	    << r2.rname() << '\t'
 	    << r2.pos()-1 << '\t'
@@ -607,7 +615,7 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 filtering_ostream & outputM( filtering_ostream & out,
 			     const samrecord & r )
 {
-  string name = fix_readname(r.qname());
+  string name = r.qname();//fix_readname(r.qname());
   vector<mapping_pos> mpos = get_mapping_pos(r);
   //cerr << "name = " << name <<' ' << r.mapq() << '\n';
   for( unsigned i=0;i<mpos.size();++i)

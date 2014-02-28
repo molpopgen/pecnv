@@ -147,7 +147,7 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       map<unsigned,vector<linkeddata> > & raw_par,
 		       map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
 		       streamtype & lin,
-		       streamtype & rin,	      
+		       //streamtype & rin,	      
 		       const unsigned & min_mqual,
 		       const unsigned & max_mm,
 		       const unsigned & max_gap,
@@ -172,8 +172,8 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 	>> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
       */
       lin >> pairname
-	  >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type >> ws;
-      rin >> pairname2
+	  >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
+	  >> pairname2
 	  >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
       assert(pairname == pairname2);
       chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
@@ -284,29 +284,29 @@ void read_data( map<unsigned,vector<linkeddata> > & raw_div,
 		map<unsigned,vector<linkeddata> > & raw_par,
 		map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
 		const char * left,
-		const char * right,
+		//const char * right,
 		const unsigned & min_mqual,
 		const unsigned & max_mm,
 		const unsigned & max_gap,
 		vector<pair<string,unsigned> > * chrom_labels,
 		unsigned * chrom_index)
 {
-  if( isbinary(left) && isbinary(right) )
+  if( isbinary(left) ) //&& isbinary(right) )
     {
       filtering_istream il;
       il.push(gzip_decompressor());
       il.push(file_source(left,ios_base::in|ios_base::binary));
-      
-      filtering_istream ir;
-      ir.push(gzip_decompressor());
-      ir.push(file_source(right,ios_base::in|ios_base::binary));
-
-      read_data_details( raw_div,raw_par,raw_ul , il,ir,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
+      /*
+	filtering_istream ir;
+	ir.push(gzip_decompressor());
+	ir.push(file_source(right,ios_base::in|ios_base::binary));
+      */
+      read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
     }
   else
     {
-      ifstream il(left),ir(right);
-      read_data_details( raw_div,raw_par,raw_ul , il,ir,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
+      ifstream il(left);//,ir(right);
+      read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
     }
 }
 		
@@ -369,12 +369,13 @@ int main(int argc, char ** argv)
   map<unsigned, map<unsigned,vector<linkeddata> > > raw_ul;
   vector<pair<string,unsigned> > chrom_labels;
   unsigned chrom_index=0;
-  for(int i = argn;i<argc;i+=2)
+  for(int i = argn;i<argc;++i)//i+=2)
     {
-      cerr << "processing " << argv[i]
-	   << " and " << argv[i+1] << '\n';
+      cerr << "processing " << argv[i] << '\n';
+	//<< " and " << argv[i+1] << '\n';
       read_data(raw_div,raw_par,raw_ul,
-		argv[i],argv[i+1],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
+		argv[i],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
+		//argv[i],argv[i+1],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
     }
 
   unsigned eventid=0;
