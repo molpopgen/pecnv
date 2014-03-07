@@ -11,6 +11,32 @@ if ( ! can_run('R') )
 {
     die "Error: R not found in user's \$PATH";
 }
+
+if ( ! can_run('bwa') )
+{
+    die "Error: bwa not found in user's \$PATH";
+}
+
+if ( ! can_run('samtools') )
+{
+    die "Error: samtools not found in user's \$PATH";
+}
+
+if ( ! can_run('bwa_mapdistance') )
+{
+    die "Error: bwa_mapdistance not found in user's \$PATH";
+}
+
+if ( ! can_run('bwa_bam_to_mapfiles') )
+{
+    die "Error: bwa_bam_to_mapfiles not found in user's \$PATH";
+}
+
+if ( ! can_run('cluster_cnv') )
+{
+    die "Error: cluster_cnv not found in user's \$PATH";
+}
+
 ##Establish options and their default values
 my $OUTDIR = "pecnv_output";
 my $SAMPLEID = 0;
