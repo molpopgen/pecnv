@@ -48,7 +48,7 @@ if (! defined( $REFERENCE ) )
 my $ROCKMEMVAL=$ROCKMEM;
 my $ROCKMEMUNIT=$ROCKMEM;
 $ROCKMEMVAL =~ s/[A-Za-z]+//go;
-$ROCKMEMUNIT =~ =s/[0-9]+//go;
+$ROCKMEMUNIT =~ s/[0-9]+//go;
 
 my $ROCKMEMCPU = int($ROCKMEMVAL/$CPU);
 
