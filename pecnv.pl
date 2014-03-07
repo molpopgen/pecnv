@@ -3,7 +3,14 @@
 use strict;
 use Getopt::Long;
 use Parallel::ForkManager;
+use File::Which; 
 
+use IPC::Cmd qw[can_run run];
+
+if ( ! can_run('R') )
+{
+    die "Error: R not found in user's \$PATH";
+}
 ##Establish options and their default values
 my $OUTDIR = "pecnv_output";
 my $SAMPLEID = 0;
