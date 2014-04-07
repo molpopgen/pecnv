@@ -24,8 +24,9 @@ using namespace boost::iostreams;
 typedef map<string,unsigned> maptype;
 struct teinfo
 {
-  unsigned chrom,start,stop;
-  teinfo( const unsigned & c, const unsigned & st, const unsigned & sto) :
+  string chrom;
+  unsigned start,stop;
+  teinfo( const string & c, const unsigned & st, const unsigned & sto) :
   chrom(c),start(st),stop(sto)
   {
   }
@@ -54,7 +55,8 @@ void read_data( maptype & umm,
   //unsigned line,lane,pair,read,
   string readname;
   unsigned mq;
-  unsigned chrom,start,stop;
+  string chrom;
+  unsigned start,stop;
   string temp;
   while( ! in.eof() )
     {
@@ -96,7 +98,8 @@ void read_umu( istreamtype & in,
   //unsigned line,lane,pair,read,mq;
   string readname;
   unsigned mq;
-  unsigned chrom,start,stop,strand;
+  string chrom;
+  unsigned start,stop,strand;
   string temp;
   unsigned nfound = 0;
   while( ! in.eof() )
@@ -138,7 +141,8 @@ int main( int argc, char ** argv )
   if( ref_data != NULL )
     {
       ifstream in(ref_data);
-      unsigned chrom,start,stop;
+      string chrom;
+      unsigned start,stop;
       //string name;
       while ( !in.eof() )
 	{

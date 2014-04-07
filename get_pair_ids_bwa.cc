@@ -25,7 +25,7 @@ using namespace boost;
 using namespace boost::iostreams;
 //pair, lane, side, chromo, event_id
 
-typedef pair <unsigned, unsigned > puu;
+typedef pair < unsigned, unsigned > puu;
 typedef pair < unsigned, puu > data;
 typedef map < puu, data > event;
 typedef pair < int, unsigned > piu;
@@ -46,9 +46,11 @@ struct te_boundary
   }
 };
 
-void read_tes( const char * teclust_datafile, const unsigned & distance, map<unsigned,vector<te_boundary> > & tes, char * outputfile2);
-void read_umu ( const  map<unsigned,vector<te_boundary> > & tes, const char * umufile, event & left_events, event & right_events);
-void get_mapfile ( const  map<unsigned,vector<te_boundary> > & tes, const char * mapfile, event & left_events, event & right_events);
+typedef map<string,vector<te_boundary> > tecontainer;
+
+void read_tes( const char * teclust_datafile, const unsigned & distance, tecontainer & tes, char * outputfile2);
+void read_umu ( const  tecontainer & tes, const char * umufile, event & left_events, event & right_events);
+void get_mapfile ( const  tecontainer & tes, const char * mapfile, event & left_events, event & right_events);
 void print_events(event & events, char * outfile);
 
 vector < pair <int, unsigned > > overlap( const vector<te_boundary> & vbound, const unsigned & beg, const unsigned & end )
@@ -126,7 +128,7 @@ int main(int argc, char ** argv)
   char * outputfile = argv[argn++];
   char * outputfile2 = argv[argn++];
 
-  map<unsigned,vector<te_boundary> > tes;
+  tecontainer tes;
 
   read_tes(teclust_datafile,distance,tes,outputfile2);
 
@@ -146,12 +148,13 @@ int main(int argc, char ** argv)
   }
 }
 
-void read_tes( const char * teclust_datafile, const unsigned & distance, map<unsigned,vector<te_boundary> > & tes, char * outputfile2)
+void read_tes( const char * teclust_datafile, const unsigned & distance, tecontainer & tes, char * outputfile2)
 {
   //read in teclust_datafile 
   cout << "reading teclust_input" << endl;
   string temp, pdist, mdist;
-  unsigned chromo, nplus, nminus, pfirst, plast, pin, mfirst, mlast, min;
+  string chromo;
+  unsigned nplus, nminus, pfirst, plast, pin, mfirst, mlast, min;
   unsigned counter=0;
   
   ofstream outfile2;
@@ -189,14 +192,15 @@ void read_tes( const char * teclust_datafile, const unsigned & distance, map<uns
 
 template<typename streamtype> 
 void read_umu_details( streamtype & in, 
-		       const  map<unsigned,vector<te_boundary> > & tes, event & left_events, event & right_events)
+		       const  tecontainer & tes, event & left_events, event & right_events)
 {
-  unsigned line, lane, pair, read, mapping, chromo, beg, end, strand, mismatch, gap;
+  unsigned line, lane, pair, read, mapping, beg, end, strand, mismatch, gap;
+  string chromo;
   cout << "reading umu" << endl;
   while(! in.eof() )
     {
       in >> line >> lane >> pair >> read >> mapping >> chromo >> beg >> end >> strand >> mismatch >> gap >> ws;
-      map<unsigned,vector<te_boundary> >::const_iterator itr = tes.find(chromo);
+      tecontainer::const_iterator itr = tes.find(chromo);
       if( itr != tes.end() )	
 	{
 	  //does read overlap a left or right?
@@ -226,16 +230,17 @@ void read_umu_details( streamtype & in,
 
 template<typename streamtype> 
 void read_map_details( streamtype & in, 
-		       const  map<unsigned,vector<te_boundary> > & tes,
+		       const  tecontainer & tes,
 		       event & left_events, event & right_events)
 {
-  unsigned line, lane, pair, read, mapping, chromo, beg, end, strand, mismatch, gap;
+  unsigned line, lane, pair, read, mapping, beg, end, strand, mismatch, gap;
+  string chromo;
   string type;
   cout << "reading mapping" << endl;
   while(! in.eof() )
     {
       in >> line >> lane >> pair >> read >> mapping >> chromo >> beg >> end >> strand >> mismatch >> gap >> type >> ws;
-      map<unsigned,vector<te_boundary> >::const_iterator itr = tes.find(chromo);
+      tecontainer::const_iterator itr = tes.find(chromo);
       if( itr != tes.end() )
 	{
 	  //does read overlap a left or right?
@@ -271,7 +276,7 @@ void read_map_details( streamtype & in,
     }
 }
 
-void read_umu ( const  map<unsigned,vector<te_boundary> > & tes, const char * umufile, event & left_events, event & right_events)
+void read_umu ( const  tecontainer & tes, const char * umufile, event & left_events, event & right_events)
 {
  if( isbinary(umufile) )
     {
@@ -287,7 +292,7 @@ void read_umu ( const  map<unsigned,vector<te_boundary> > & tes, const char * um
     }
 }
 
-void get_mapfile ( const  map<unsigned,vector<te_boundary> > & tes, const char * mapfile, event & left_events, event & right_events)
+void get_mapfile ( const  tecontainer & tes, const char * mapfile, event & left_events, event & right_events)
 {
  if( isbinary(mapfile) )
     {

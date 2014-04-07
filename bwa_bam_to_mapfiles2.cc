@@ -369,7 +369,7 @@ int main(int argc, char ** argv)
 
 string::size_type parsingXA( const string & XA,
 			     string::size_type & p,
-			     unsigned & chrom,
+			     string & chrom,
 			     int & pos,
 			     string & cigar,
 			     unsigned & nm)
@@ -381,7 +381,8 @@ string::size_type parsingXA( const string & XA,
 
   string::size_type comma = XA.find(",",p);
   assert(comma != string::npos);
-  chrom = atoi(string(XA.begin()+p,XA.begin()+comma).c_str());
+  //chrom = atoi(string(XA.begin()+p,XA.begin()+comma).c_str());
+  chrom = string(XA.begin()+p,XA.begin()+comma);
   p=comma+1;
   comma = XA.find(",",p);
   char sign = *(XA.begin()+p);
@@ -504,8 +505,9 @@ filtering_ostream & outputM( filtering_ostream & out,
 
 struct mapping_pos
 {
-  unsigned chrom,start,stop,strand,mm,gap;
-  mapping_pos(const unsigned &__c,
+  string chrom;
+  unsigned start,stop,strand,mm,gap;
+  mapping_pos(const string &__c,
 	      const unsigned &__s,
 	      const unsigned &__st,
 	      const unsigned &__str,
@@ -542,7 +544,7 @@ bool operator<(const mapping_pos & left,
 vector<mapping_pos> get_mapping_pos(const samrecord & r)
 {
   vector<mapping_pos> rv;
-  rv.push_back( mapping_pos( atoi(r.rname().c_str()),
+  rv.push_back( mapping_pos( r.rname(), //atoi(r.rname().c_str()),
 			     r.pos()-1,
 			     r.pos()+alignment_length(r)-2,
 			     r.flag().qstrand,
@@ -589,7 +591,8 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	      comma = hit.find(",",comma+1);
 	    }
 	  while(comma != string::npos);
-	  unsigned hit_chrom = atoi( string(hit.begin(),hit.begin()+commas[0]).c_str() );
+	  //unsigned hit_chrom = atoi( string(hit.begin(),hit.begin()+commas[0]).c_str() );
+	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
 	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
 	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
 	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
