@@ -13,14 +13,13 @@ module load R
 
 ##Copy data from public-www as symlinks
 #get unrenamed version of reference
-#cp -s /bio/public-www/krthornt/references/dyak/dyak-all-chromosome-r1.3-newnames.fasta .
-wget ftp://ftp.flybase.net/genomes/Drosophila_yakuba/dyak_r1.3_FB2011_08/fasta/dyak-all-chromosome-r1.3.fasta.gz
+cp -s /bio/public-www/krthornt/references/dyak/dyak-all-chromosome-r1.3-newnames.fasta .
+#wget ftp://ftp.flybase.net/genomes/Drosophila_yakuba/dyak_r1.3_FB2011_08/fasta/dyak-all-chromosome-r1.3.fasta.gz
 gunzip dyak-all-chromosome-r1.3.fasta.gz
-bwa build dyak-all-chromosome-r1.3.fasta
+bwa index dyak-all-chromosome-r1.3.fasta
 
 cp -s /bio/public-www/krthornt/dyak_genomic_reads/NY42* .
 
-#make input file
 ls -1 *.fastq.gz | sort > infile
 
 #run pipeline
