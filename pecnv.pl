@@ -227,4 +227,4 @@ my @MDIST=`cat $OUTDIR/mquant.txt`;
 my $MD = shift(@MDIST);
 chomp $MD;
 
-system(qq{cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings_left.csv.gz});# $OUTDIR/cnv_mappings_right.csv.gz});
+system(qq{cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings.csv.gz});# $OUTDIR/cnv_mappings_right.csv.gz});

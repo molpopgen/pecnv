@@ -29,32 +29,27 @@ using namespace Sequence;
 struct output_files
 {
   enum MAPTYPE {DIV,PAR,UL,UMU,UMM};
-  string structural_left_fn,structural_right_fn,structural_sam_fn,
+  string structural_fn,structural_sam_fn,
     um_u_fn,um_m_fn,um_sam_fn;
 
-  filtering_ostream structural_left,structural_right,um_u,um_m,
+  filtering_ostream structural,um_u,um_m,
     structural_sam,um_sam;
 
   output_files(const char * structural_base, const char * um_base) :
-    structural_left_fn(structural_base),
-    structural_right_fn(structural_base),
+    structural_fn(structural_base),
     structural_sam_fn(structural_base),
     um_u_fn(um_base),
     um_m_fn(um_base),
     um_sam_fn(um_base)
   {
-    structural_left_fn += "_left.csv.gz";
-    structural_right_fn += "_right.csv.gz";
+    structural_fn += ".csv.gz";
     structural_sam_fn += ".sam.gz";
     um_u_fn += "_u.csv.gz";
     um_m_fn += "_m.csv.gz";
     um_sam_fn += ".sam.gz";
 
-    structural_left.push(gzip_compressor());
-    structural_left.push(file_sink(structural_left_fn.c_str()),ios_base::out|ios_base::binary);
-
-    structural_right.push(gzip_compressor());
-    structural_right.push(file_sink(structural_right_fn.c_str()),ios_base::out|ios_base::binary);
+    structural.push(gzip_compressor());
+    structural.push(file_sink(structural_fn.c_str()),ios_base::out|ios_base::binary);
 
     structural_sam.push(gzip_compressor());
     structural_sam.push(file_sink(structural_sam_fn.c_str()),ios_base::out|ios_base::binary);
@@ -71,10 +66,8 @@ struct output_files
 
   ~output_files()
   {
-    structural_left.pop();
-    structural_left.pop();
-    structural_right.pop();
-    structural_right.pop();
+    structural.pop();
+    structural.pop();
     structural_sam.pop();
     structural_sam.pop();
     um_u.pop();
@@ -96,7 +89,7 @@ struct output_files
 	return um_m;
       }
     assert( m == DIV || m == PAR || m == UL );
-    return structural_left;
+    return structural;
     /*
     if(readname[readname.length()-1]=='0')
       {
