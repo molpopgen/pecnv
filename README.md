@@ -134,4 +134,31 @@ start2 = Start position of second read cluster.<br>
 stop2 = Stop position of second read cluster.<br> 
 reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
 
+###Running on pre-existing bam files
 
+Example is specific to UCI HPC:
+```
+#!/bin/sh
+
+#$ -q krt,bio
+
+module load boost/1.53.0
+module load R
+
+cd /bio/krthornt/test_pecnv/pecnv/pecnv_output/runonbam
+
+samtools view -f 1 merged_readsorted.bam | bwa_bam_to_mapfiles structural um
+
+samtools view -f 2 merged_readsorted.bam | bwa_mapdistance mdist.gz
+
+R --no-save --slave --args <<EOF
+x=read.table("mdist.gz",header=TRUE)
+z=which(x\$cprob >= 0.999)
+y=x\$distance[z[1]]
+write(y,"mquant.txt")
+EOF
+
+MD=`head -n 1 mquant.txt`
+echo $MD
+cluster_cnv 30 0 2 $MD div.gz par.gz ul.gz structural.csv.gz
+```
