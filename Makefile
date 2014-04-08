@@ -7,7 +7,7 @@ BIOSTREAMS=-lboost_iostreams
 targets=fastq_to_table bwa_bam_to_mapfiles bwa_mapdistance rename_reference cluster_cnv teclust umm_te_finder filter_edit 
 
 #all: fastq_to_table.o bwa_bam_to_mapfiles2.o bwa_mapdistance.o bwa_util.o isbinary.o rename_reference.o cluster_cnv2.o string_unsigned_lookup.o file_util.o umm_te_finder.o teclust.o filter_edit.o get_pair_ids_bwa.o
-all: fastq_to_table.o bwa_bam_to_mapfiles2.o bwa_mapdistance.o bwa_util.o isbinary.o rename_reference.o cluster_cnv2.o string_unsigned_lookup.o file_util.o umm_te_finder.o teclust.o 
+all: fastq_to_table.o bwa_bam_to_mapfiles2.o bwa_mapdistance.o bwa_util.o isbinary.o rename_reference.o cluster_cnv2.o string_unsigned_lookup.o file_util.o umm_te_finder.o teclust.o process_readmappings.o
 	$(CXX) $(CXXFLAGS) -o rename_reference rename_reference.o isbinary.o $(LDFLAGS) $(SEQ) $(BIOSTREAMS) 
 	$(CXX) $(CXXFLAGS) -o fastq_to_table fastq_to_table.o isbinary.o $(LDFLAGS) $(SEQ) $(BIOSTREAMS) 
 	$(CXX) $(CXXFLAGS) -o bwa_bam_to_mapfiles bwa_bam_to_mapfiles2.o bwa_util.o $(LDFLAGS) $(SEQ) $(BIOSTREAMS) 
