@@ -58,7 +58,9 @@ The script also runs "bwa index" on new_reference_name.fasta.
 
 _pecnv.pl_ takes the following options:
 
-> pecnv.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -infile (infilename) -sample 0 -cpu 32 -ref (reference_fasta_filename)
+```
+pecnv.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -infile (infilename) -sample 0 -cpu 32 -ref (reference_fasta_filename)
+```
 
 In the above line, default values are shown for each option where the exist and values in parentheses must be provided by the user.  The definition of each argument is:
 
@@ -91,7 +93,9 @@ There is a variable at the top of the script called GEGENERIC.  This variable is
 
 To run the script
 
-> gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
+```
+gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
+```
 
 As with the master script, option values not in parentheses reflect defaults.  Option values shown in parentheses reflect mandatory options that the user must provide.
 
@@ -102,7 +106,9 @@ The options for this script that differ from the master script are:
 
 Here is how I would run the pipeline on the UCI cluster:
 
-> gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
+```
+gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
+```
 
 The output of the script is a series of shell scripts.  Their names are such that they will be lexically sorted by the Linux shell automatically.  Therefore, one way to submit them is simply to say:
 
@@ -115,9 +121,11 @@ done
 
 The (interesting) output from _pecnv.pl_ is the following:
 
-1. div.gz
-2. par.gz
-3. ul.gz
+<ol>
+<li>div.gz</li>
+<li>par.gz</li>
+<li>ul.gz</li>
+<ol>
 
 The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.
 
