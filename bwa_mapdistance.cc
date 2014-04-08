@@ -84,11 +84,6 @@ int main( int argc, char ** argv )
 		      itr->second++;
 		    }
 		}
-	      // else
-	      // 	{
-	      // 	  cerr << r1 << '\n'
-	      // 	       << r2 << '\n';
-	      // 	}
 	    }
 	}
     }
