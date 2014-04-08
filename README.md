@@ -155,9 +155,13 @@ module load R
 
 cd /bio/krthornt/test_pecnv/pecnv/pecnv_output/runonbam
 
-samtools view -f 1 merged_readsorted.bam | bwa_bam_to_mapfiles structural um
+#Old version of workflow
+#samtools view -f 1 merged_readsorted.bam | bwa_bam_to_mapfiles structural um
 
-samtools view -f 2 merged_readsorted.bam | bwa_mapdistance mdist.gz
+#samtools view -f 2 merged_readsorted.bam | bwa_mapdistance mdist.gz
+
+#new streamlined version
+samtools view -f 1 merged_readsorted.bam | process_readmappings structural um mdist.gz
 
 R --no-save --slave --args <<EOF
 x=read.table("mdist.gz",header=TRUE)
