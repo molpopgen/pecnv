@@ -138,11 +138,11 @@ vector< pair<char,
 
 unsigned mm(const unsigned & nm,
 	    const vector< pair<char,
-			       unsigned> > & cigar_data);
+	    unsigned> > & cigar_data);
 unsigned ngaps(const vector< pair<char,
-				  unsigned> > & cigar_data);
+	       unsigned> > & cigar_data);
 unsigned alen(const vector< pair<char,
-				 unsigned> > & cigar_data);
+	      unsigned> > & cigar_data);
 filtering_ostream & outputM( filtering_ostream & out,
 			     const samrecord & r );
 
@@ -180,32 +180,35 @@ int main(int argc, char ** argv)
 	  bool ppaired = false;
 	  //check if reads in expected orientation.
 	  string qref(r1.rname()),mref(r1.mrnm());
-	  if(qref==mref && !hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+	  if(qref==mref)
 	    {
-	      int mdist1 = r1.isize();
-	      int pos1 = r1.pos(),pos2=r2.pos();
-	      samflag f1 = r1.flag(),f2 = r2.flag();
-	      if( 
-		 ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
-				    || ( f2.qstrand && !f2.mstrand) ) )
-		 ||
-		 ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
-					|| ( !f2.qstrand && f2.mstrand ) ) )
-		  )
+	      if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
 		{
-		  ppaired = true;
+		  int mdist1 = r1.isize();
+		  int pos1 = r1.pos(),pos2=r2.pos();
+		  samflag f1 = r1.flag(),f2 = r2.flag();
+		  if( 
+		     ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
+					|| ( f2.qstrand && !f2.mstrand) ) )
+		     ||
+		     ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
+					    || ( !f2.qstrand && f2.mstrand ) ) )
+		      )
+		    {
+		      ppaired = true;
 #ifndef NDEBUG
-		  int mdist2=r2.isize();
-		  assert( abs(mdist1) == abs(mdist2) );
+		      int mdist2=r2.isize();
+		      assert( abs(mdist1) == abs(mdist2) );
 #endif
-		  map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
-		  if( itr == mdist.end() )
-		    {
-		      mdist.insert(make_pair(abs(mdist1),1));
-		    }
-		  else
-		    {
-		      itr->second++;
+		      map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
+		      if( itr == mdist.end() )
+			{
+			  mdist.insert(make_pair(abs(mdist1),1));
+			}
+		      else
+			{
+			  itr->second++;
+			}
 		    }
 		}
 	    }
@@ -260,24 +263,24 @@ int main(int argc, char ** argv)
 	}
     }
   //get sum of insert size dist
-  double sum = 0;
+  long unsigned sum = 0;
   for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
        i != mdist.end() ; ++i )
     {
-      sum += double(i->second);
+      sum += unsigned(long(i->second));
     }
   filtering_ostream mdistout;
   mdistout.push(gzip_compressor());
   mdistout.push(file_sink(mdistfile),ios_base::binary|ios_base::out);
   mdistout << "distance\tnumber\tcprob\n";
-  double cum=0;
+  unsigned long cum=0;
   for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
        i != mdist.end() ; ++i )
     {
-      cum += double(i->second);
+      cum += unsigned(long(i->second));
       mdistout << i->first << '\t'
-	  << i->second << '\t'
-	  << scientific << cum/sum << '\n';
+	       << i->second << '\t'
+	       << scientific << double(cum)/double(sum) << '\n';
     }
   mdistout.pop();
   mdistout.pop();
@@ -422,7 +425,7 @@ vector<pair<char,
 	    unsigned> > parse_cigar(const string & cigar)
 {
   vector<pair<char,
-    unsigned> > cigar_data;
+	      unsigned> > cigar_data;
   
   string::const_iterator pibeg = find_if( cigar.begin(),cigar.end(),::isdigit);
   string::const_iterator piend = find_if( pibeg+1,cigar.end(),::isalpha );
