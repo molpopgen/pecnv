@@ -211,7 +211,7 @@ else
 }
 
 #process read mappings
-system(qq{samtools fiew -f 1 $OUTDIR/merged_readsorted.bam | process_readmappings $OUTDIR/cnv_mappings $OUTDIR/um $OUTDIR/mdist.gz});
+system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | process_readmappings $OUTDIR/cnv_mappings $OUTDIR/um $OUTDIR/mdist.gz});
 
 #OLD
 #Get distr. of mapping distances
