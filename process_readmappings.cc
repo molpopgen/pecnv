@@ -179,8 +179,7 @@ int main(int argc, char ** argv)
 	{
 	  bool ppaired = false;
 	  //check if reads in expected orientation.
-	  string qref(r1.rname()),mref(r1.mrnm());
-	  if(qref==mref)
+	  if(r1.rname() == r2.rname() && rf.is_proper_pair)
 	    {
 	      if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
 		{
@@ -212,6 +211,7 @@ int main(int argc, char ** argv)
 		    }
 		}
 	    }
+	  string qref(r1.rname()),mref(r1.mrnm());
 	  if(mref != "=" && qref != mref) //UL
 	    {
 	      assert(!ppaired);
@@ -219,21 +219,23 @@ int main(int argc, char ** argv)
 	    }
 	  else
 	    {
-	      assert(!ppaired);
 	      if(r1.pos() != r1.mpos()) //don't map to same pos on reference
 		{
 		  if(rf.qstrand == rf.mstrand)
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::PAR,of);
 		    }
 		  else if (rf.qstrand == 0 &&
 			   r1.pos() > r1.mpos())
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::DIV,of);
 		    }
 		  else if (rf.mstrand == 0 &&
 			   r1.mpos() > r1.pos())
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::DIV,of);
 		    }
 		  else if(!rf.is_proper_pair)//is a putative UM
@@ -249,6 +251,7 @@ int main(int argc, char ** argv)
 		  else if ( (hasXA(r1) && !hasXA(r2)) ||
 			    (hasXA(r2) && !hasXA(r1)) )
 		    {
+		      //could be ppaired due to rescued read
 		      //make sure both are not labelled XT:A:U or R
 		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
 			{
