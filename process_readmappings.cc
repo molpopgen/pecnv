@@ -156,13 +156,15 @@ int main(int argc, char ** argv)
   int argn = 1;
   const char * structural_base = argv[argn++];
   const char * um_base = argv[argn++];
+  const char * mdistfile = argv[argn++];
   struct output_files of(structural_base,um_base);
   
   samrecord r1,r2;
+  map<unsigned,unsigned> mdist; //distribution of insert sizes
   while( !cin.eof())
     {
       cin >> r1 >> ws >> r2 >> ws;
-      //modification to move away from read name changing
+
       if ( r1.qname() != r2.qname() )
 	{
 	  cerr << "error: alignment records not properly sorted by read name\n"
@@ -175,13 +177,46 @@ int main(int argc, char ** argv)
       if(!rf.query_unmapped &&
 	 !rf.mate_unmapped)
 	{
+	  bool ppaired = false;
+	  //check if reads in expected orientation.
 	  string qref(r1.rname()),mref(r1.mrnm());
+	  if(qref==mref && !hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+	    {
+	      int mdist1 = r1.isize();
+	      int pos1 = r1.pos(),pos2=r2.pos();
+	      samflag f1 = r1.flag(),f2 = r2.flag();
+	      if( 
+		 ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
+				    || ( f2.qstrand && !f2.mstrand) ) )
+		 ||
+		 ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
+					|| ( !f2.qstrand && f2.mstrand ) ) )
+		  )
+		{
+		  ppaired = true;
+#ifndef NDEBUG
+		  int mdist2=r2.isize();
+		  assert( abs(mdist1) == abs(mdist2) );
+#endif
+		  map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
+		  if( itr == mdist.end() )
+		    {
+		      mdist.insert(make_pair(abs(mdist1),1));
+		    }
+		  else
+		    {
+		      itr->second++;
+		    }
+		}
+	    }
 	  if(mref != "=" && qref != mref) //UL
 	    {
+	      assert(!ppaired);
 	      checkMap(r1,r2,output_files::UL,of);
 	    }
 	  else
 	    {
+	      assert(!ppaired);
 	      if(r1.pos() != r1.mpos()) //don't map to same pos on reference
 		{
 		  if(rf.qstrand == rf.mstrand)
@@ -224,6 +259,28 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
+  //get sum of insert size dist
+  double sum = 0;
+  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+       i != mdist.end() ; ++i )
+    {
+      sum += double(i->second);
+    }
+  filtering_ostream mdistout;
+  mdistout.push(gzip_compressor());
+  mdistout.push(file_sink(mdistfile),ios_base::binary|ios_base::out);
+  mdistout << "distance\tnumber\tcprob\n";
+  double cum=0;
+  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+       i != mdist.end() ; ++i )
+    {
+      cum += double(i->second);
+      mdistout << i->first << '\t'
+	  << i->second << '\t'
+	  << scientific << cum/sum << '\n';
+    }
+  mdistout.pop();
+  mdistout.pop();
 }
 
 void checkMap(const samrecord & r1,
