@@ -421,7 +421,7 @@ bool operator<(const mapping_pos & left,
 vector<mapping_pos> get_mapping_pos(const samrecord & r)
 {
   vector<mapping_pos> rv;
-  rv.push_back( mapping_pos( r.rname(), //atoi(r.rname().c_str()),
+  rv.push_back( mapping_pos( r.rname(), 
 			     r.pos()-1,
 			     r.pos()+alignment_length(r)-2,
 			     r.flag().qstrand,
@@ -448,7 +448,6 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	  colon = XA.find(";",colon+1);
 	}
       while(colon != string::npos);
-      //cerr << r << '\n';
       string hit;
       for(unsigned i=0;i<colons.size();++i)
 	{
@@ -468,18 +467,14 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	      comma = hit.find(",",comma+1);
 	    }
 	  while(comma != string::npos);
-	  //unsigned hit_chrom = atoi( string(hit.begin(),hit.begin()+commas[0]).c_str() );
+
 	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
 	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
 	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
 	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
 	  unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
 	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
-	  /*cerr << hit_chrom << ' '
-	       << abs(hit_start) << ' ' 
-	       << hit_stop << ' ' 
-	       << nm << '\n';
-	  */
+
 	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
 			     mm(nm,cdata),ngaps(cdata));
 	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
