@@ -131,7 +131,7 @@ if ($#POSBAMS > 0)
 }
 else
 {
-    system(qq{mv $OUTDIR/bamfile.obam $OUTDIR/merged_pos_sorted.bam});
+    system(qq{mv $OUTDIR/bamfile.0.bam $OUTDIR/merged_pos_sorted.bam});
 }
 
 ##Index.  This pipeline doesn't use the index, but it is good to have
