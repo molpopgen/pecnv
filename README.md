@@ -58,7 +58,9 @@ The script also runs "bwa index" on new_reference_name.fasta.
 
 _pecnv.pl_ takes the following options:
 
-> pecnv.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -infile (infilename) -sample 0 -cpu 32 -ref (reference_fasta_filename)
+```
+pecnv.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -infile (infilename) -sample 0 -cpu 32 -ref (reference_fasta_filename)
+```
 
 In the above line, default values are shown for each option where the exist and values in parentheses must be provided by the user.  The definition of each argument is:
 
@@ -91,7 +93,9 @@ There is a variable at the top of the script called GEGENERIC.  This variable is
 
 To run the script
 
-> gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
+```
+gridify.pl -outdir pecnv_output -minqual 30 -mismatches 3 -gaps 0 -sample 0 -cpumin 8 -cpumax 64 -N pecnv -ref (reference_fasta_filename) -infile (infilename) -q (queuename or quenames)
+```
 
 As with the master script, option values not in parentheses reflect defaults.  Option values shown in parentheses reflect mandatory options that the user must provide.
 
@@ -102,7 +106,9 @@ The options for this script that differ from the master script are:
 
 Here is how I would run the pipeline on the UCI cluster:
 
-> gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
+```
+gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename -sample sampleid
+```
 
 The output of the script is a series of shell scripts.  Their names are such that they will be lexically sorted by the Linux shell automatically.  Therefore, one way to submit them is simply to say:
 
@@ -115,9 +121,11 @@ done
 
 The (interesting) output from _pecnv.pl_ is the following:
 
-1. div.gz
-2. par.gz
-3. ul.gz
+<ol>
+<li>div.gz</li>
+<li>par.gz</li>
+<li>ul.gz</li>
+<ol>
 
 The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.
 
@@ -134,4 +142,35 @@ start2 = Start position of second read cluster.<br>
 stop2 = Stop position of second read cluster.<br> 
 reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
 
+###Running on pre-existing bam files
 
+Example is specific to UCI HPC:
+```
+#!/bin/sh
+
+#$ -q krt,bio
+
+module load boost/1.53.0
+module load R
+
+cd /bio/krthornt/test_pecnv/pecnv/pecnv_output/runonbam
+
+#Old version of workflow
+#samtools view -f 1 merged_readsorted.bam | bwa_bam_to_mapfiles structural um
+
+#samtools view -f 2 merged_readsorted.bam | bwa_mapdistance mdist.gz
+
+#new streamlined version
+samtools view -f 1 merged_readsorted.bam | process_readmappings structural um mdist.gz
+
+R --no-save --slave --args <<EOF
+x=read.table("mdist.gz",header=TRUE)
+z=which(x\$cprob >= 0.999)
+y=x\$distance[z[1]]
+write(y,"mquant.txt")
+EOF
+
+MD=`head -n 1 mquant.txt`
+echo $MD
+cluster_cnv 30 0 2 $MD div.gz par.gz ul.gz structural.csv.gz
+```

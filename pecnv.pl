@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use Getopt::Long;
@@ -22,15 +22,20 @@ if ( ! can_run('samtools') )
     die "Error: samtools not found in user's \$PATH";
 }
 
-if ( ! can_run('bwa_mapdistance') )
-{
-    die "Error: bwa_mapdistance not found in user's \$PATH";
-}
+#if ( ! can_run('bwa_mapdistance') )
+#{
+#    die "Error: bwa_mapdistance not found in user's \$PATH";
+#}
 
-if ( ! can_run('bwa_bam_to_mapfiles') )
-{
-    die "Error: bwa_bam_to_mapfiles not found in user's \$PATH";
-}
+#if ( ! can_run('bwa_bam_to_mapfiles') )
+#{
+#    die "Error: bwa_bam_to_mapfiles not found in user's \$PATH";
+#}
+
+if ( ! can_run('process_readmappings') )
+  {
+    die "Error: process_readmappings not found in user's \$PATH";
+  }
 
 if ( ! can_run('cluster_cnv') )
 {
@@ -205,8 +210,12 @@ else
     unlink(qq{$OUTDIR/temp.bam});
 }
 
+#process read mappings
+system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | process_readmappings $OUTDIR/cnv_mappings $OUTDIR/um $OUTDIR/mdist.gz});
+
+#OLD
 #Get distr. of mapping distances
-system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
+#system(qq{samtools view -f 2 $OUTDIR/merged_readsorted.bam | bwa_mapdistance $OUTDIR/mdist.gz});
 
 #Get 99.9th quantile of mapping distances
 #Executed via a HERE document so that we don't need path to an R script
@@ -219,12 +228,13 @@ write(y,n[2])
 TEST
 });
 
+#OLD
 #Identify unusual read pairings
-system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/cnv_mappings $OUTDIR/um});
+#system(qq{samtools view -f 1 $OUTDIR/merged_readsorted.bam | bwa_bam_to_mapfiles $OUTDIR/cnv_mappings $OUTDIR/um});
 
 #Finally, cluster the CNVs
 my @MDIST=`cat $OUTDIR/mquant.txt`;
 my $MD = shift(@MDIST);
 chomp $MD;
 
-system(qq{cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings_left.csv.gz});# $OUTDIR/cnv_mappings_right.csv.gz});
+system(qq{cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/div.gz  $OUTDIR/par.gz  $OUTDIR/ul.gz $OUTDIR/cnv_mappings.csv.gz});# $OUTDIR/cnv_mappings_right.csv.gz});

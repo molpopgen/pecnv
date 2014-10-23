@@ -1,4 +1,9 @@
 /*
+  Assumptions: bam file is sorted be read name and generted with BWA + samtools
+  Also, this code has only been tested (and results independently validated with long-read sequencing)
+  on alignments generated with bwa 0.5.9 using the command lines provided in Rogers et al.
+
+  A merge of the features in bwa_bam_tomapfiles2.cc and bwa_mapdistance.cc
   1.  assumes alignment records are sorted by read name
   2.  assumes only paired reads are in the stream (e.g. samtools view -f 1 [bamfile] | ./this_program
 */
@@ -77,8 +82,7 @@ struct output_files
     um_sam.pop();
     um_sam.pop();
   }
-  filtering_ostream & stream(const MAPTYPE & m)//,
-  //const string & readname)
+  filtering_ostream & stream(const MAPTYPE & m)
   {
     if (m == UMU)
       {
@@ -90,13 +94,6 @@ struct output_files
       }
     assert( m == DIV || m == PAR || m == UL );
     return structural;
-    /*
-    if(readname[readname.length()-1]=='0')
-      {
-	return structural_left;
-      }
-    return structural_right;
-    */
   }
 };
 
@@ -136,156 +133,38 @@ bool hasXA(const samrecord & r)
   return false;
 }
 
-/*
-string fix_readname( const std::string & n )
-{
-  string rv(n);
-  string::size_type pos = rv.find(':');
-  while(pos != string::npos)
-    {
-      rv[pos]='\t';
-      pos = rv.find(':',pos+1);
-    }
-  return rv;
-}
-*/
 vector< pair<char,
 	     unsigned> > parse_cigar(const string & cigar);
 
 unsigned mm(const unsigned & nm,
 	    const vector< pair<char,
-			       unsigned> > & cigar_data);
+	    unsigned> > & cigar_data);
 unsigned ngaps(const vector< pair<char,
-				  unsigned> > & cigar_data);
+	       unsigned> > & cigar_data);
 unsigned alen(const vector< pair<char,
-				 unsigned> > & cigar_data);
+	      unsigned> > & cigar_data);
 filtering_ostream & outputM( filtering_ostream & out,
 			     const samrecord & r );
 
 void checkMap(const samrecord & r1,
 	      const samrecord & r2,
 	      const output_files::MAPTYPE & m,
-	      output_files & of)
-{
-  //make sure no foul-ups get this far
-  string name2 = r2.qname();
- 
-#ifndef NDEBUG
-  assert( r1.qname() == r2.qname() );
-#endif
-  /*
-    #ifndef NDEBUG
-    unsigned lane1,rpair1,lane2,rpair2;
-    getLanePair(&lane1,&rpair1,r1.qname());
-    getLanePair(&lane2,&rpair2,r2.qname());
-    assert(lane1==lane2&&rpair1==rpair2);
-    #endif
-  */
-  bool isU1 = hasXT(r1,"U"),
-    isU2 = hasXT(r2,"U"),
-    isR1 = hasXT(r1,"R"),
-    isR2 = hasXT(r2,"R"),
-    hasXA1 = hasXA(r1),
-    hasXA2 = hasXA(r2);
-  if(isR1 && isR2)
-    {
-      return;
-    }
-  bool written = false;
-  if(isU1 && isU2 )
-    {
-      written = true;
-      of.stream(m)//,r1.qname()) 
-	<< r1.qname() << '\t'
-	//<< fix_readname(r1.qname()) << '\t' 
-	<< r1.mapq() << '\t'
-	<< r1.rname() << '\t'
-	<< r1.pos()-1 << '\t'
-	<< r1.pos() + alignment_length(r1) -1 << '\t'
-	<< r1.flag().qstrand << '\t'
-	<< mismatches(r1) << '\t'
-	<< ngaps(r1) << '\t'
-	<< mtype2string(m) << '\n';
-
-      of.stream(m)//,r2.qname()) 
-	<< r2.qname() << '\t'
-	//<< fix_readname(r2.qname()) << '\t' 
-	<< r2.mapq() << '\t'
-	<< r2.rname() << '\t'
-	<< r2.pos()-1 << '\t'
-	<< r2.pos() + alignment_length(r2) -1 << '\t'
-	<< r2.flag().qstrand << '\t'
-	<< mismatches(r2) << '\t'
-	<< ngaps(r2) << '\t'
-	<< mtype2string(m) << '\n';
-
-      of.structural_sam << r1 << '\n'
-			<< r2 << '\n';
-    }
-  else //if((isU1||isR1) && isMorR2)//1 is R, 2 is U
-    {
-      bool U1M2 = (( (isU1||isR1) && !hasXA1 ) && hasXA2);
-      bool U2M1 = (( (isU2||isR2) && !hasXA2 ) && hasXA1);
-      if(U1M2)
-	{
-	  written = true;
-	  
-	  of.stream(output_files::UMU)//,r1.qname()) 
-	    << r1.qname() << '\t'
-	    //<< fix_readname(r1.qname()) << '\t' 
-	    << r1.mapq() << '\t'
-	    << r1.rname() << '\t'
-	    << r1.pos()-1 << '\t'
-	    << r1.pos() + alignment_length(r1) - 2 << '\t'
-	    << r1.flag().qstrand << '\t'
-	    << mismatches(r1) << '\t'
-	    << ngaps(r1) << '\n';
-	  
-	  outputM( of.stream(output_files::UMM),//r2.qname()),
-		   r2 );
-	  of.um_sam << r1 << '\n'
-		    << r2 << '\n';
-	}
-      //else if((isU2||isR2) && isMorR1)
-      else if(U2M1 )
-	{
-	  //cerr << r2 << '\n' << r2.pos() <<'\n';
-	  //cerr << r1.pos() << '\n';
-	  written = true;
-	  outputM( of.stream(output_files::UMM),//r1.qname()),
-		   r1 );
-	  
-	  of.stream(output_files::UMU)//,r2.qname()) 
-	    << r2.qname() << '\t'
-	    //<< fix_readname(r2.qname()) << '\t' 
-	    << r2.mapq() << '\t'
-	    << r2.rname() << '\t'
-	    << r2.pos()-1 << '\t'
-	    << r2.pos() + alignment_length(r2) - 2 << '\t'
-	    << r2.flag().qstrand << '\t'
-	    << mismatches(r2) << '\t'
-	    << ngaps(r2) << '\n';
-	  
-	  of.um_sam << r1 << '\n'
-		    << r2 << '\n';
-	}
-    }
-}
-
+	      output_files & of);
 
 int main(int argc, char ** argv)
 {
   int argn = 1;
   const char * structural_base = argv[argn++];
   const char * um_base = argv[argn++];
+  const char * mdistfile = argv[argn++];
   struct output_files of(structural_base,um_base);
   
   samrecord r1,r2;
-  //unsigned lane1,rpair1,lane2,rpair2;
+  map<unsigned,unsigned> mdist; //distribution of insert sizes
   while( !cin.eof())
     {
       cin >> r1 >> ws >> r2 >> ws;
-      //modification to move away from read name changing
+
       if ( r1.qname() != r2.qname() )
 	{
 	  cerr << "error: alignment records not properly sorted by read name\n"
@@ -293,25 +172,49 @@ int main(int argc, char ** argv)
 	       << r2 << '\n';
 	  exit(10);
 	}
-      /*
-      getLanePair(&lane1,&rpair1,r1.qname());
-      getLanePair(&lane2,&rpair2,r2.qname());
-      if ( lane1 != lane2 ||
-	   rpair1 != rpair2 )
-	{
-	  cerr << "error: alignment records not properly sorted by read name\n"
-	       << r1 << '\n'
-	       << r2 << '\n';
-	  exit(10);
-	}
-      */
+ 
       samflag rf = r1.flag();
       if(!rf.query_unmapped &&
 	 !rf.mate_unmapped)
 	{
+	  bool ppaired = false;
+	  //check if reads in expected orientation.
+	  if(r1.rname() == r2.rname() && rf.is_proper_pair)
+	    {
+	      if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+		{
+		  int mdist1 = r1.isize();
+		  int pos1 = r1.pos(),pos2=r2.pos();
+		  samflag f1 = r1.flag(),f2 = r2.flag();
+		  if( 
+		     ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
+					|| ( f2.qstrand && !f2.mstrand) ) )
+		     ||
+		     ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
+					    || ( !f2.qstrand && f2.mstrand ) ) )
+		      )
+		    {
+		      ppaired = true;
+#ifndef NDEBUG
+		      int mdist2=r2.isize();
+		      assert( abs(mdist1) == abs(mdist2) );
+#endif
+		      map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
+		      if( itr == mdist.end() )
+			{
+			  mdist.insert(make_pair(abs(mdist1),1));
+			}
+		      else
+			{
+			  itr->second++;
+			}
+		    }
+		}
+	    }
 	  string qref(r1.rname()),mref(r1.mrnm());
 	  if(mref != "=" && qref != mref) //UL
 	    {
+	      assert(!ppaired);
 	      checkMap(r1,r2,output_files::UL,of);
 	    }
 	  else
@@ -320,16 +223,19 @@ int main(int argc, char ** argv)
 		{
 		  if(rf.qstrand == rf.mstrand)
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::PAR,of);
 		    }
 		  else if (rf.qstrand == 0 &&
 			   r1.pos() > r1.mpos())
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::DIV,of);
 		    }
 		  else if (rf.mstrand == 0 &&
 			   r1.mpos() > r1.pos())
 		    {
+		      assert(!ppaired);
 		      checkMap(r1,r2,output_files::DIV,of);
 		    }
 		  else if(!rf.is_proper_pair)//is a putative UM
@@ -345,6 +251,7 @@ int main(int argc, char ** argv)
 		  else if ( (hasXA(r1) && !hasXA(r2)) ||
 			    (hasXA(r2) && !hasXA(r1)) )
 		    {
+		      //could be ppaired due to rescued read
 		      //make sure both are not labelled XT:A:U or R
 		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
 			{
@@ -358,38 +265,124 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
+  //get sum of insert size dist
+  long unsigned sum = 0;
+  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+       i != mdist.end() ; ++i )
+    {
+      sum += unsigned(long(i->second));
+    }
+  filtering_ostream mdistout;
+  mdistout.push(gzip_compressor());
+  mdistout.push(file_sink(mdistfile),ios_base::binary|ios_base::out);
+  mdistout << "distance\tnumber\tcprob\n";
+  unsigned long cum=0;
+  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+       i != mdist.end() ; ++i )
+    {
+      cum += unsigned(long(i->second));
+      mdistout << i->first << '\t'
+	       << i->second << '\t'
+	       << scientific << double(cum)/double(sum) << '\n';
+    }
+  mdistout.pop();
+  mdistout.pop();
 }
 
-string::size_type parsingXA( const string & XA,
-			     string::size_type & p,
-			     string & chrom,
-			     int & pos,
-			     string & cigar,
-			     unsigned & nm)
+void checkMap(const samrecord & r1,
+	      const samrecord & r2,
+	      const output_files::MAPTYPE & m,
+	      output_files & of)
 {
-  if(p>XA.size()) return string::npos;
+  //make sure no foul-ups get this far
+  string name2 = r2.qname();
+ 
+#ifndef NDEBUG
+  assert( r1.qname() == r2.qname() );
+#endif
 
-  string::size_type colon = XA.find(";",p);
-  if(colon==string::npos) { return colon; }
+  bool isU1 = hasXT(r1,"U"),
+    isU2 = hasXT(r2,"U"),
+    isR1 = hasXT(r1,"R"),
+    isR2 = hasXT(r2,"R"),
+    hasXA1 = hasXA(r1),
+    hasXA2 = hasXA(r2);
+  if(isR1 && isR2)
+    {
+      return;
+    }
+  bool written = false;
+  if(isU1 && isU2 )
+    {
+      written = true;
+      of.stream(m)
+	<< r1.qname() << '\t'
+	<< r1.mapq() << '\t'
+	<< r1.rname() << '\t'
+	<< r1.pos()-1 << '\t'
+	<< r1.pos() + alignment_length(r1) -1 << '\t'
+	<< r1.flag().qstrand << '\t'
+	<< mismatches(r1) << '\t'
+	<< ngaps(r1) << '\t'
+	<< mtype2string(m) << '\n';
 
-  string::size_type comma = XA.find(",",p);
-  assert(comma != string::npos);
-  //chrom = atoi(string(XA.begin()+p,XA.begin()+comma).c_str());
-  chrom = string(XA.begin()+p,XA.begin()+comma);
-  p=comma+1;
-  comma = XA.find(",",p);
-  char sign = *(XA.begin()+p);
-  assert(comma != string::npos);
-  pos = (sign == '+') ? 
-    atoi(string(XA.begin()+p+1,XA.begin()+comma).c_str()) :
-    -atoi(string(XA.begin()+p+1,XA.begin()+comma).c_str());
-  p=comma+1;
-  comma = XA.find(",",p);
-  assert(comma != string::npos);
-  cigar = string(XA.begin()+p,XA.begin()+comma);
-  p=comma+1;
-  nm = atoi(string(XA.begin()+p,XA.begin()+colon).c_str());
-  return ( (colon+1) < XA.length() ? (colon+1) : string::npos );
+      of.stream(m)
+	<< r2.qname() << '\t'
+	<< r2.mapq() << '\t'
+	<< r2.rname() << '\t'
+	<< r2.pos()-1 << '\t'
+	<< r2.pos() + alignment_length(r2) -1 << '\t'
+	<< r2.flag().qstrand << '\t'
+	<< mismatches(r2) << '\t'
+	<< ngaps(r2) << '\t'
+	<< mtype2string(m) << '\n';
+
+      of.structural_sam << r1 << '\n'
+			<< r2 << '\n';
+    }
+  else 
+    {
+      bool U1M2 = (( (isU1||isR1) && !hasXA1 ) && hasXA2);
+      bool U2M1 = (( (isU2||isR2) && !hasXA2 ) && hasXA1);
+      if(U1M2)
+	{
+	  written = true;
+	  
+	  of.stream(output_files::UMU)
+	    << r1.qname() << '\t'
+	    << r1.mapq() << '\t'
+	    << r1.rname() << '\t'
+	    << r1.pos()-1 << '\t'
+	    << r1.pos() + alignment_length(r1) - 2 << '\t'
+	    << r1.flag().qstrand << '\t'
+	    << mismatches(r1) << '\t'
+	    << ngaps(r1) << '\n';
+	  
+	  outputM( of.stream(output_files::UMM),
+		   r2 );
+	  of.um_sam << r1 << '\n'
+		    << r2 << '\n';
+	}
+      else if(U2M1 )
+	{
+	  written = true;
+	  outputM( of.stream(output_files::UMM),
+		   r1 );
+	  
+	  of.stream(output_files::UMU)
+	    << r2.qname() << '\t'
+	    << r2.mapq() << '\t'
+	    << r2.rname() << '\t'
+	    << r2.pos()-1 << '\t'
+	    << r2.pos() + alignment_length(r2) - 2 << '\t'
+	    << r2.flag().qstrand << '\t'
+	    << mismatches(r2) << '\t'
+	    << ngaps(r2) << '\n';
+	  
+	  of.um_sam << r1 << '\n'
+		    << r2 << '\n';
+	}
+    }
 }
 
 unsigned alen(const vector< pair<char,
@@ -435,7 +428,7 @@ vector<pair<char,
 	    unsigned> > parse_cigar(const string & cigar)
 {
   vector<pair<char,
-    unsigned> > cigar_data;
+	      unsigned> > cigar_data;
   
   string::const_iterator pibeg = find_if( cigar.begin(),cigar.end(),::isdigit);
   string::const_iterator piend = find_if( pibeg+1,cigar.end(),::isalpha );
@@ -449,52 +442,6 @@ vector<pair<char,
     }
   return cigar_data;
 }
-/*
-filtering_ostream & outputM( filtering_ostream & out,
-			     const samrecord & r )
-{
-  string name = fix_readname(r.qname());
-  out << name << '\t'
-      << r.mapq() << '\t'
-      << r.rname() << '\t'
-      << r.pos()-1 << '\t'
-      << r.pos() + alignment_length(r) - 2 << '\t'
-      << r.flag().qstrand << '\t'
-      << mismatches(r) << '\t'
-      << ngaps(r) << '\n';
-
-  string XA;
-  bool found=false;
-  for( samrecord::tag_iterator i = r.tag_begin() ; 
-       !found&&i != r.tag_end() ; ++i )
-    {
-      if(i->tag() == "XA")
-	{
-	  XA=i->value();
-	  found=true;
-	}
-    }
-
-  unsigned chrom,nm;
-  int pos;
-  string cigar;
-  string::size_type p=0;
-  while( (p=parsingXA(XA,p,chrom,pos,cigar,nm))!=string::npos )
-    {
-      vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-      out << name << '\t'
-	  << r.mapq() << '\t'
-	  << chrom << '\t'
-	//<< r.rname() << '\t'
-	  << abs(pos)-1 << '\t'
-	  << abs(pos) + alen(cdata) - 2 << '\t'
-	  << ( (pos > 0) ? 0 : 1 ) << '\t'
-	  << mm(nm,cdata) << '\t'
-	  << ngaps(cdata) << '\n';
-    }
-  return out;
-}
-*/
 
 struct mapping_pos
 {
@@ -537,7 +484,7 @@ bool operator<(const mapping_pos & left,
 vector<mapping_pos> get_mapping_pos(const samrecord & r)
 {
   vector<mapping_pos> rv;
-  rv.push_back( mapping_pos( r.rname(), //atoi(r.rname().c_str()),
+  rv.push_back( mapping_pos( r.rname(), 
 			     r.pos()-1,
 			     r.pos()+alignment_length(r)-2,
 			     r.flag().qstrand,
@@ -564,7 +511,6 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	  colon = XA.find(";",colon+1);
 	}
       while(colon != string::npos);
-      //cerr << r << '\n';
       string hit;
       for(unsigned i=0;i<colons.size();++i)
 	{
@@ -584,18 +530,14 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	      comma = hit.find(",",comma+1);
 	    }
 	  while(comma != string::npos);
-	  //unsigned hit_chrom = atoi( string(hit.begin(),hit.begin()+commas[0]).c_str() );
+
 	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
 	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
 	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
 	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
 	  unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
 	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
-	  /*cerr << hit_chrom << ' '
-	       << abs(hit_start) << ' ' 
-	       << hit_stop << ' ' 
-	       << nm << '\n';
-	  */
+
 	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
 			     mm(nm,cdata),ngaps(cdata));
 	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
@@ -604,16 +546,14 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
 	    }
 	}
     }
-  //cerr << "size = "<<rv.size()<<'\n';
   return rv;
 }
 
 filtering_ostream & outputM( filtering_ostream & out,
 			     const samrecord & r )
 {
-  string name = r.qname();//fix_readname(r.qname());
+  string name = r.qname();
   vector<mapping_pos> mpos = get_mapping_pos(r);
-  //cerr << "name = " << name <<' ' << r.mapq() << '\n';
   for( unsigned i=0;i<mpos.size();++i)
     {
       out << name << '\t' << r.mapq() << '\t'
@@ -625,45 +565,4 @@ filtering_ostream & outputM( filtering_ostream & out,
 	  << mpos[i].gap << '\n';
     }
   return out;
-  /*
-  out << name << '\t'
-      << r.mapq() << '\t'
-      << r.rname() << '\t'
-      << r.pos()-1 << '\t'
-      << r.pos() + alignment_length(r) - 2 << '\t'
-      << r.flag().qstrand << '\t'
-      << mismatches(r) << '\t'
-      << ngaps(r) << '\n';
-
-  string XA;
-  bool found=false;
-  for( samrecord::tag_iterator i = r.tag_begin() ; 
-       !found&&i != r.tag_end() ; ++i )
-    {
-      if(i->tag() == "XA")
-	{
-	  XA=i->value();
-	  found=true;
-	}
-    }
-
-  unsigned chrom,nm;
-  int pos;
-  string cigar;
-  string::size_type p=0;
-  while( (p=parsingXA(XA,p,chrom,pos,cigar,nm))!=string::npos )
-    {
-      vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-      out << name << '\t'
-	  << r.mapq() << '\t'
-	  << chrom << '\t'
-	//<< r.rname() << '\t'
-	  << abs(pos)-1 << '\t'
-	  << abs(pos) + alen(cdata) - 2 << '\t'
-	  << ( (pos > 0) ? 0 : 1 ) << '\t'
-	  << mm(nm,cdata) << '\t'
-	  << ngaps(cdata) << '\n';
-    }
-  return out;
-  */
 }
