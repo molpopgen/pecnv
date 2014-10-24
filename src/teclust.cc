@@ -29,7 +29,7 @@
 #include <cassert>
 #include <isbinary.hpp>
 #include <string_unsigned_lookup.hpp>
-#include <boost/bind.hpp>
+//#include <boost/bind.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
@@ -447,7 +447,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	{
 	  vector<cluster>::iterator j = find_if(minus.begin(),
 						minus.end(),
-						boost::bind(close_enough_minus(),_1,plus[i],MDIST));
+						std::bind(close_enough_minus(),std::placeholders::_1,plus[i],MDIST));
 	  if( j != minus.end() )
 	    {
 	      //is there a better match in plus for this minus?
