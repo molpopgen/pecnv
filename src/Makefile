@@ -1,5 +1,5 @@
 CXX=c++
-CXXFLAGS=-O2 -Wall -W -ansi -pedantic -I.
+CXXFLAGS=-std=c++11 -O2 -Wall -W  -I.
 SEQ=-lsequence
 BIOSTREAMS=-lboost_iostreams
 #Modify LDFLAGS if your system has libraries in non-standard locations
