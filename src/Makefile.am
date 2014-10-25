@@ -1,0 +1,14 @@
+bin_PROGRAMS=fastq_to_table bwa_bam_to_mapfiles bwa_mapdistance rename_reference cluster_cnv teclust umm_te_finder filter_edit process_readmappings 
+
+#get_pair_ids_bwa
+
+fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
+bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
+bwa_mapdistance_SOURCES=bwa_mapdistance.cc bwa_util.cc isbinary.cc
+rename_reference_SOURCES=rename_reference.cc isbinary.cc
+cluster_cnv_SOURCES=cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc isbinary.cc
+teclust_SOURCES=teclust.cc isbinary.cc string_unsigned_lookup.cc
+umm_te_finder_SOURCES=umm_te_finder.cc isbinary.cc
+filter_edit_SOURCES=filter_edit.cc isbinary.cc
+process_readmappings_SOURCES=process_readmappings.cc bwa_util.cc
+#get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
