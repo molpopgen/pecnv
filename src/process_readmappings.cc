@@ -173,9 +173,10 @@ int main(int argc, char ** argv)
 	  exit(10);
 	}
  
-      samflag rf = r1.flag();
-      if(!rf.query_unmapped &&
-	 !rf.mate_unmapped)
+      samflag rf = r1.flag(),
+	rf2 = r2.flag();
+      if((!rf.query_unmapped && !rf.mate_unmapped) &&
+	 (!rf2.query_unmapped && !rf2.mate_unmapped) ) //Fixed bug/issue #1 from git
 	{
 	  bool ppaired = false;
 	  //check if reads in expected orientation.
