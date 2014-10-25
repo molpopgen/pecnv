@@ -304,6 +304,7 @@ int main(int argc, char ** argv)
 	       << r2 << '\n';
 	  exit(10);
 	}
+      */
       samflag rf = r1.flag(),
 	rf2 = r2.flag();
       //Check BOTH flags.  Addresses isue #1 on github
