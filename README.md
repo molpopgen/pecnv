@@ -14,6 +14,11 @@ The full version of the TE detection pipeline, along with test data, is availabl
 
 This code has been used by the lab for detecting tandem duplications from short-read data, and the accompanying perl/shell scripts are intended to walk a user through doing such an analysis.
 
+#A note on version numbers
+
+1.  Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
+2.  Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
+
 #Installation
 
 ##Dependencies
