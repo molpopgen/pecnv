@@ -289,9 +289,11 @@ int main(int argc, char ** argv)
 	       << r2 << '\n';
 	  exit(10);
 	}
-      samflag rf = r1.flag();
-      if(!rf.query_unmapped &&
-	 !rf.mate_unmapped)
+      samflag rf = r1.flag(),
+	rf2 = r2.flag();
+      //Check BOTH flags.  Addresses isue #1 on github
+      if( (!rf.query_unmapped && !rf.mate_unmapped) &&
+	  (!rf2.query_unmapped && !rf2.mate_unmapped) )
 	{
 	  string qref(r1.rname()),mref(r1.mrnm());
 	  if(mref != "=" && qref != mref) //UL
