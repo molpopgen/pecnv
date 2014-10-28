@@ -3,12 +3,13 @@ _pecnv_ is a collection of C++ programs used for the detection of copy-number va
 
 This pipeline corresponds to the clustering algorithm described and used in
 
->Rogers, R. L. _et al._ Landscape of standing variation for tandem duplications in Drosophila yakuba and Drosophila simulans
+*  __Rogers, R. L.__, __J. M. Cridland__, __L. Shao__, T. T. Hu, P. Andolfatto and K. R. Thornton (2014) Landscape of standing variation for tandem duplications in _Drosophila yakuba_ and _Drosophila simulans_.  Molecular Biology and Evolution __31__: 1750-1766 PMID 24710518, [Manuscript](http://mbe.oxfordjournals.org/content/31/7/1750.abstract.html)
 
 A preprint of the manuscript is available on [arXiv](http://arxiv.org/abs/1401.7371).
 
 This software also contains the C++ portions of the transposable element (TE) detection pipeline descrbed in:
-> Cridland, J.M., S.J. MacDonald, A.D. Long, and K.R Thornton (2013) Abundance and Distribution of Transposable Elements in Two \textit{Drosophila} QTL Mapping Resources  Molecular Biology and Evolution 30: 2311-2327, which is available [here](http://mbe.oxfordjournals.org/content/30/10/2311.full)
+
+* __Cridland, J.M.__, S.J. MacDonald, A.D. Long, and K.R Thornton (2013) Abundance and Distribution of Transposable Elements in Two _Drosophila_ QTL Mapping Resources  Molecular Biology and Evolution __30__: 2311-2327. PMID 23883524 [Manuscript](http://mbe.oxfordjournals.org/content/30/10/2311.full)
 
 The full version of the TE detection pipeline, along with test data, is available from the Thornton lab [website](http://www.molpopgen.org/tepipeline/line99_example.tar.gz).  Users interested primarily in TE detection are encouraged to download that archive and study how it works.
 
@@ -117,35 +118,35 @@ gridify.pl -q krt,bio -ref /path/to/reference.fasta -infile infile -N samplename
 
 The output of the script is a series of shell scripts.  Their names are such that they will be lexically sorted by the Linux shell automatically.  Therefore, one way to submit them is simply to say:
 
-for i in *.sh<br>
-do<br>
-qsub $i<br>
+```
+for i in *.sh
+do
+qsub $i
 done
+```
 
 ###The output
 
 The (interesting) output from _pecnv.pl_ is the following:
 
-<ol>
-<li>div.gz</li>
-<li>par.gz</li>
-<li>ul.gz</li>
-<ol>
+* div.gz
+* par.gz
+* ul.gz
 
 The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.
 
 The format of the output files is as follows:
 
-id = Event identification number (arb. integer)<br>
-chrom1 = Chromosome number in reference where the first read cluster is<br>
-coverage = Number of read pairs supporting the event<br>
-strand1 = Strand of first read cluster.  0 = plus, 1 = minus<br>
-start1 = Start position of first read cluster.<br>  
-stop1 = Stop position of second read cluster.<br>
-chrom2 = Chromosome number in reference where the second read cluster is<br>
-start2 = Start position of second read cluster.<br>  
-stop2 = Stop position of second read cluster.<br> 
-reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
+* id = Event identification number (arb. integer)
+* chrom1 = Chromosome number in reference where the first read cluster is
+* coverage = Number of read pairs supporting the event
+* strand1 = Strand of first read cluster.  0 = plus, 1 = minus
+* start1 = Start position of first read cluster.  
+* stop1 = Stop position of second read cluster.
+* chrom2 = Chromosome number in reference where the second read cluster is
+* start2 = Start position of second read cluster.  
+* stop2 = Stop position of second read cluster. 
+* reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.
 
 ###Running on pre-existing bam files
 
