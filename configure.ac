@@ -37,6 +37,12 @@ AM_CONDITIONAL(PROFILING, test x$profiling = xtrue)
 
 dnl check for things that we need
 
+dnl htslib
+AC_CHECK_HEADER(htslib/bgzf.h,,[AC_MSG_ERROR([htslib/bgzf.h not found. htslib >= 1.1 required.  See http://htslib.org.  Exiting.])])
+
+dnl specific libsequence features
+AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+
 dnl boost (only needed prior to 1.8.3)
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
 AC_CHECK_HEADER(boost/iostreams/filtering_stream.hpp, , [AC_MSG_ERROR([boost::iostreams::filtering_stream required])])
@@ -44,7 +50,8 @@ AC_CHECK_HEADER(boost/iostreams/filter/gzip.hpp, , [AC_MSG_ERROR([boost::iostrea
 AC_CHECK_HEADER(boost/iostreams/device/file.hpp, , [AC_MSG_ERROR([boost::iostreams::filtering_stream required])])
 
 dnl AC_CHECK_LIB(zlib, gzread,,[echo "zlib runtime library does not seem to be here";exit 1])
-AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here])])
+AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here.  Exiting.])])
+AC_CHECK_LIB(hts, bgzf_read,,[AC_MSG_ERROR([htslib runtime library does not seem to be here. Exiting.])])
 
 AC_LANG_SAVE
           AC_LANG_CPLUSPLUS

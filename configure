@@ -4867,6 +4867,24 @@ fi
 done
 
 
+ac_fn_cxx_check_header_mongrel "$LINENO" "htslib/bgzf.h" "ac_cv_header_htslib_bgzf_h" "$ac_includes_default"
+if test "x$ac_cv_header_htslib_bgzf_h" = xyes; then :
+
+else
+  as_fn_error $? "htslib/bgzf.h not found. htslib >= 1.1 required.  See http://htslib.org.  Exiting." "$LINENO" 5
+fi
+
+
+
+ac_fn_cxx_check_header_mongrel "$LINENO" "Sequence/IOhelp.hpp" "ac_cv_header_Sequence_IOhelp_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_Sequence_IOhelp_hpp" = xyes; then :
+
+else
+  as_fn_error $? "Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting." "$LINENO" 5
+fi
+
+
+
 ac_fn_cxx_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes; then :
 
@@ -4944,7 +4962,54 @@ _ACEOF
   LIBS="-lz $LIBS"
 
 else
-  as_fn_error $? "zlib runtime library does not seem to be here" "$LINENO" 5
+  as_fn_error $? "zlib runtime library does not seem to be here.  Exiting." "$LINENO" 5
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for bgzf_read in -lhts" >&5
+$as_echo_n "checking for bgzf_read in -lhts... " >&6; }
+if ${ac_cv_lib_hts_bgzf_read+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lhts  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char bgzf_read ();
+int
+main ()
+{
+return bgzf_read ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_hts_bgzf_read=yes
+else
+  ac_cv_lib_hts_bgzf_read=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_hts_bgzf_read" >&5
+$as_echo "$ac_cv_lib_hts_bgzf_read" >&6; }
+if test "x$ac_cv_lib_hts_bgzf_read" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBHTS 1
+_ACEOF
+
+  LIBS="-lhts $LIBS"
+
+else
+  as_fn_error $? "htslib runtime library does not seem to be here. Exiting." "$LINENO" 5
 fi
 
 
