@@ -29,6 +29,12 @@ This software requires the following libraries to compile:
 1. [libsequence](http://www.github.com/molpopgen/libsequence) - version 1.8.0 or greater
 2. [boost](http://www.boost.org) - version 1.5.3 or greater
 
+The following perl modules are required:
+
+* File::Which
+* Getopt::Long
+* File::Which
+
 ##Compilation
 
 On most systems, simply type "make" to compile the programs.  On systems where the dependencies may be installed in funny locations, edit the Makefile accordingly.
