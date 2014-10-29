@@ -34,6 +34,7 @@ The following perl modules are required:
 * File::Which
 * Getopt::Long
 * File::Which
+* IPC::Cmd
 
 ##Compilation
 
