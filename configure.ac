@@ -15,7 +15,7 @@ AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 AM_MAINTAINER_MODE([enable])
 
 AC_LANG(C++)
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile])
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug    Turn on debugging],
