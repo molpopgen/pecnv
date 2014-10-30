@@ -19,6 +19,7 @@ This code has been used by the lab for detecting tandem duplications from short-
 
 1.  Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
 2.  Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
+3.  
 
 #Installation
 
@@ -29,16 +30,33 @@ This software requires the following libraries to compile:
 1. [libsequence](http://www.github.com/molpopgen/libsequence) - version 1.8.0 or greater
 2. [boost](http://www.boost.org) - version 1.5.3 or greater
 
-The following perl modules are required:
+##Compilation and installation
 
-* File::Which
-* Getopt::Long
-* File::Which
-* IPC::Cmd
+For systems where all dependencies are "where they're supposed to be":
 
-##Compilation
+```
+./configure
+make
+sudo make install
+```
 
-On most systems, simply type "make" to compile the programs.  On systems where the dependencies may be installed in funny locations, edit the Makefile accordingly.
+For systems where dependencies are in a custom location.  For this example, I assume that they are installed in your users' home folder:
+
+```
+./configure CXXFLAGS=-I$HOME/include LDFLAGS=-L$HOME/lib
+make
+sudo make install
+```
+
+To install into your user's home folder:
+
+```
+./configure --prefix=$HOME
+make
+make install
+```
+
+You may mix and match the above.
 
 ##Installation
 
@@ -54,6 +72,7 @@ The easiest way to use the programs will be to run the master script, _pecnv.pl_
 
 1. The [bwa](http://bio-bwa.sourceforge.net/) aligner.  __NOTE:__ this pipeline has only been used with bwa version 0.5.9!
 2. [samtools](http://samtools.sourceforge.net/)
+3. Rscript 
 
 __Note:__ the _pecnv.pl_ script uses ForkManager to attempt to make more effective use of CPU resources during several of the steps.  Make sure that this perl module is installed on your system!
 
