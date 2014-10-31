@@ -117,8 +117,12 @@ The format of the output files is as follows:
 ###Running on pre-existing bam files
 
 ```
+#Process the (readname-sorted) bam file, and collect abnormal PE mappings:
 samtools view -f 1 readsorted_bam.bam | process_readmappings cnv_mappings um mdist.gz
+#Get the 99.95th quantile of fragment sizes based on unique/unique read pairs:
 Rscript -e "x=read.table(\"mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"mquant.txt\")"
+#Store that value in a shell variable:
 MAXDIST=`head -n 1 mquant.txt`
+#Cluster the reads:
 cluster_cnv minqual max_mismatches max_gaps $MAXDIST div_clusters.gz par_clusters.gz ul_clusters.gz cnv_mappings.csv.gz
 ```
