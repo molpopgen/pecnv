@@ -41,7 +41,8 @@ dnl htslib
 dnl AC_CHECK_HEADER(htslib/bgzf.h,,[AC_MSG_ERROR([htslib/bgzf.h not found. htslib >= 1.1 required.  See http://htslib.org.  Exiting.])])
 
 dnl specific libsequence features
-dnl AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/samrecord.hpp,,[AC_MSG_ERROR([Sequence/samrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 
 dnl boost (only needed prior to 1.8.3)
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])

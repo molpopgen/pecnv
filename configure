@@ -4475,7 +4475,6 @@ fi
 
 
 
-
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4867,6 +4866,23 @@ _ACEOF
 fi
 
 done
+
+
+ac_fn_cxx_check_header_mongrel "$LINENO" "Sequence/samrecord.hpp" "ac_cv_header_Sequence_samrecord_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_Sequence_samrecord_hpp" = xyes; then :
+
+else
+  as_fn_error $? "Sequence/samrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting." "$LINENO" 5
+fi
+
+
+ac_fn_cxx_check_header_mongrel "$LINENO" "Sequence/IOhelp.hpp" "ac_cv_header_Sequence_IOhelp_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_Sequence_IOhelp_hpp" = xyes; then :
+
+else
+  as_fn_error $? "Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting." "$LINENO" 5
+fi
+
 
 
 ac_fn_cxx_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
