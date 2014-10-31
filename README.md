@@ -93,7 +93,7 @@ Example:
 ```
 ###The output
 
-The (interesting) output from _pecnv.pl_ is the following:
+The (interesting) output from _pecnv.sh_ is the following:
 
 * div_clusters.gz
 * par_clusters.gz
@@ -116,33 +116,9 @@ The format of the output files is as follows:
 
 ###Running on pre-existing bam files
 
-Example is specific to UCI HPC:
 ```
-#!/bin/sh
-
-#$ -q krt,bio
-
-module load boost/1.53.0
-module load R
-
-cd /bio/krthornt/test_pecnv/pecnv/pecnv_output/runonbam
-
-#Old version of workflow
-#samtools view -f 1 merged_readsorted.bam | bwa_bam_to_mapfiles structural um
-
-#samtools view -f 2 merged_readsorted.bam | bwa_mapdistance mdist.gz
-
-#new streamlined version
-samtools view -f 1 merged_readsorted.bam | process_readmappings structural um mdist.gz
-
-R --no-save --slave --args <<EOF
-x=read.table("mdist.gz",header=TRUE)
-z=which(x\$cprob >= 0.999)
-y=x\$distance[z[1]]
-write(y,"mquant.txt")
-EOF
-
-MD=`head -n 1 mquant.txt`
-echo $MD
-cluster_cnv 30 0 2 $MD div.gz par.gz ul.gz structural.csv.gz
+samtools view -f 1 readsorted_bam.bam | process_readmappings cnv_mappings um mdist.gz
+Rscript -e "x=read.table(\"mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"mquant.txt\")"
+MAXDIST=`head -n 1 mquant.txt`
+cluster_cnv minqual max_mismatches max_gaps $MAXDIST div_clusters.gz par_clusters.gz ul_clusters.gz cnv_mappings.csv.gz
 ```
