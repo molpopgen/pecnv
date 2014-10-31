@@ -80,6 +80,12 @@ then
     exit
 fi
 
+if [ ! -e $REFERENCE.bwt ]
+then
+    >&2 echo "Reference does not seem to have been indexed.  Running bwa index..."
+    bwa index $REFERENCE
+fi
+
 if [ ! -d $OUTDIR ]
 then
     echo "Making output directory $OUTDIR"
