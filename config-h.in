@@ -7,10 +7,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
-/* Define to 1 if you have the `boost_iostreams' library (-lboost_iostreams).
-   */
-#define HAVE_LIBBOOST_IOSTREAMS 1
-
 /* Define to 1 if you have the `sequence' library (-lsequence). */
 #define HAVE_LIBSEQUENCE 1
 

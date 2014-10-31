@@ -13,13 +13,18 @@
 #include <string>
 #include <functional>
 #include <algorithm>
+#include <sstream>
+#include <Sequence/IOhelp.hpp>
+
+/*
 #include <isbinary.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
+*/
 
 using namespace std;
-using namespace boost::iostreams;
+//using namespace boost::iostreams;
 
 typedef map<string,unsigned> maptype;
 struct teinfo
@@ -46,10 +51,11 @@ struct iste : public binary_function<teinfo,teinfo,bool>
 };
 
 
-template<typename streamtype>
+//template<typename streamtype>
 void read_data( maptype & umm,
 		vector<teinfo> & refdata,
-		streamtype & in,
+		//streamtype & in,
+		gzFile gzin,
 		const unsigned & minmqual)
 {
   //unsigned line,lane,pair,read,
@@ -58,13 +64,16 @@ void read_data( maptype & umm,
   string chrom;
   unsigned start,stop;
   string temp;
-  while( ! in.eof() )
+  //while( ! in.eof() )
+  do
     {
       //in >> line >> lane >> pair >> read >> mq
+      auto line = Sequence::IOhelp::gzreadline(gzin);
+      istringstream in(line.first);
       in >> readname >> mq
 	 >> chrom >> start >> stop;
-      getline(in,temp);
-      in >> ws;
+      //getline(in,temp);
+      //in >> ws;
 
       if( mq >= minmqual ) //filter on mapping quality
 	{
@@ -72,8 +81,9 @@ void read_data( maptype & umm,
 	  if(!refdata.empty())
 	    {
 	      vector<teinfo>::iterator itr = find_if(refdata.begin(),refdata.end(),
-						     bind2nd(iste(),
-							     teinfo(chrom,start,stop)));
+						     //bind2nd(iste(),
+						     std::bind(iste(),std::placeholders::_1,
+							       teinfo(chrom,start,stop)));
 	      if ( itr != refdata.end() )
 		{
 		  //umm.insert(pair);
@@ -86,14 +96,16 @@ void read_data( maptype & umm,
 	      umm[readname]=1;
 	    }
 	}
-    }
+    } while(!gzeof(gzin));
 }
 
-template<typename istreamtype,
-	 typename ostreamtype>
-void read_umu( istreamtype & in,
-	       ostreamtype & out,
-	       maptype & pairs)
+//template<typename istreamtype,
+//typename ostreamtype>
+void read_umu( //istreamtype & in,
+	      //ostreamtype & out,
+	      gzFile gzin,
+	      gzFile gzout,
+	      maptype & pairs)
 {
   //unsigned line,lane,pair,read,mq;
   string readname;
@@ -102,24 +114,35 @@ void read_umu( istreamtype & in,
   unsigned start,stop,strand;
   string temp;
   unsigned nfound = 0;
-  while( ! in.eof() )
+  //while( ! in.eof() )
+  do
     {
       //in >> line >> lane >> pair >> read >> mq
+      auto line = Sequence::IOhelp::gzreadline(gzin);
+      istringstream in(line.first);
       in >> readname >> mq
 	 >> chrom >> start >> stop >> strand;
-      getline(in,temp);
-      in >> ws;
+      //getline(in,temp);
+      //in >> ws;
       //if( find(pairs.begin(),pairs.end(),pair) != pairs.end() )
       //if(pairs.find(pair) != pairs.end())
       if(pairs.find(readname) != pairs.end())
 	{
-	      out << start << '\t'
-		  << chrom << '\t' 
-		  << strand << '\n';
+	  /*
+	  out << start << '\t'
+	      << chrom << '\t' 
+	      << strand << '\n';
+	  */
+	  if( gzprintf(gzout,"%u\t%s\t%u\n",start,chrom.c_str(),strand) <= 0 )
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
 	  ++nfound;
 	  if(nfound == pairs.size()) return;
 	}
-    }
+    } while(!gzeof(gzin));
 }
 
 int main( int argc, char ** argv )
@@ -154,10 +177,27 @@ int main( int argc, char ** argv )
     }
 
   //set<unsigned> umm;
-  filtering_ostream out;
-  out.push(gzip_compressor());
-  out.push(file_sink(outfile,ios_base::binary|ios_base::out));
+  //filtering_ostream out;
+  //out.push(gzip_compressor());
+  //out.push(file_sink(outfile,ios_base::binary|ios_base::out));
+  gzFile gzout = gzopen(outfile,"w");
+  if(gzout==NULL) {
+    cerr << "Error: could not open "
+	 << outfile
+	 << " for writing\n";
+    exit(1);
+  }
+
   maptype umm;
+  gzFile gzin = gzopen(umm_mapfile,"r");
+  if(gzin == NULL) {
+    cerr << "Error: could not open "
+	 << umm_mapfile
+	 << " for reading.\n";
+    exit(10);
+  }
+  read_data(umm,refdata,gzin,minmqual);
+  /*
   if( isbinary(umm_mapfile) )
     {
       filtering_istream gzin;
@@ -173,7 +213,18 @@ int main( int argc, char ** argv )
       read_data(umm,refdata,
 		in,minmqual);
     }
+  */
+  gzclose(gzin);
   cerr << "finished um_m file\n";
+  gzin = gzopen(umu_mapfile,"r");
+  if(gzin == NULL) {
+    cerr << "Error: could not open "
+	 << umu_mapfile
+	 << " for reading.\n";
+    exit(10);
+  }
+  read_umu(gzin,gzout,umm);
+  /*
   if ( isbinary(umu_mapfile) )
     {
       filtering_istream gzin;
@@ -186,4 +237,5 @@ int main( int argc, char ** argv )
       ifstream in(umu_mapfile);
       read_umu(in,out,umm);
     }
+  */
 }

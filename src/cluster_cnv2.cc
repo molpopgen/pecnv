@@ -30,18 +30,22 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <Sequence/IOhelp.hpp>
+#include <zlib.h>
+/*
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
-#include <boost/bind.hpp>
+*/
+//#include <boost/bind.hpp>
 
 #include <string_unsigned_lookup.hpp>
-#include <isbinary.hpp>
+//#include <isbinary.hpp>
 #include <file_util.hpp>
 
 using namespace std;
-using namespace boost;
-using namespace boost::iostreams;
+//using namespace boost;
+//using namespace boost::iostreams;
 
 const unsigned UMAX = numeric_limits<unsigned>::max();
 std::string make_readname(const unsigned & line,
@@ -135,18 +139,20 @@ bool unique_positions_by_lane(const vector<linkeddata> & data,
 			      const bool & check_lane = false);
 */
 
-void write_clusters( filtering_ostream & o,
+//void write_clusters( filtering_ostream & o,
+void write_clusters( gzFile o,
 		     const string & chrom1,
 		     const string & chrom2,
 		     const cluster_container & clusters,
 		     unsigned * eventid );
 
 
-template<typename streamtype>
+//template<typename streamtype>
 void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       map<unsigned,vector<linkeddata> > & raw_par,
 		       map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
-		       streamtype & lin,
+		       gzFile lin,
+		       //streamtype & lin,
 		       //streamtype & rin,	      
 		       const unsigned & min_mqual,
 		       const unsigned & max_mm,
@@ -163,7 +169,8 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
   int start,stop,start2,stop2;
   std::string type,type2;
 
-  while(! lin.eof() )
+  //while(! lin.eof() )
+  do
     {
       /*
 	lin >> line >> lane >> pair >> read 
@@ -171,11 +178,22 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 	rin >> line2 >> lane2 >> pair2 >> read2 
 	>> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
       */
+      /*
       lin >> pairname
 	  >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
 	  >> pairname2
 	  >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      assert(pairname == pairname2);
+      */
+      
+      //Very lazy input method...
+      auto data = Sequence::IOhelp::gzreadline(lin);
+      istringstream pdata(data.first);
+      pdata >> pairname
+	    >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
+	//>> pairname2
+	    >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
+      //if(pairname != pairname2) { cerr << pairname << ' ' << pairname2 << ' ' << type << ' ' << type2 << '\n'; }
+      //assert(pairname == pairname2);
       chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
       chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
       /*
@@ -277,7 +295,7 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 	    }
 #endif
 	}
-    }
+    } while(!gzeof(lin));
 }
 
 void read_data( map<unsigned,vector<linkeddata> > & raw_div,
@@ -291,23 +309,32 @@ void read_data( map<unsigned,vector<linkeddata> > & raw_div,
 		vector<pair<string,unsigned> > * chrom_labels,
 		unsigned * chrom_index)
 {
+  gzFile input = gzopen(left,"r");
+  if(input == NULL) {
+    cerr << "Error: could not open "
+	 << left
+	 << " for reading\n";
+    exit(1);
+  }
+  read_data_details( raw_div,raw_par,raw_ul , input, min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
+  gzclose(input);
+  /*
   if( isbinary(left) ) //&& isbinary(right) )
     {
       filtering_istream il;
       il.push(gzip_decompressor());
       il.push(file_source(left,ios_base::in|ios_base::binary));
-      /*
-	filtering_istream ir;
-	ir.push(gzip_decompressor());
-	ir.push(file_source(right,ios_base::in|ios_base::binary));
-      */
+
+      gzFile input = gzopen(left,"r");
       read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
+      gzclose(input);
     }
   else
     {
       ifstream il(left);//,ir(right);
       read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
     }
+  */
 }
 		
 
@@ -339,31 +366,76 @@ int main(int argc, char ** argv)
       cerr << "error: " << divfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
+
+  gzFile divstream = gzopen(divfile,"wb");
+  if(divstream==NULL) {
+    cerr << "Error: could not open "
+	 << divfile
+	 << " for writing\n";
+  }
+  if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
+    {
+      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  /*
   filtering_ostream divstream;
   divstream.push(gzip_compressor());
   divstream.push(file_sink(divfile,ios_base::out|ios_base::binary));
   divstream << header << '\n';
-
+  */
   if( file_exists(parfile) )
     {
       cerr << "error: " << parfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
+
+  gzFile parstream = gzopen(parfile,"wb");
+  if(parstream == NULL) {
+    cerr << "Error: could not open "
+	 << parfile << " for writing\n";
+    exit(1);
+  }
+    
+  if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
+    {
+      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  /*
   filtering_ostream parstream;
   parstream.push(gzip_compressor());
   parstream.push(file_sink(parfile,ios_base::out|ios_base::binary));
   parstream << header << '\n';
+  */
 
   if( file_exists(ulfile) )
     {
       cerr << "error: " << ulfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
+  gzFile ulstream = gzopen(ulfile,"wb");
+  if(ulstream == NULL)
+    {
+      cerr << "Error: could not open "
+	   << ulfile
+	   << " for writing\n";
+      exit(1);
+    }
+  if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
+    {
+      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  /*
   filtering_ostream ulstream;
   ulstream.push(gzip_compressor());
   ulstream.push(file_sink(ulfile,ios_base::out|ios_base::binary));
   ulstream << header << '\n';
-
+  */
   map<unsigned, vector<linkeddata> > raw_div;
   map<unsigned, vector<linkeddata> > raw_par;
   map<unsigned, map<unsigned,vector<linkeddata> > > raw_ul;
@@ -619,7 +691,8 @@ void reduce_clusters( cluster_container & clusters,
     }
 }
 
-void write_clusters( filtering_ostream & o,
+//void write_clusters( filtering_ostream & o,
+void write_clusters( gzFile gzout,
 		     const string & chrom1,
 		     const string & chrom2,
 		     const cluster_container & clusters,
@@ -655,6 +728,7 @@ void write_clusters( filtering_ostream & o,
 	    }
 	  readnames += t.str();
 	}
+      ostringstream o;
       o << *eventid << '\t'
 	<< chrom1 << '\t'
 	<< clusters[i].size() << '\t'
@@ -663,7 +737,13 @@ void write_clusters( filtering_ostream & o,
 	<< chrom2 << '\t'
 	<< clusters[i][0]->strand2 << '\t'
 	<< min2 << '\t' << max2 << '\t'
-	<< readnames << '\n';
+	<< readnames;// << '\n';
+      if ( gzprintf(gzout,"%s\n",o.str().c_str()) <= 0 )
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
       ++(*eventid);
     } 
 }

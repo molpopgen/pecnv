@@ -111,19 +111,22 @@ do
     fi
     #ALIGN THIS PAIR 
     #We go straight to sorted BAM output via process substitution
-    bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
+    #bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
     PAIR=$(($PAIR+1))
 done
 
 ###2. Merge bam files if necessary
 if [ $NPAIRS -gt 1 ]
 then
-    samtools merge $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/intermediate_bamfile*.bam
+    echo "skipping merge"
+#    samtools merge $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/intermediate_bamfile*.bam
 fi
 
 ###3. Sort bam file by read name.  This is done 2x b/c samtools sorting on read name has been unreliable in the past
-samtools sort -n -m $SORTMEM $OUTDIR/"$BAMFILEBASE"_sorted.bam $OUTDIR/temp
-samtools sort -n -m $SORTMEM $OUTDIR/temp.bam $OUTDIR/"$BAMFILESTUB"_readsorted
+#samtools sort -n -m $SORTMEM $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/temp
+#samtools sort -n -m $SORTMEM $OUTDIR/temp.bam $OUTDIR/"$BAMFILESTUB"_readsorted
+
+#exit
 
 if [ -s $OUTDIR/"$BAMFILESTUB"_readsorted ]
 then

@@ -4876,6 +4876,14 @@ else
 fi
 
 
+ac_fn_cxx_check_header_mongrel "$LINENO" "Sequence/samflag.hpp" "ac_cv_header_Sequence_samflag_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_Sequence_samflag_hpp" = xyes; then :
+
+else
+  as_fn_error $? "Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting." "$LINENO" 5
+fi
+
+
 ac_fn_cxx_check_header_mongrel "$LINENO" "Sequence/IOhelp.hpp" "ac_cv_header_Sequence_IOhelp_hpp" "$ac_includes_default"
 if test "x$ac_cv_header_Sequence_IOhelp_hpp" = xyes; then :
 
@@ -4890,30 +4898,6 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 
 else
   as_fn_error $? "zlib development files required" "$LINENO" 5
-fi
-
-
-ac_fn_cxx_check_header_mongrel "$LINENO" "boost/iostreams/filtering_stream.hpp" "ac_cv_header_boost_iostreams_filtering_stream_hpp" "$ac_includes_default"
-if test "x$ac_cv_header_boost_iostreams_filtering_stream_hpp" = xyes; then :
-
-else
-  as_fn_error $? "boost::iostreams::filtering_stream required" "$LINENO" 5
-fi
-
-
-ac_fn_cxx_check_header_mongrel "$LINENO" "boost/iostreams/filter/gzip.hpp" "ac_cv_header_boost_iostreams_filter_gzip_hpp" "$ac_includes_default"
-if test "x$ac_cv_header_boost_iostreams_filter_gzip_hpp" = xyes; then :
-
-else
-  as_fn_error $? "boost::iostreams::gzip_compressor/decombpressor required" "$LINENO" 5
-fi
-
-
-ac_fn_cxx_check_header_mongrel "$LINENO" "boost/iostreams/device/file.hpp" "ac_cv_header_boost_iostreams_device_file_hpp" "$ac_includes_default"
-if test "x$ac_cv_header_boost_iostreams_device_file_hpp" = xyes; then :
-
-else
-  as_fn_error $? "boost::iostreams::filtering_stream required" "$LINENO" 5
 fi
 
 
@@ -5013,47 +4997,6 @@ _ACEOF
 
 else
   echo "libsequence runtime library does not seem to be here";exit 1
-fi
-
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_iostreams" >&5
-$as_echo_n "checking for main in -lboost_iostreams... " >&6; }
-if ${ac_cv_lib_boost_iostreams_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lboost_iostreams  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_boost_iostreams_main=yes
-else
-  ac_cv_lib_boost_iostreams_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_iostreams_main" >&5
-$as_echo "$ac_cv_lib_boost_iostreams_main" >&6; }
-if test "x$ac_cv_lib_boost_iostreams_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBBOOST_IOSTREAMS 1
-_ACEOF
-
-  LIBS="-lboost_iostreams $LIBS"
-
-else
-  echo "boost_iostreams runtime library does not seem to be here";exit 1
 fi
 
 ac_ext=cpp

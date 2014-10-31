@@ -76,10 +76,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = fastq_to_table$(EXEEXT) bwa_bam_to_mapfiles$(EXEEXT) \
-	bwa_mapdistance$(EXEEXT) rename_reference$(EXEEXT) \
-	cluster_cnv$(EXEEXT) teclust$(EXEEXT) umm_te_finder$(EXEEXT) \
-	filter_edit$(EXEEXT) process_readmappings$(EXEEXT)
+bin_PROGRAMS = cluster_cnv$(EXEEXT) teclust$(EXEEXT) \
+	umm_te_finder$(EXEEXT) filter_edit$(EXEEXT) \
+	process_readmappings$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -94,39 +93,22 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_bwa_bam_to_mapfiles_OBJECTS = bwa_bam_to_mapfiles2.$(OBJEXT) \
-	bwa_util.$(OBJEXT)
-bwa_bam_to_mapfiles_OBJECTS = $(am_bwa_bam_to_mapfiles_OBJECTS)
-bwa_bam_to_mapfiles_LDADD = $(LDADD)
-am_bwa_mapdistance_OBJECTS = bwa_mapdistance.$(OBJEXT) \
-	bwa_util.$(OBJEXT) isbinary.$(OBJEXT)
-bwa_mapdistance_OBJECTS = $(am_bwa_mapdistance_OBJECTS)
-bwa_mapdistance_LDADD = $(LDADD)
 am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
-	string_unsigned_lookup.$(OBJEXT) file_util.$(OBJEXT) \
-	isbinary.$(OBJEXT)
+	string_unsigned_lookup.$(OBJEXT) file_util.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
 cluster_cnv_LDADD = $(LDADD)
-am_fastq_to_table_OBJECTS = fastq_to_table.$(OBJEXT) \
-	isbinary.$(OBJEXT)
-fastq_to_table_OBJECTS = $(am_fastq_to_table_OBJECTS)
-fastq_to_table_LDADD = $(LDADD)
-am_filter_edit_OBJECTS = filter_edit.$(OBJEXT) isbinary.$(OBJEXT)
+am_filter_edit_OBJECTS = filter_edit.$(OBJEXT)
 filter_edit_OBJECTS = $(am_filter_edit_OBJECTS)
 filter_edit_LDADD = $(LDADD)
 am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
 	bwa_util.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
-am_rename_reference_OBJECTS = rename_reference.$(OBJEXT) \
-	isbinary.$(OBJEXT)
-rename_reference_OBJECTS = $(am_rename_reference_OBJECTS)
-rename_reference_LDADD = $(LDADD)
-am_teclust_OBJECTS = teclust.$(OBJEXT) isbinary.$(OBJEXT) \
+am_teclust_OBJECTS = teclust.$(OBJEXT) \
 	string_unsigned_lookup.$(OBJEXT)
 teclust_OBJECTS = $(am_teclust_OBJECTS)
 teclust_LDADD = $(LDADD)
-am_umm_te_finder_OBJECTS = umm_te_finder.$(OBJEXT) isbinary.$(OBJEXT)
+am_umm_te_finder_OBJECTS = umm_te_finder.$(OBJEXT)
 umm_te_finder_OBJECTS = $(am_umm_te_finder_OBJECTS)
 umm_te_finder_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -158,16 +140,12 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(bwa_bam_to_mapfiles_SOURCES) $(bwa_mapdistance_SOURCES) \
-	$(cluster_cnv_SOURCES) $(fastq_to_table_SOURCES) \
-	$(filter_edit_SOURCES) $(process_readmappings_SOURCES) \
-	$(rename_reference_SOURCES) $(teclust_SOURCES) \
+SOURCES = $(cluster_cnv_SOURCES) $(filter_edit_SOURCES) \
+	$(process_readmappings_SOURCES) $(teclust_SOURCES) \
 	$(umm_te_finder_SOURCES)
-DIST_SOURCES = $(bwa_bam_to_mapfiles_SOURCES) \
-	$(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(fastq_to_table_SOURCES) $(filter_edit_SOURCES) \
-	$(process_readmappings_SOURCES) $(rename_reference_SOURCES) \
-	$(teclust_SOURCES) $(umm_te_finder_SOURCES)
+DIST_SOURCES = $(cluster_cnv_SOURCES) $(filter_edit_SOURCES) \
+	$(process_readmappings_SOURCES) $(teclust_SOURCES) \
+	$(umm_te_finder_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -288,14 +266,15 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 #get_pair_ids_bwa
-fastq_to_table_SOURCES = fastq_to_table.cc isbinary.cc
-bwa_bam_to_mapfiles_SOURCES = bwa_bam_to_mapfiles2.cc bwa_util.cc
-bwa_mapdistance_SOURCES = bwa_mapdistance.cc bwa_util.cc isbinary.cc
-rename_reference_SOURCES = rename_reference.cc isbinary.cc
-cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc isbinary.cc
-teclust_SOURCES = teclust.cc isbinary.cc string_unsigned_lookup.cc
-umm_te_finder_SOURCES = umm_te_finder.cc isbinary.cc
-filter_edit_SOURCES = filter_edit.cc isbinary.cc
+
+#fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
+#bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
+#bwa_mapdistance_SOURCES=bwa_mapdistance.cc bwa_util.cc isbinary.cc
+#rename_reference_SOURCES=rename_reference.cc isbinary.cc
+cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc
+teclust_SOURCES = teclust.cc string_unsigned_lookup.cc
+umm_te_finder_SOURCES = umm_te_finder.cc 
+filter_edit_SOURCES = filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc bwa_util.cc
 all: all-am
 
@@ -374,21 +353,9 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
-bwa_bam_to_mapfiles$(EXEEXT): $(bwa_bam_to_mapfiles_OBJECTS) $(bwa_bam_to_mapfiles_DEPENDENCIES) $(EXTRA_bwa_bam_to_mapfiles_DEPENDENCIES) 
-	@rm -f bwa_bam_to_mapfiles$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(bwa_bam_to_mapfiles_OBJECTS) $(bwa_bam_to_mapfiles_LDADD) $(LIBS)
-
-bwa_mapdistance$(EXEEXT): $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_DEPENDENCIES) $(EXTRA_bwa_mapdistance_DEPENDENCIES) 
-	@rm -f bwa_mapdistance$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_LDADD) $(LIBS)
-
 cluster_cnv$(EXEEXT): $(cluster_cnv_OBJECTS) $(cluster_cnv_DEPENDENCIES) $(EXTRA_cluster_cnv_DEPENDENCIES) 
 	@rm -f cluster_cnv$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(cluster_cnv_OBJECTS) $(cluster_cnv_LDADD) $(LIBS)
-
-fastq_to_table$(EXEEXT): $(fastq_to_table_OBJECTS) $(fastq_to_table_DEPENDENCIES) $(EXTRA_fastq_to_table_DEPENDENCIES) 
-	@rm -f fastq_to_table$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(fastq_to_table_OBJECTS) $(fastq_to_table_LDADD) $(LIBS)
 
 filter_edit$(EXEEXT): $(filter_edit_OBJECTS) $(filter_edit_DEPENDENCIES) $(EXTRA_filter_edit_DEPENDENCIES) 
 	@rm -f filter_edit$(EXEEXT)
@@ -397,10 +364,6 @@ filter_edit$(EXEEXT): $(filter_edit_OBJECTS) $(filter_edit_DEPENDENCIES) $(EXTRA
 process_readmappings$(EXEEXT): $(process_readmappings_OBJECTS) $(process_readmappings_DEPENDENCIES) $(EXTRA_process_readmappings_DEPENDENCIES) 
 	@rm -f process_readmappings$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(process_readmappings_OBJECTS) $(process_readmappings_LDADD) $(LIBS)
-
-rename_reference$(EXEEXT): $(rename_reference_OBJECTS) $(rename_reference_DEPENDENCIES) $(EXTRA_rename_reference_DEPENDENCIES) 
-	@rm -f rename_reference$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(rename_reference_OBJECTS) $(rename_reference_LDADD) $(LIBS)
 
 teclust$(EXEEXT): $(teclust_OBJECTS) $(teclust_DEPENDENCIES) $(EXTRA_teclust_DEPENDENCIES) 
 	@rm -f teclust$(EXEEXT)
@@ -416,16 +379,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_bam_to_mapfiles2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fastq_to_table.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_edit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isbinary.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rename_reference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string_unsigned_lookup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umm_te_finder.Po@am__quote@

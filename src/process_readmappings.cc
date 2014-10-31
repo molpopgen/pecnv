@@ -21,14 +21,19 @@
 #include <cctype>
 #include <limits>
 #include <vector>
+#include <algorithm>
 #include <cassert>
+#include <sstream>
+#include <zlib.h>
+/*
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/device/file.hpp>
+*/
 #include <bwa_util.hpp>
 
 using namespace std;
-using namespace boost::iostreams;
+//using namespace boost::iostreams;
 using namespace Sequence;
 
 struct output_files
@@ -37,7 +42,8 @@ struct output_files
   string structural_fn,structural_sam_fn,
     um_u_fn,um_m_fn,um_sam_fn;
 
-  filtering_ostream structural,um_u,um_m,
+  //filtering_ostream structural,um_u,um_m,
+  gzFile structural,um_u,um_m,
     structural_sam,um_sam;
 
   output_files(const char * structural_base, const char * um_base) :
@@ -53,6 +59,38 @@ struct output_files
     um_m_fn += "_m.csv.gz";
     um_sam_fn += ".sam.gz";
 
+
+    structural = gzopen(structural_fn.c_str(),"w");
+    if ( structural == NULL ) {
+      cerr << "Error, could not open " << structural_fn
+	   << " for writing\n";
+      exit(1);
+    }
+    structural_sam = gzopen(structural_sam_fn.c_str(),"w");
+    if ( structural_sam == NULL ) {
+      cerr << "Error, could not open " << structural_sam_fn
+	   << " for writing\n";
+      exit(1);
+    }
+    um_u = gzopen(um_u_fn.c_str(),"w");
+    if ( um_u == NULL ) {
+      cerr << "Error, could not open " << um_u_fn
+	   << " for writing\n";
+      exit(1);
+    }
+    um_m = gzopen(um_m_fn.c_str(),"w");
+    if ( um_m == NULL ) {
+      cerr << "Error, could not open " << um_m_fn
+	   << " for writing\n";
+      exit(1);
+    }
+    um_sam = gzopen(um_sam_fn.c_str(),"w");
+    if ( um_sam == NULL ) {
+      cerr << "Error, could not open " << um_sam_fn
+	   << " for writing\n";
+      exit(1);
+    }
+    /*
     structural.push(gzip_compressor());
     structural.push(file_sink(structural_fn.c_str()),ios_base::out|ios_base::binary);
 
@@ -67,10 +105,17 @@ struct output_files
 
     um_sam.push(gzip_compressor());
     um_sam.push(file_sink(um_sam_fn.c_str()),ios_base::out|ios_base::binary);
+    */
   }
 
   ~output_files()
   {
+    gzclose(structural);
+    gzclose(structural_sam);
+    gzclose(um_u);
+    gzclose(um_m);
+    gzclose(um_sam);
+    /*
     structural.pop();
     structural.pop();
     structural_sam.pop();
@@ -81,8 +126,9 @@ struct output_files
     um_m.pop();
     um_sam.pop();
     um_sam.pop();
+    */
   }
-  filtering_ostream & stream(const MAPTYPE & m)
+  gzFile stream(const MAPTYPE & m)
   {
     if (m == UMU)
       {
@@ -143,8 +189,9 @@ unsigned ngaps(const vector< pair<char,
 	       unsigned> > & cigar_data);
 unsigned alen(const vector< pair<char,
 	      unsigned> > & cigar_data);
-filtering_ostream & outputM( filtering_ostream & out,
-			     const samrecord & r );
+//filtering_ostream & outputM( filtering_ostream & out,
+void outputM( gzFile out,
+	      const samrecord & r );
 
 void checkMap(const samrecord & r1,
 	      const samrecord & r2,
@@ -273,21 +320,47 @@ int main(int argc, char ** argv)
     {
       sum += unsigned(long(i->second));
     }
+  /*
   filtering_ostream mdistout;
   mdistout.push(gzip_compressor());
   mdistout.push(file_sink(mdistfile),ios_base::binary|ios_base::out);
   mdistout << "distance\tnumber\tcprob\n";
+  */
+  gzFile mdistout = gzopen(mdistfile,"w");
+  if( mdistout == NULL ) {
+    cerr << "Error: could not open "
+	 << mdistfile
+	 << " for writing\n";
+    exit(1);
+  }
+  if( gzprintf(mdistout,"%s\n","distance\tnumber\tcprob") <= 0 )
+    {
+      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
   unsigned long cum=0;
   for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
        i != mdist.end() ; ++i )
     {
       cum += unsigned(long(i->second));
+      /*
       mdistout << i->first << '\t'
 	       << i->second << '\t'
 	       << scientific << double(cum)/double(sum) << '\n';
+      */
+      if( gzprintf(mdistout,"%u\t%u\t%e\n",i->first,i->second,double(cum)/double(sum)) <= 0 )
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
     }
+  gzclose(mdistout);
+  /*
   mdistout.pop();
   mdistout.pop();
+  */
 }
 
 void checkMap(const samrecord & r1,
@@ -316,30 +389,49 @@ void checkMap(const samrecord & r1,
   if(isU1 && isU2 )
     {
       written = true;
-      of.stream(m)
-	<< r1.qname() << '\t'
-	<< r1.mapq() << '\t'
-	<< r1.rname() << '\t'
-	<< r1.pos()-1 << '\t'
-	<< r1.pos() + alignment_length(r1) -1 << '\t'
-	<< r1.flag().qstrand << '\t'
-	<< mismatches(r1) << '\t'
-	<< ngaps(r1) << '\t'
-	<< mtype2string(m) << '\n';
+      ostringstream obuffer;
+      obuffer<< r1.qname() << '\t'
+	     << r1.mapq() << '\t'
+	     << r1.rname() << '\t'
+	     << r1.pos()-1 << '\t'
+	     << r1.pos() + alignment_length(r1) -1 << '\t'
+	     << r1.flag().qstrand << '\t'
+	     << mismatches(r1) << '\t'
+	     << ngaps(r1) << '\t'
+	     << mtype2string(m) << '\t'
+      //of.stream(m)
+      //gzprintf(of.stream(m),"%s\n",obuffer.str().c_str());
 
-      of.stream(m)
-	<< r2.qname() << '\t'
-	<< r2.mapq() << '\t'
-	<< r2.rname() << '\t'
-	<< r2.pos()-1 << '\t'
-	<< r2.pos() + alignment_length(r2) -1 << '\t'
-	<< r2.flag().qstrand << '\t'
-	<< mismatches(r2) << '\t'
-	<< ngaps(r2) << '\t'
-	<< mtype2string(m) << '\n';
-
+      //obuffer.str(string());//reset the buffer
+      //obuffer << r2.qname() << '\t'
+	//<< r2.qname() << '\t'
+	     << r2.mapq() << '\t'
+	     << r2.rname() << '\t'
+	     << r2.pos()-1 << '\t'
+	     << r2.pos() + alignment_length(r2) -1 << '\t'
+	     << r2.flag().qstrand << '\t'
+	     << mismatches(r2) << '\t'
+	     << ngaps(r2) << '\t'
+	     << mtype2string(m);
+      //of.stream(m)
+      if ( gzprintf(of.stream(m),"%s\n",obuffer.str().c_str()) <= 0 )
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      obuffer.str(string());
+      obuffer << r1 << '\t' << r2;
+      /*
       of.structural_sam << r1 << '\n'
 			<< r2 << '\n';
+      */
+      if( gzprintf(of.structural_sam,"%s\n",obuffer.str().c_str()) <= 0)
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
     }
   else 
     {
@@ -349,20 +441,40 @@ void checkMap(const samrecord & r1,
 	{
 	  written = true;
 	  
-	  of.stream(output_files::UMU)
-	    << r1.qname() << '\t'
-	    << r1.mapq() << '\t'
-	    << r1.rname() << '\t'
-	    << r1.pos()-1 << '\t'
-	    << r1.pos() + alignment_length(r1) - 2 << '\t'
-	    << r1.flag().qstrand << '\t'
-	    << mismatches(r1) << '\t'
-	    << ngaps(r1) << '\n';
+	  //of.stream(output_files::UMU)
+	  ostringstream obuffer;
+	  obuffer << r1.qname() << '\t'
+		  << r1.mapq() << '\t'
+		  << r1.rname() << '\t'
+		  << r1.pos()-1 << '\t'
+		  << r1.pos() + alignment_length(r1) - 2 << '\t'
+		  << r1.flag().qstrand << '\t'
+		  << mismatches(r1) << '\t'
+		  << ngaps(r1);
+	  if( gzprintf(of.stream(output_files::UMU),
+		       "%s\n",
+		       obuffer.str().c_str()) <= 0 )
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
 	  
 	  outputM( of.stream(output_files::UMM),
 		   r2 );
+
+	  obuffer.str(string());
+	  obuffer << r1 << '\n' << r2;
+	  if( gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0 )
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  /*
 	  of.um_sam << r1 << '\n'
 		    << r2 << '\n';
+	  */
 	}
       else if(U2M1 )
 	{
@@ -370,18 +482,36 @@ void checkMap(const samrecord & r1,
 	  outputM( of.stream(output_files::UMM),
 		   r1 );
 	  
-	  of.stream(output_files::UMU)
-	    << r2.qname() << '\t'
-	    << r2.mapq() << '\t'
-	    << r2.rname() << '\t'
-	    << r2.pos()-1 << '\t'
-	    << r2.pos() + alignment_length(r2) - 2 << '\t'
-	    << r2.flag().qstrand << '\t'
-	    << mismatches(r2) << '\t'
-	    << ngaps(r2) << '\n';
-	  
+	  ostringstream obuffer;
+	  //of.stream(output_files::UMU)
+	  obuffer << r2.qname() << '\t'
+		  << r2.mapq() << '\t'
+		  << r2.rname() << '\t'
+		  << r2.pos()-1 << '\t'
+		  << r2.pos() + alignment_length(r2) - 2 << '\t'
+		  << r2.flag().qstrand << '\t'
+		  << mismatches(r2) << '\t'
+		  << ngaps(r2);// << '\n';
+	  if (gzprintf(of.stream(output_files::UMU),
+		       "%s\n",
+		       obuffer.str().c_str()) <= 0 )
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  obuffer.str(string());
+	  obuffer << r1 << '\n'<<r2;
+	  if (gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0)
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  /*
 	  of.um_sam << r1 << '\n'
 		    << r2 << '\n';
+	  */
 	}
     }
 }
@@ -550,20 +680,28 @@ vector<mapping_pos> get_mapping_pos(const samrecord & r)
   return rv;
 }
 
-filtering_ostream & outputM( filtering_ostream & out,
-			     const samrecord & r )
+//filtering_ostream & outputM( filtering_ostream & out,
+void outputM( gzFile gzout,
+	      const samrecord & r )
 {
   string name = r.qname();
   vector<mapping_pos> mpos = get_mapping_pos(r);
   for( unsigned i=0;i<mpos.size();++i)
     {
+      ostringstream out;
       out << name << '\t' << r.mapq() << '\t'
 	  << mpos[i].chrom << '\t'
 	  << mpos[i].start << '\t'
 	  << mpos[i].stop << '\t'
 	  << mpos[i].strand << '\t'
 	  << mpos[i].mm << '\t'
-	  << mpos[i].gap << '\n';
+	  << mpos[i].gap;// << '\n';
+      if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
     }
-  return out;
+  //return out;
 }
