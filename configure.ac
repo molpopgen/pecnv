@@ -45,21 +45,14 @@ AC_CHECK_HEADER(Sequence/samrecord.hpp,,[AC_MSG_ERROR([Sequence/samrecord.hpp no
 AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 
-dnl boost (only needed prior to 1.8.3)
+
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
-dnl AC_CHECK_HEADER(boost/iostreams/filtering_stream.hpp, , [AC_MSG_ERROR([boost::iostreams::filtering_stream required])])
-dnl AC_CHECK_HEADER(boost/iostreams/filter/gzip.hpp, , [AC_MSG_ERROR([boost::iostreams::gzip_compressor/decombpressor required])])
-dnl AC_CHECK_HEADER(boost/iostreams/device/file.hpp, , [AC_MSG_ERROR([boost::iostreams::filtering_stream required])])
 
-dnl AC_CHECK_LIB(zlib, gzread,,[echo "zlib runtime library does not seem to be here";exit 1])
 AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here.  Exiting.])])
-dnl AC_CHECK_LIB(hts, bgzf_read,,[AC_MSG_ERROR([htslib runtime library does not seem to be here. Exiting.])])
-
 AC_LANG_SAVE
           AC_LANG_CPLUSPLUS
           AC_REQUIRE_CPP
 	  AC_CHECK_LIB(sequence, main,,[echo "libsequence runtime library does not seem to be here";exit 1])	
-dnl 	  AC_CHECK_LIB(boost_iostreams, main,,[echo "boost_iostreams runtime library does not seem to be here";exit 1])	
 AC_LANG_RESTORE
 dnl AM_CONFIG_HEADER(config.h)
 
