@@ -32,16 +32,7 @@
 #include <zlib.h>
 #include <Sequence/IOhelp.hpp>
 
-//#include <isbinary.hpp>
-//#include <boost/bind.hpp>
-/*
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/device/file.hpp>
-*/
-
 using namespace std;
-//using namespace boost::iostreams;
 
 // DEFINITIONS OF DATA TYPES
 typedef pair<unsigned,unsigned> puu;
@@ -169,17 +160,11 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 void reduce_ends( vector<cluster> & clusters,
 		  const unsigned & INSERTSIZE );
 
-//void output_results( const vector<cluster> & clusters, const string & chrom_label , const vector< pair<unsigned,unsigned> > & ref_te_chromo);
-void output_results( //filtering_ostream & out,
-		    //gzFile out,
-		    //void output_results( ofstream & out,
-		    ostringstream & out,
+void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label , const vector< pair<unsigned,unsigned> > & ref_te_chromo);
 
-//template<typename streamtype>
-void read_raw_data(//streamtype & in, 
-		   gzFile gzin,
+void read_raw_data(gzFile gzin,
 		   map<unsigned,vector<puu> > & raw_data,
 		   vector<pair<string,unsigned> > * chrom_labels )
 /*
@@ -192,7 +177,7 @@ void read_raw_data(//streamtype & in,
   string chrom_label;
   map<unsigned,vector<puu> >::iterator itr;
   unsigned nread=0;
-  //  while(!in.eof())
+
   do
     {
       auto nextline = Sequence::IOhelp::gzreadline(gzin);
@@ -253,46 +238,11 @@ int main( int argc, char ** argv )
 	exit(10);
       }
       read_raw_data(in,raw_data, &chrom_labels );
-      /*
-      if( isbinary(argv[i]) )
-	{
-	  filtering_istream in;
-	  in.push(gzip_decompressor());
-	  in.push(file_source(argv[i],ios_base::in|ios_base::binary));
-	  if(!in)
-	    {
-	      cerr << "cannot read " << argv[i] << '\n';
-	      exit(10);
-	    }
-	  read_raw_data(in,raw_data, &chrom_labels );
-	}
-      else
-	{
-	  ifstream in(argv[i]);
-	  if(!in)
-	    {
-	      cerr << "cannot read " << argv[i] << '\n';
-	      exit(10);
-	    }
-	  read_raw_data(in,raw_data, &chrom_labels );
-	}
-      for( map<unsigned,vector<puu> >::iterator itr = raw_data.begin() ; 
-	   itr != raw_data.end() ; ++itr )
-	{
-	  std::sort(itr->second.begin(),itr->second.end(),puu_less());
-	}
-      */
     }
 
   map< unsigned, vector< pair<unsigned,unsigned> > > reference_te;
   get_ref_te(reference_te, reference_datafile,chrom_labels);
   
-  /*
-  filtering_ostream out;
-  out.push(gzip_compressor());
-  out.push(file_sink(outfile,ios_base::out|ios_base::binary));
-  */
-  //ofstream out(outfile);
   ostringstream out;
   out << "chromo\t"
       << "nplus\t"
@@ -315,10 +265,6 @@ int main( int argc, char ** argv )
 		     lookup_string(chrom_labels,itr->first),
 		     reference_te[itr->first]);
     }
-  /*
-  out.pop();
-  out.pop();
-  */
   gzFile gzout = gzopen(outfile,"w");
   if(gzout == NULL) {
     cerr << "Error: could not open "
@@ -326,6 +272,9 @@ int main( int argc, char ** argv )
 	 << " for writing\n";
     exit(10);
   }
+  //Make sure the buffer is adequate
+  //8912 is the zlib default
+  gzbuffer(gzout,max(8192u,unsigned(out.str().size())+1));
   if(gzprintf(gzout,"%s",out.str().c_str())<=0)
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
@@ -619,9 +568,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
   */
 }
 
-void output_results( //ofstream & out,
-		    //filtering_ostream & out,
-		    ostringstream & out,
+void output_results( ostringstream & out,
 		     const vector<pair<cluster,cluster> > & clusters, 
 		     const string & chrom_label , 
 		     const vector< pair<unsigned,unsigned> > & ref_te_chromo )

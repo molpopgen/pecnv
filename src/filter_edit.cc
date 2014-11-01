@@ -8,28 +8,19 @@
 #include <iostream>
 #include <fstream>
 #include <cassert> 
-#include <boost/bind.hpp>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <utility>
 #include <sstream>
-/*
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/device/file.hpp>
-*/
 #include <cctype>
-//#include <isbinary.hpp>
 
 #include <Sequence/IOhelp.hpp>
 
 using namespace std;
-//using namespace boost;
-//using namespace boost::iostreams;
 
-//void read_file (const char * file, char * outfile, int filter);
 void printout( const char * infile, const char * outfile, int filter);
+
 int main(int argc, char ** argv)
 {
   
@@ -37,23 +28,14 @@ int main(int argc, char ** argv)
   const char * file = argv[argn++];
   char * outfile = argv[argn++];//for novel
   const int filter = atoi(argv[argn++]);
-  
-  //read_file(file, outfile, filter);
   printout(file,outfile,filter);
 }
 
-//template<typename streamtype> 
-//void printout( streamtype & in, char * outfile, int filter)
 void printout( const char * infile, const char * outfile, int filter)
 {
   int nplus, nminus;
   string temp, pdist, mdist, mfirst, mlast, chromo, pfirst, plast, pin, min;
 
-  /*
-  filtering_ostream outstream;
-  outstream.push(gzip_compressor());
-  outstream.push(file_sink(outfile,ios_base::out|ios_base::binary));  
-  */
   ostringstream outstream;
 
   gzFile gzin = gzopen(infile,"r");
@@ -64,17 +46,14 @@ void printout( const char * infile, const char * outfile, int filter)
     exit(1);
   }
 
-  //getline(in, temp);
   auto line = Sequence::IOhelp::gzreadline(gzin);
   int maxdist;
   string na = ("NA");
   maxdist = 1000;
   outstream << "chromo" << "\t" <<  "nplus" << "\t" << "nminus" << "\t" << "pfirst" << "\t" << "plast" << "\t" << "pdist" << "\t" << "pin" << "\t" << "mfirst" << "\t" << "mlast" << "\t" << "mdist" << "\t" << "min" << endl;
 
-  //while(! in.eof() )
   do
     {
-
       int pdisttemp, mdisttemp, pintemp, mintemp;
 
       pdisttemp = -1;
@@ -84,7 +63,6 @@ void printout( const char * infile, const char * outfile, int filter)
       line = Sequence::IOhelp::gzreadline(gzin);
       istringstream in(line.first);
       in >> chromo >> nplus >> nminus >> pfirst >> plast >> pdist >> pin >> mfirst >> mlast >> mdist >> min >> ws;
-      // cout << chromo << "\t" << nplus << "\t" << nminus << "\t" << pfirst << "\t" << plast << "\t" << pdist << "\t" << pin << "\t" << mfirst << "\t" << mlast << "\t" << mdist << "\t" << min << endl;
 
       //first check to see if pdist and mdist are NA or values
 
@@ -128,6 +106,9 @@ void printout( const char * infile, const char * outfile, int filter)
 	 << " for writing.\n";
     exit(10);
   }
+  //Make sure the buffer is adequate
+  //8912 is the zlib default
+  gzbuffer(gzin,max(8192u,unsigned(outstream.str().size())+1));
   if( gzprintf(gzin,"%s",outstream.str().c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
@@ -137,18 +118,3 @@ void printout( const char * infile, const char * outfile, int filter)
   gzclose(gzin);
 }
 
-// void read_file (const char * file, char * outfile,  int filter)
-// {
-//   if( isbinary(file) )
-//     {
-//       filtering_istream in;
-//       in.push(gzip_decompressor());
-//       in.push(file_source(file,ios_base::in|ios_base::binary));
-//       printout(in,outfile,filter);
-//     }
-//   else
-//     {
-//       ifstream in(file);
-//       printout(in,outfile, filter);
-//     }
-// }

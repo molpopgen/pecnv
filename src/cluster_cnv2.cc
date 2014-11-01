@@ -32,20 +32,10 @@
 #include <limits>
 #include <Sequence/IOhelp.hpp>
 #include <zlib.h>
-/*
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/device/file.hpp>
-*/
-//#include <boost/bind.hpp>
-
 #include <string_unsigned_lookup.hpp>
-//#include <isbinary.hpp>
 #include <file_util.hpp>
 
 using namespace std;
-//using namespace boost;
-//using namespace boost::iostreams;
 
 const unsigned UMAX = numeric_limits<unsigned>::max();
 std::string make_readname(const unsigned & line,
@@ -61,16 +51,12 @@ struct linkeddata
 	     const unsigned & __b,
 	     const unsigned & __bS,
 	     const string & __readname,
-	     /*
-	       const unsigned & line,
-	       const unsigned & lane, const unsigned & pair,
-	     */
 	     const short & _strand1,
 	     const short & _strand2) : a(__a),
 				       aS(__aS),
 				       b(__b),
 				       bS(__bS),
-				       readname( __readname ), //make_readname(line,lane,pair) ),
+				       readname( __readname ),
 				       strand1(_strand1),strand2(_strand2)
   {
   }
@@ -129,17 +115,6 @@ bool unique_positions(const vector<linkeddata> & data,
 		      const unsigned & start2,
 		      const unsigned & stop2);
 
-/*
-bool unique_positions_by_lane(const vector<linkeddata> & data,
-			      const unsigned & start,
-			      const unsigned & stop,
-			      const unsigned & start2,
-			      const unsigned & stop2,
-			      const unsigned & lane,
-			      const bool & check_lane = false);
-*/
-
-//void write_clusters( filtering_ostream & o,
 void write_clusters( gzFile o,
 		     const string & chrom1,
 		     const string & chrom2,
@@ -147,13 +122,10 @@ void write_clusters( gzFile o,
 		     unsigned * eventid );
 
 
-//template<typename streamtype>
 void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       map<unsigned,vector<linkeddata> > & raw_par,
 		       map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
 		       gzFile lin,
-		       //streamtype & lin,
-		       //streamtype & rin,	      
 		       const unsigned & min_mqual,
 		       const unsigned & max_mm,
 		       const unsigned & max_gap,
@@ -161,62 +133,29 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       unsigned * chrom_index)
 {
   string chrom_label,chrom_label2,pairname,pairname2;
-  //unsigned line,lane,pair,read,
   unsigned mqual,chrom,strand,mm,gap,
-    //line2,lane2,pair2,read2,
     mqual2,chrom2,strand2,mm2,gap2;
 
   int start,stop,start2,stop2;
   std::string type,type2;
 
-  //while(! lin.eof() )
   do
     {
-      /*
-	lin >> line >> lane >> pair >> read 
-	>> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type >> ws;
-	rin >> line2 >> lane2 >> pair2 >> read2 
-	>> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      */
-      /*
-      lin >> pairname
-	  >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
-	  >> pairname2
-	  >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      */
-      
       //Very lazy input method...
       auto data = Sequence::IOhelp::gzreadline(lin);
       istringstream pdata(data.first);
       pdata >> pairname
 	    >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
-	//>> pairname2
 	    >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      //if(pairname != pairname2) { cerr << pairname << ' ' << pairname2 << ' ' << type << ' ' << type2 << '\n'; }
-      //assert(pairname == pairname2);
       chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
       chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
-      /*
-      assert(type==type2);
-      assert(line==line2);
-      assert(lane==lane2);
-      assert(pair==pair2);
-      */
+
       if( mqual >= min_mqual && mqual2 >= min_mqual &&
 	  mm <= max_mm && gap <= max_gap &&
 	  mm2 <= max_mm && gap2 <= max_gap )
 	{
 	  if(type == "DIV")
 	    {
-	      /*
-	      if ( unique_positions_by_lane(raw_div[chrom],
-						(strand==0) ? start2 : start,
-						(strand==0) ? stop2 : stop,
-						(strand==0) ? start : start2,
-						(strand==0) ? stop : stop2,
-						lane) )
-		    {
-	      */
 	      if ( unique_positions(raw_div[chrom],
 				    (strand==0) ? start2 : start,
 				    (strand==0) ? stop2 : stop,
@@ -230,22 +169,9 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 							(strand==0) ? stop : stop2,
 							pairname,1,0 ) );
 		}
-						    //line,lane,pair,1,0 ) );
-		      /*
-			}
-		      */
 	    }
 	  else if (type == "PAR")
 	    {
-	      /*
-	      if ( unique_positions_by_lane(raw_par[chrom],
-					    (start<start2) ? start : start2,
-					    (start<start2) ? stop : stop2,
-					    (start<start2) ? start2 : start,
-					    (start<start2) ? stop2 : stop,
-					    lane) )
-		{
-	      */
 	      if ( unique_positions(raw_par[chrom],
 				    (start<start2) ? start : start2,
 				    (start<start2) ? stop : stop2,
@@ -256,13 +182,10 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 							(start<start2) ? stop : stop2,
 							(start<start2) ? start2 : start,
 							(start<start2) ? stop2 : stop,
-							pairname,//line,lane,pair,
+							pairname,
 							(start<start2) ? strand : strand2,
 							(start<start2) ? strand2 : strand ));
 		}
-		  /*
-		    }
-		  */
 	    }
 	  else if (type == "UL")
 	    {
@@ -274,19 +197,11 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		  swap(stop,stop2);
 		  swap(strand,strand2);
 		}
-	      /*
-		if ( unique_positions_by_lane(raw_ul[chrom][chrom2],start,stop,start2,stop2,lane) )
-		{
-	      */
 	      if ( unique_positions(raw_ul[chrom][chrom2],start,stop,start2,stop2) )
 		{
 		  raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
 							      pairname,strand,strand2) );
 		}
-	      //line,lane,pair,strand,strand2) );
-	      /*
-		}
-	      */
 	    }
 #ifndef NDEBUG
 	  else
@@ -302,7 +217,6 @@ void read_data( map<unsigned,vector<linkeddata> > & raw_div,
 		map<unsigned,vector<linkeddata> > & raw_par,
 		map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
 		const char * left,
-		//const char * right,
 		const unsigned & min_mqual,
 		const unsigned & max_mm,
 		const unsigned & max_gap,
@@ -318,23 +232,6 @@ void read_data( map<unsigned,vector<linkeddata> > & raw_div,
   }
   read_data_details( raw_div,raw_par,raw_ul , input, min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
   gzclose(input);
-  /*
-  if( isbinary(left) ) //&& isbinary(right) )
-    {
-      filtering_istream il;
-      il.push(gzip_decompressor());
-      il.push(file_source(left,ios_base::in|ios_base::binary));
-
-      gzFile input = gzopen(left,"r");
-      read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
-      gzclose(input);
-    }
-  else
-    {
-      ifstream il(left);//,ir(right);
-      read_data_details( raw_div,raw_par,raw_ul , il,min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
-    }
-  */
 }
 		
 
@@ -373,18 +270,13 @@ int main(int argc, char ** argv)
 	 << divfile
 	 << " for writing\n";
   }
+  gzbuffer(divstream,65536);
   if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-  /*
-  filtering_ostream divstream;
-  divstream.push(gzip_compressor());
-  divstream.push(file_sink(divfile,ios_base::out|ios_base::binary));
-  divstream << header << '\n';
-  */
   if( file_exists(parfile) )
     {
       cerr << "error: " << parfile << " already exists, and we don't want to accidentally over-write something important!\n";
@@ -397,19 +289,13 @@ int main(int argc, char ** argv)
 	 << parfile << " for writing\n";
     exit(1);
   }
-    
+  gzbuffer(parstream,65536);
   if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-  /*
-  filtering_ostream parstream;
-  parstream.push(gzip_compressor());
-  parstream.push(file_sink(parfile,ios_base::out|ios_base::binary));
-  parstream << header << '\n';
-  */
 
   if( file_exists(ulfile) )
     {
@@ -424,18 +310,14 @@ int main(int argc, char ** argv)
 	   << " for writing\n";
       exit(1);
     }
+  gzbuffer(ulstream,65536);
   if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-  /*
-  filtering_ostream ulstream;
-  ulstream.push(gzip_compressor());
-  ulstream.push(file_sink(ulfile,ios_base::out|ios_base::binary));
-  ulstream << header << '\n';
-  */
+
   map<unsigned, vector<linkeddata> > raw_div;
   map<unsigned, vector<linkeddata> > raw_par;
   map<unsigned, map<unsigned,vector<linkeddata> > > raw_ul;
@@ -444,10 +326,8 @@ int main(int argc, char ** argv)
   for(int i = argn;i<argc;++i)//i+=2)
     {
       cerr << "processing " << argv[i] << '\n';
-	//<< " and " << argv[i+1] << '\n';
       read_data(raw_div,raw_par,raw_ul,
 		argv[i],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
-		//argv[i],argv[i+1],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
     }
 
   unsigned eventid=0;
@@ -517,43 +397,6 @@ bool unique_positions(const vector<linkeddata> & data,
     }
   return true;
 }
-
-/*
-bool unique_positions_by_lane(const vector<linkeddata> & data,
-			      const unsigned & start,
-			      const unsigned & stop,
-			      const unsigned & start2,
-			      const unsigned & stop2,
-			      const unsigned & lane,
-			      const bool & check_lane)
-{
-  for(unsigned i=0;i<data.size();++i)
-    {
-      if( start == data[i].a &&
-	  //stop == data[i].aS &&
-	  start2 == data[i].b )
-	  //stop2 == data[i].bS )
-	{
-	  if(check_lane)
-	    {
-	      string temp(data[i].readname);
-	      string::size_type colon1 = temp.find(':');
-	      string::size_type colon2 = temp.find(':',colon1+1);
-	      unsigned this_read_pair_lane = atoi( string(temp.begin()+colon1+1,temp.begin()+colon2).c_str() );
-	      if( lane == this_read_pair_lane )
-		{
-		  return false;
-		}
-	    }
-	  else
-	    {
-	      return false;
-	    }
-	}
-    }
-  return true;
-}
-*/
 
 /*
   OLD VERSION, USED IN DGRP
@@ -736,9 +579,15 @@ void write_clusters( gzFile gzout,
 	<< min1 << '\t' << max1 << '\t'
 	<< chrom2 << '\t'
 	<< clusters[i][0]->strand2 << '\t'
-	<< min2 << '\t' << max2 << '\t'
-	<< readnames;// << '\n';
-      if ( gzprintf(gzout,"%s\n",o.str().c_str()) <= 0 )
+	<< min2 << '\t' << max2 << '\t';
+      int rv;
+      if ( (rv = gzprintf(gzout,"%s",o.str().c_str())) <= 0 )
+	{
+	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      if ( (rv = gzprintf(gzout,"%s\n",readnames.c_str())) <= 0 )
 	{
 	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';

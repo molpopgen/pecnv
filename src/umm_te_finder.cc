@@ -16,15 +16,7 @@
 #include <sstream>
 #include <Sequence/IOhelp.hpp>
 
-/*
-#include <isbinary.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/device/file.hpp>
-*/
-
 using namespace std;
-//using namespace boost::iostreams;
 
 typedef map<string,unsigned> maptype;
 struct teinfo
@@ -50,100 +42,14 @@ struct iste : public binary_function<teinfo,teinfo,bool>
   }
 };
 
-
-//template<typename streamtype>
 void read_data( maptype & umm,
 		vector<teinfo> & refdata,
-		//streamtype & in,
 		gzFile gzin,
-		const unsigned & minmqual)
-{
-  //unsigned line,lane,pair,read,
-  string readname;
-  unsigned mq;
-  string chrom;
-  unsigned start,stop;
-  string temp;
-  //while( ! in.eof() )
-  do
-    {
-      //in >> line >> lane >> pair >> read >> mq
-      auto line = Sequence::IOhelp::gzreadline(gzin);
-      istringstream in(line.first);
-      in >> readname >> mq
-	 >> chrom >> start >> stop;
-      //getline(in,temp);
-      //in >> ws;
+		const unsigned & minmqual);
 
-      if( mq >= minmqual ) //filter on mapping quality
-	{
-	  //is this guy a TE?
-	  if(!refdata.empty())
-	    {
-	      vector<teinfo>::iterator itr = find_if(refdata.begin(),refdata.end(),
-						     //bind2nd(iste(),
-						     std::bind(iste(),std::placeholders::_1,
-							       teinfo(chrom,start,stop)));
-	      if ( itr != refdata.end() )
-		{
-		  //umm.insert(pair);
-		  umm[readname]=1;
-		}
-	    }
-	  else
-	    {
-	      //umm.insert(pair);
-	      umm[readname]=1;
-	    }
-	}
-    } while(!gzeof(gzin));
-}
-
-//template<typename istreamtype,
-//typename ostreamtype>
-void read_umu( //istreamtype & in,
-	      //ostreamtype & out,
-	      gzFile gzin,
+void read_umu(gzFile gzin,
 	      gzFile gzout,
-	      maptype & pairs)
-{
-  //unsigned line,lane,pair,read,mq;
-  string readname;
-  unsigned mq;
-  string chrom;
-  unsigned start,stop,strand;
-  string temp;
-  unsigned nfound = 0;
-  //while( ! in.eof() )
-  do
-    {
-      //in >> line >> lane >> pair >> read >> mq
-      auto line = Sequence::IOhelp::gzreadline(gzin);
-      istringstream in(line.first);
-      in >> readname >> mq
-	 >> chrom >> start >> stop >> strand;
-      //getline(in,temp);
-      //in >> ws;
-      //if( find(pairs.begin(),pairs.end(),pair) != pairs.end() )
-      //if(pairs.find(pair) != pairs.end())
-      if(pairs.find(readname) != pairs.end())
-	{
-	  /*
-	  out << start << '\t'
-	      << chrom << '\t' 
-	      << strand << '\n';
-	  */
-	  if( gzprintf(gzout,"%u\t%s\t%u\n",start,chrom.c_str(),strand) <= 0 )
-	    {
-	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
-	  ++nfound;
-	  if(nfound == pairs.size()) return;
-	}
-    } while(!gzeof(gzin));
-}
+	      maptype & pairs);
 
 int main( int argc, char ** argv )
 {
@@ -197,23 +103,7 @@ int main( int argc, char ** argv )
     exit(10);
   }
   read_data(umm,refdata,gzin,minmqual);
-  /*
-  if( isbinary(umm_mapfile) )
-    {
-      filtering_istream gzin;
-      gzin.push(gzip_decompressor());
-      gzin.push(file_source(umm_mapfile));
-      read_data(umm,
-		refdata,
-		gzin,minmqual);
-    }
-  else
-    {
-      ifstream in(umm_mapfile);
-      read_data(umm,refdata,
-		in,minmqual);
-    }
-  */
+
   gzclose(gzin);
   cerr << "finished um_m file\n";
   gzin = gzopen(umu_mapfile,"r");
@@ -224,18 +114,82 @@ int main( int argc, char ** argv )
     exit(10);
   }
   read_umu(gzin,gzout,umm);
-  /*
-  if ( isbinary(umu_mapfile) )
+}
+
+void read_data( maptype & umm,
+		vector<teinfo> & refdata,
+		gzFile gzin,
+		const unsigned & minmqual)
+{
+  //unsigned line,lane,pair,read,
+  string readname;
+  unsigned mq;
+  string chrom;
+  unsigned start,stop;
+  string temp;
+  //while( ! in.eof() )
+  do
     {
-      filtering_istream gzin;
-      gzin.push(gzip_decompressor());
-      gzin.push(file_source(umu_mapfile));
-      read_umu(gzin,out,umm);
-    }
-  else
+      auto line = Sequence::IOhelp::gzreadline(gzin);
+      istringstream in(line.first);
+      in >> readname >> mq
+	 >> chrom >> start >> stop;
+
+      if( mq >= minmqual ) //filter on mapping quality
+	{
+	  //is this guy a TE?
+	  if(!refdata.empty())
+	    {
+	      vector<teinfo>::iterator itr = find_if(refdata.begin(),refdata.end(),
+						     //bind2nd(iste(),
+						     std::bind(iste(),std::placeholders::_1,
+							       teinfo(chrom,start,stop)));
+	      if ( itr != refdata.end() )
+		{
+		  //umm.insert(pair);
+		  umm[readname]=1;
+		}
+	    }
+	  else
+	    {
+	      //umm.insert(pair);
+	      umm[readname]=1;
+	    }
+	}
+    } while(!gzeof(gzin));
+}
+
+void read_umu(gzFile gzin,
+	      gzFile gzout,
+	      maptype & pairs)
+{
+  string readname;
+  unsigned mq;
+  string chrom;
+  unsigned start,stop,strand;
+  string temp;
+  unsigned nfound = 0;
+  do
     {
-      ifstream in(umu_mapfile);
-      read_umu(in,out,umm);
-    }
-  */
+      auto line = Sequence::IOhelp::gzreadline(gzin);
+      istringstream in(line.first);
+      in >> readname >> mq
+	 >> chrom >> start >> stop >> strand;
+      if(pairs.find(readname) != pairs.end())
+	{
+	  /*
+	  out << start << '\t'
+	      << chrom << '\t' 
+	      << strand << '\n';
+	  */
+	  if( gzprintf(gzout,"%u\t%s\t%u\n",start,chrom.c_str(),strand) <= 0 )
+	    {
+	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  ++nfound;
+	  if(nfound == pairs.size()) return;
+	}
+    } while(!gzeof(gzin));
 }
