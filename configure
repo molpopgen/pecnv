@@ -4929,6 +4929,63 @@ fi
 
 
 
+
+
+          ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lsequence" >&5
+$as_echo_n "checking for main in -lsequence... " >&6; }
+if ${ac_cv_lib_sequence_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsequence  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_sequence_main=yes
+else
+  ac_cv_lib_sequence_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sequence_main" >&5
+$as_echo "$ac_cv_lib_sequence_main" >&6; }
+if test "x$ac_cv_lib_sequence_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSEQUENCE 1
+_ACEOF
+
+  LIBS="-lsequence $LIBS"
+
+else
+  echo "libsequence runtime library does not seem to be here";exit 1
+fi
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 $as_echo_n "checking for gzread in -lz... " >&6; }
 if ${ac_cv_lib_z_gzread+:} false; then :
@@ -5025,62 +5082,6 @@ else
   HAVE_HTSLIB_TRUE='#'
   HAVE_HTSLIB_FALSE=
 fi
-
-
-
-          ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-
-	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lsequence" >&5
-$as_echo_n "checking for main in -lsequence... " >&6; }
-if ${ac_cv_lib_sequence_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsequence  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_sequence_main=yes
-else
-  ac_cv_lib_sequence_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_sequence_main" >&5
-$as_echo "$ac_cv_lib_sequence_main" >&6; }
-if test "x$ac_cv_lib_sequence_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSEQUENCE 1
-_ACEOF
-
-  LIBS="-lsequence $LIBS"
-
-else
-  echo "libsequence runtime library does not seem to be here";exit 1
-fi
-
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 cat >confcache <<\_ACEOF

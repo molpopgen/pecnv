@@ -52,9 +52,6 @@ AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not foun
 
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
 
-AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here.  Exiting.])])
-AC_CHECK_LIB(hts, bgzf_read,FOUND_HTSLIB_LIBRARY=1,[AC_MSG_ERROR([htslib runtime library does not seem to be here.  Exiting.])])
-AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_LIBRARY = x1 )
 
 AC_LANG_SAVE
           AC_LANG_CPLUSPLUS
@@ -62,5 +59,9 @@ AC_LANG_SAVE
 	  AC_CHECK_LIB(sequence, main,,[echo "libsequence runtime library does not seem to be here";exit 1])	
 AC_LANG_RESTORE
 dnl AM_CONFIG_HEADER(config.h)
+
+AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here.  Exiting.])])
+AC_CHECK_LIB(hts, bgzf_read,FOUND_HTSLIB_LIBRARY=1,[AC_MSG_ERROR([htslib runtime library does not seem to be here.  Exiting.])])
+AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_LIBRARY = x1 )
 
 AC_OUTPUT
