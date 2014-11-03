@@ -32,7 +32,7 @@ This code has been used by the lab for detecting tandem duplications from short-
 
 This software requires the following libraries to compile:
 
-1. [libsequence](http://www.github.com/molpopgen/libsequence) - version 1.8.0 or greater
+1. [libsequence](http://www.github.com/molpopgen/libsequence) - version 1.8.3 or greater
 2. [boost](http://www.boost.org) - version 1.5.3 or greater
 
 ##Compilation and installation
