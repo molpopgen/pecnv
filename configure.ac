@@ -1,7 +1,7 @@
 AC_PREREQ(2.59)
 M
 AC_INIT(pecnv, [0.1.2], [https://github.com/molpopgen/pecnv])
-AC_CONFIG_SRCDIR([src/bwa_mapdistance.cc])
+AC_CONFIG_SRCDIR([src/process_readmappings.cc])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config-h.in])
 
