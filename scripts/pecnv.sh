@@ -84,6 +84,11 @@ if [ ! -e $REFERENCE.bwt ]
 then
     >&2 echo "Reference does not seem to have been indexed.  Running bwa index..."
     bwa index $REFERENCE
+    if [ ! -e $REFERENCE.bwt ]
+    then
+	>&2 echo "Error: I tried to index your reference, but still cannot find $REFERENCE.bwt.  Perhaps there is a permissions issue?"
+	exit;
+    fi
 fi
 
 if [ ! -d $OUTDIR ]
@@ -138,12 +143,12 @@ fi
 
 
 ###4. Collect unusual read pairings
-samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/cnv_mappings $OUTDIR/um $OUTDIR/mdist.gz
+samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###5. Get quantile of mapping distance
-Rscript -e "x=read.table(\"$OUTDIR/mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/mquant.txt\")"
+Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
 
 MD=`head -n 1 $OUTDIR/mquant.txt`
 
 ###6. Cluster
-cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/div_clusters.gz  $OUTDIR/par_clusters.gz  $OUTDIR/ul_clusters.gz $OUTDIR/cnv_mappings.csv.gz
+cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
