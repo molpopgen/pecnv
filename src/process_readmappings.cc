@@ -58,7 +58,6 @@ struct output_files
 	   << " for writing\n";
       exit(1);
     }
-    gzbuffer(structural,65536);
 
     structural_sam = gzopen(structural_sam_fn.c_str(),"w");
     if ( structural_sam == NULL ) {
@@ -66,7 +65,6 @@ struct output_files
 	   << " for writing\n";
       exit(1);
     }
-    gzbuffer(structural_sam,65536);
 
     um_u = gzopen(um_u_fn.c_str(),"w");
     if ( um_u == NULL ) {
@@ -74,7 +72,6 @@ struct output_files
 	   << " for writing\n";
       exit(1);
     }
-    gzbuffer(um_u,65536);
 
     um_m = gzopen(um_m_fn.c_str(),"w");
     if ( um_m == NULL ) {
@@ -82,7 +79,6 @@ struct output_files
 	   << " for writing\n";
       exit(1);
     }
-    gzbuffer(um_m,65536);
 
     um_sam = gzopen(um_sam_fn.c_str(),"w");
     if ( um_sam == NULL ) {
@@ -90,7 +86,6 @@ struct output_files
 	   << " for writing\n";
       exit(1);
     }
-    gzbuffer(um_sam,65536);
   }
 
   ~output_files()
@@ -362,18 +357,18 @@ void checkMap(const samrecord & r1,
 	     << r2.flag().qstrand << '\t'
 	     << mismatches(r2) << '\t'
 	     << ngaps(r2) << '\t'
-	     << mtype2string(m);
-      if ( gzprintf(of.stream(m),"%s\n",obuffer.str().c_str()) <= 0 )
+	     << mtype2string(m) << '\n';
+      if(!gzwrite(of.stream(m),obuffer.str().c_str(),obuffer.str().size()))
 	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
       obuffer.str(string());
-      obuffer << r1 << '\t' << r2;
-      if( gzprintf(of.structural_sam,"%s\n",obuffer.str().c_str()) <= 0)
+      obuffer << r1 << '\n' << r2 << '\n';
+      if(!gzwrite(of.structural_sam,obuffer.str().c_str(),obuffer.str().size()))
 	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
@@ -394,12 +389,13 @@ void checkMap(const samrecord & r1,
 		  << r1.pos() + alignment_length(r1) - 2 << '\t'
 		  << r1.flag().qstrand << '\t'
 		  << mismatches(r1) << '\t'
-		  << ngaps(r1);
-	  if( gzprintf(of.stream(output_files::UMU),
-		       "%s\n",
-		       obuffer.str().c_str()) <= 0 )
+		  << ngaps(r1) << '\n';
+	  // if( gzprintf(of.stream(output_files::UMU),
+	  // 	       "%s\n",
+	  // 	       obuffer.str().c_str()) <= 0 )
+	  if(!gzwrite(of.stream(output_files::UMU),obuffer.str().c_str(),obuffer.str().size()))
 	    {
-	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 		   << " of " << __FILE__ << '\n';
 	      exit(1);
 	    }
@@ -409,9 +405,10 @@ void checkMap(const samrecord & r1,
 
 	  obuffer.str(string());
 	  obuffer << r1 << '\n' << r2;
-	  if( gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0 )
+	  //if( gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0 )
+	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
 	    {
-	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 		   << " of " << __FILE__ << '\n';
 	      exit(1);
 	    }
@@ -430,20 +427,25 @@ void checkMap(const samrecord & r1,
 		  << r2.pos() + alignment_length(r2) - 2 << '\t'
 		  << r2.flag().qstrand << '\t'
 		  << mismatches(r2) << '\t'
-		  << ngaps(r2);// << '\n';
+	    	  << ngaps(r2) << '\n';
+	  /*
 	  if (gzprintf(of.stream(output_files::UMU),
 		       "%s\n",
 		       obuffer.str().c_str()) <= 0 )
+	  */
+	  if(!gzwrite(of.stream(output_files::UMU),
+		      obuffer.str().c_str(),obuffer.str().size()))
 	    {
-	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 		   << " of " << __FILE__ << '\n';
 	      exit(1);
 	    }
 	  obuffer.str(string());
-	  obuffer << r1 << '\n'<<r2;
-	  if (gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0)
+	  obuffer << r1 << '\n'<<r2 << '\n';
+	  //if (gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0)
+	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
 	    {
-	      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 		   << " of " << __FILE__ << '\n';
 	      exit(1);
 	    }
@@ -630,9 +632,10 @@ void outputM( gzFile gzout,
 	  << mpos[i].strand << '\t'
 	  << mpos[i].mm << '\t'
 	  << mpos[i].gap;// << '\n';
-      if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+      //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+      if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
 	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}

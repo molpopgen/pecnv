@@ -272,12 +272,9 @@ int main( int argc, char ** argv )
 	 << " for writing\n";
     exit(10);
   }
-  //Make sure the buffer is adequate
-  //8912 is the zlib default
-  gzbuffer(gzout,max(8192u,unsigned(out.str().size())+1));
-  if(gzprintf(gzout,"%s",out.str().c_str())<=0)
+  if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
     {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }

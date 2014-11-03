@@ -270,8 +270,7 @@ int main(int argc, char ** argv)
 	 << divfile
 	 << " for writing\n";
   }
-  gzbuffer(divstream,65536);
-  if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
+ if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
@@ -289,7 +288,6 @@ int main(int argc, char ** argv)
 	 << parfile << " for writing\n";
     exit(1);
   }
-  gzbuffer(parstream,65536);
   if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
@@ -310,7 +308,6 @@ int main(int argc, char ** argv)
 	   << " for writing\n";
       exit(1);
     }
-  gzbuffer(ulstream,65536);
   if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
@@ -562,12 +559,17 @@ void write_clusters( gzFile gzout,
 	    << clusters[i][j]->strand2;
 	  if ( readnames.empty() )
 	    {
-	      readnames += clusters[i][j]->readname;
+	      auto hashpos = clusters[i][j]->readname.find('#');
+	      readnames += string(clusters[i][j]->readname.begin(),
+				  clusters[i][j]->readname.begin()+hashpos);
 	    }
 	  else
 	    {
 	      readnames += "|";
-	      readnames += clusters[i][j]->readname;
+	      auto hashpos = clusters[i][j]->readname.find('#');
+	      readnames += string(clusters[i][j]->readname.begin(),
+				  clusters[i][j]->readname.begin()+hashpos);
+	      //readnames += clusters[i][j]->readname;
 	    }
 	  readnames += t.str();
 	}
@@ -579,17 +581,12 @@ void write_clusters( gzFile gzout,
 	<< min1 << '\t' << max1 << '\t'
 	<< chrom2 << '\t'
 	<< clusters[i][0]->strand2 << '\t'
-	<< min2 << '\t' << max2 << '\t';
-      int rv;
-      if ( (rv = gzprintf(gzout,"%s",o.str().c_str())) <= 0 )
+	//<< min2 << '\t' << max2 << '\t';
+	<< min2 << '\t' << max2 << '\t'
+	<< readnames << '\n';
+      if(!gzwrite(gzout,o.str().c_str(),o.str().size()))
 	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-      if ( (rv = gzprintf(gzout,"%s\n",readnames.c_str())) <= 0 )
-	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}

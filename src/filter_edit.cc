@@ -106,12 +106,9 @@ void printout( const char * infile, const char * outfile, int filter)
 	 << " for writing.\n";
     exit(10);
   }
-  //Make sure the buffer is adequate
-  //8912 is the zlib default
-  gzbuffer(gzin,max(8192u,unsigned(outstream.str().size())+1));
-  if( gzprintf(gzin,"%s",outstream.str().c_str()) <= 0 )
+  if(! gzwrite(gzin,outstream.str().c_str(),outstream.str().size() ) )
     {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
