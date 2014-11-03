@@ -34,6 +34,9 @@ This software requires the following libraries to compile:
 
 1. [libsequence](http://www.github.com/molpopgen/libsequence) - version 1.8.3 or greater
 2. [zlib](http://zlib.net) (This is a also a libsequence dependency)
+3. [htslib](http://htslib.org)
+
+__Please make sure that your installation of libsequence makes use of htslib.  That requires that htslib be installed prior to installing libsequence, so that the latter will compile features depending on the former.__
 
 ##Compilation and installation
 
