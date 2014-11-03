@@ -140,6 +140,18 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
 SOURCES = $(cluster_cnv_SOURCES) $(filter_edit_SOURCES) \
 	$(process_readmappings_SOURCES) $(teclust_SOURCES) \
 	$(umm_te_finder_SOURCES)
@@ -271,11 +283,11 @@ top_srcdir = @top_srcdir@
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
 #bwa_mapdistance_SOURCES=bwa_mapdistance.cc bwa_util.cc isbinary.cc
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
-cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc
-teclust_SOURCES = teclust.cc string_unsigned_lookup.cc
+cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
+teclust_SOURCES = teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
-process_readmappings_SOURCES = process_readmappings.cc bwa_util.cc
+process_readmappings_SOURCES = process_readmappings.cc bwa_util.cc bwa_util.hpp
 all: all-am
 
 .SUFFIXES:
