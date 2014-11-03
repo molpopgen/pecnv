@@ -79,6 +79,7 @@ POST_UNINSTALL = :
 bin_PROGRAMS = cluster_cnv$(EXEEXT) teclust$(EXEEXT) \
 	umm_te_finder$(EXEEXT) filter_edit$(EXEEXT) \
 	process_readmappings$(EXEEXT)
+@HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -288,6 +289,8 @@ teclust_SOURCES = teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc bwa_util.cc bwa_util.hpp
+#get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
+AM_CXXFLAGS = $(am__append_1)
 all: all-am
 
 .SUFFIXES:
@@ -618,7 +621,6 @@ uninstall-am: uninstall-binPROGRAMS
 	ps ps-am tags tags-am uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
-#get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

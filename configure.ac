@@ -38,7 +38,8 @@ AM_CONDITIONAL(PROFILING, test x$profiling = xtrue)
 dnl check for things that we need
 
 dnl htslib
-AC_CHECK_HEADER(htslib/bgzf.h,,[AC_MSG_ERROR([htslib/bgzf.h not found. htslib >= 1.1 required.  See http://htslib.org.  Exiting.])])
+AC_CHECK_HEADER(htslib/bgzf.h,FOUND_HTSLIB_HEADERS=1,[AC_MSG_ERROR([htslib/bgzf.h not found. htslib >= 1.1 required.  See http://htslib.org.  Exiting.])])
+AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_HEADERS = x1 )
 
 dnl specific libsequence features
 dnl AC_CHECK_HEADER(Sequence/samrecord.hpp,,[AC_MSG_ERROR([Sequence/samrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
@@ -52,7 +53,9 @@ AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not foun
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
 
 AC_CHECK_LIB(z, gzread,,[AC_MSG_ERROR([zlib runtime library does not seem to be here.  Exiting.])])
-AC_CHECK_LIB(hts, gzread,,[AC_MSG_ERROR([htslib runtime library does not seem to be here.  Exiting.])])
+AC_CHECK_LIB(hts, bgzf_read,FOUND_HTSLIB_LIBRARY=1,[AC_MSG_ERROR([htslib runtime library does not seem to be here.  Exiting.])])
+AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_LIBRARY = x1 )
+
 AC_LANG_SAVE
           AC_LANG_CPLUSPLUS
           AC_REQUIRE_CPP
