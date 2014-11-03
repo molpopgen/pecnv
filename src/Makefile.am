@@ -15,7 +15,6 @@ process_readmappings_SOURCES=process_readmappings.cc bwa_util.cc bwa_util.hpp
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 
 AM_CXXFLAGS=
-
 if HAVE_HTSLIB
 AM_CXXFLAGS+=-DHAVE_HTSLIB
 endif
