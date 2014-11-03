@@ -19,7 +19,12 @@ This code has been used by the lab for detecting tandem duplications from short-
 
 1.  Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
 2.  Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
-3.  
+3.  Release 0.1.2 = No more need to rename references or read names.  This shaves a load of time off of the workflow.
+
+##Tentative plan for future releases
+
+1.  0.1.3 will re-implement process_readmappings to read directly from BAM files.  Further, the nead for a readname-sorted BAM file will go away.  These two improvements will further speed up the pipeline.
+2.  0.1.4 will integrate the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach
 
 #Installation
 
