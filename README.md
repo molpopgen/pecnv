@@ -96,15 +96,20 @@ Optional arguments are:
 Example:
 /home/krthornt/bin/pecnv.sh -i readfile.txt -r reference.fa
 ```
+
+For the -o option, . or ./ are allowed, and the output will be written to the current directory.  The -b option is used to ensure that each sample gets a unique name prefix, _e.g._  -b SAMPLEID would be a good idea, where SAMPLEID is something informative about this particular sample.
+
 ###The output
 
 The (interesting) output from _pecnv.sh_ is the following:
 
-* div_clusters.gz
-* par_clusters.gz
-* ul_clusters.gz
+* $ODIR/$BAM.div.gz
+* $ODIR/$BAM.par.gz
+* $ODIR/$BAM.ul.gz
 
-The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.
+Where $ODIR is the value passed to the -o option and $BAM the value passed to the -b option.  
+
+The above correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.  See Figure 2 of [Cridland _et al._ 2010](http://gbe.oxfordjournals.org/content/2/83.full) for a figure representing these three mapping types.
 
 The format of the output files is as follows:
 
