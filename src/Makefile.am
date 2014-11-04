@@ -11,7 +11,7 @@ cluster_cnv_SOURCES=cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc file_
 teclust_SOURCES=teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES=umm_te_finder.cc 
 filter_edit_SOURCES=filter_edit.cc
-process_readmappings_SOURCES=process_readmappings.cc bwa_util.cc bwa_util.hpp
+process_readmappings_SOURCES=process_readmappings.cc
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 
 AM_CXXFLAGS=

@@ -7,7 +7,9 @@
   1.  assumes alignment records are sorted by read name
   2.  assumes only paired reads are in the stream (e.g. samtools view -f 1 [bamfile] | ./this_program
 */
-#include <Sequence/samrecord.hpp>
+#include <Sequence/bamreader.hpp>
+#include <Sequence/bamrecord.hpp>
+//#include <Sequence/samrecord.hpp>
 #include <Sequence/samfunctions.hpp>
 #include <iostream>
 #include <fstream>
@@ -16,6 +18,7 @@
 #include <cmath>
 #include <utility>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <cctype>
@@ -25,10 +28,15 @@
 #include <cassert>
 #include <sstream>
 #include <zlib.h>
-#include <bwa_util.hpp>
+//#include <bwa_util.hpp>
 
 using namespace std;
 using namespace Sequence;
+
+using APAIR = pair<bamrecord,bamrecord>;
+using readbucket = unordered_map< string,APAIR >; //name, pair of alignment
+using Mbucket = unordered_map<string,std::int64_t>; //name, offset in BAM files
+using PPairData = unordered_map<string,pair<bool,std::int32_t> >; //name, isU, tlen
 
 struct output_files
 {
@@ -96,6 +104,7 @@ struct output_files
     gzclose(um_m);
     gzclose(um_sam);
   }
+
   gzFile stream(const MAPTYPE & m)
   {
     if (m == UMU)
@@ -134,142 +143,153 @@ std::string mtype2string( const output_files::MAPTYPE & m )
   return "NA";
 }
 
-bool hasXA(const samrecord & r)
-{
+/*
+  bool hasXA(const samrecord & r)
+  {
   for( samrecord::tag_iterator i = r.tag_begin();
-       i!=r.tag_end();++i)
-    {
-      if(i->tag() == "XA")
-	{
-	  return true;
-	}
-    }
+  i!=r.tag_end();++i)
+  {
+  if(i->tag() == "XA")
+  {
+  return true;
+  }
+  }
   return false;
-}
+  }
+*/
 
-vector< pair<char,
-	     unsigned> > parse_cigar(const string & cigar);
-
+vector< pair<char,unsigned> > parse_cigar(const string & cigar);
 unsigned mm(const unsigned & nm,
-	    const vector< pair<char,
-	    unsigned> > & cigar_data);
+	    const vector< pair<char,unsigned> > & cigar_data);
 unsigned ngaps(const vector< pair<char,unsigned> > & cigar_data);
 unsigned alen(const vector< pair<char,unsigned> > & cigar_data);
 void outputM( gzFile out,
-	      const samrecord & r );
-void checkMap(const samrecord & r1,
-	      const samrecord & r2,
+	      const bamrecord & r );
+void checkMap(const bamrecord & r1,
+	      const bamrecord & r2,
 	      const output_files::MAPTYPE & m,
 	      output_files & of);
+
+void addRead2bucket( readbucket & rb, bamrecord & b, bool skipSecond = false )
+{
+  string n = b.read_name();
+  auto pound = n.find('#');
+  if(pound != string::npos)
+    n.erase(n.begin()+pound,n.end());
+  auto i = rb.find(n);
+  if(i == rb.end())
+    {
+      rb.insert( make_pair(n, make_pair(std::move(b),bamrecord())) );
+    }
+  else if (!skipSecond)
+    {
+      i->second.second = std::move(b);
+      assert(!i->second.second.empty());
+    }
+}
 
 int main(int argc, char ** argv)
 {
   int argn = 1;
+  const char * bamfile = argv[argn++];
   const char * structural_base = argv[argn++];
   const char * um_base = argv[argn++];
   const char * mdistfile = argv[argn++];
   struct output_files of(structural_base,um_base);
   
-  samrecord r1,r2;
-  map<unsigned,unsigned> mdist; //distribution of insert sizes
-  while( !cin.eof())
-    {
-      cin >> r1 >> ws >> r2 >> ws;
+  bamreader reader(bamfile);
 
-      if ( r1.qname() != r2.qname() )
-	{
-	  cerr << "error: alignment records not properly sorted by read name\n"
-	       << r1 << '\n'
-	       << r2 << '\n';
-	  exit(10);
-	}
- 
-      samflag rf = r1.flag(),
-	rf2 = r2.flag();
-      if((!rf.query_unmapped && !rf.mate_unmapped) &&
-	 (!rf2.query_unmapped && !rf2.mate_unmapped) ) //Fixed bug/issue #1 from git
-	{
-	  bool ppaired = false;
-	  //check if reads in expected orientation.
-	  if(r1.rname() == r2.rname() && rf.is_proper_pair)
+  if ( ! reader ) {
+    cerr << "Error: " << bamfile 
+	 << " could not be opened for reading\n";
+    exit(1);
+  }
+
+  readbucket DIV,PAR,UL;
+  Mbucket UM;
+  PPairData ISIZES;
+  map<unsigned,unsigned> mdist; //distribution of insert sizes
+  auto pos = reader.tell(); //After the headers, @ start of 1st alignment
+  while( !reader.eof() && !reader.error() )
+    {
+      bamrecord b = reader.next_record();
+      samflag sf(b.flag());
+      if(!sf.query_unmapped  && !sf.mate_unmapped) //Both reads are mapped
+      	{
+	  bamaux bXT = b.aux("XT");  //look for XT tag
+	  if(bXT.size) //if it is present
 	    {
-	      if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+	      bool unusual = false; //A putative DIV/PAR/UL?
+	      //Look for unusual read mappings here
+	      if(bXT.value[0] == 'U') //if read is uniquely-mapping
 		{
-		  int mdist1 = r1.isize();
-		  int pos1 = r1.pos(),pos2=r2.pos();
-		  samflag f1 = r1.flag(),f2 = r2.flag();
-		  if( 
-		     ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
-					|| ( f2.qstrand && !f2.mstrand) ) )
-		     ||
-		     ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
-					    || ( !f2.qstrand && f2.mstrand ) ) )
-		      )
+		  if( b.refid() != b.next_refid() ) //both map to different scaffolds
 		    {
-		      ppaired = true;
-#ifndef NDEBUG
-		      int mdist2=r2.isize();
-		      assert( abs(mdist1) == abs(mdist2) );
-#endif
-		      map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
-		      if( itr == mdist.end() )
+		      unusual = true;
+		      addRead2bucket(UL,b);
+		    }
+		  else if ( b.pos() != b.next_pos()) //Don't map to same position
+		    {
+		      if( sf.qstrand == sf.mstrand )
 			{
-			  mdist.insert(make_pair(abs(mdist1),1));
+			  unusual = true;
+			  addRead2bucket(PAR,b);
+			}
+		      else if( (sf.qstrand == 0 && b.pos() > b.next_pos()) ||
+			       (sf.mstrand == 0 && b.next_pos() > b.pos() ) )
+			{
+			  unusual = true;
+			  addRead2bucket(DIV,b);
+			}
+		    }
+
+		  if(!unusual)
+		    {
+		      const char XTval = bXT.value[0];
+		      auto n = b.read_name();
+		      auto pound = n.find('#');
+		      if(pound != string::npos)
+			n.erase(n.begin()+pound,n.end());
+		      //Test read for contributing to insert size dist
+		      auto i = ISIZES.find(n);
+
+		      if( i == ISIZES.end() )
+			{
+			  ISIZES[n] = make_pair( (XTval == 'U'), abs(b.tlen()) );
 			}
 		      else
 			{
-			  itr->second++;
-			}
-		    }
-		}
-	    }
-	  string qref(r1.rname()),mref(r1.mrnm());
-	  if(mref != "=" && qref != mref) //UL
-	    {
-	      assert(!ppaired);
-	      checkMap(r1,r2,output_files::UL,of);
-	    }
-	  else
-	    {
-	      if(r1.pos() != r1.mpos()) //don't map to same pos on reference
-		{
-		  if(rf.qstrand == rf.mstrand)
-		    {
-		      assert(!ppaired);
-		      checkMap(r1,r2,output_files::PAR,of);
-		    }
-		  else if (rf.qstrand == 0 &&
-			   r1.pos() > r1.mpos())
-		    {
-		      assert(!ppaired);
-		      checkMap(r1,r2,output_files::DIV,of);
-		    }
-		  else if (rf.mstrand == 0 &&
-			   r1.mpos() > r1.pos())
-		    {
-		      assert(!ppaired);
-		      checkMap(r1,r2,output_files::DIV,of);
-		    }
-		  else if(!rf.is_proper_pair)//is a putative UM
-		    {
-		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
-			{
-			  if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
-			    { 
-			      checkMap(r1,r2,output_files::UMU,of);
+			  if(  (i->second.first && (XTval == 'U' || XTval == 'R')) ||
+			       (!i->second.first && XTval == 'U' ) )
+			    {
+			      //update mdist iff tlens agree and then erase this pair
+			      if( abs(i->second.second) == abs(b.tlen()) )
+				{
+				  map<unsigned,unsigned>::iterator itr =  mdist.find(abs(i->second.second));
+				  if( itr == mdist.end() )
+				    {
+				      mdist.insert(make_pair(abs(i->second.second),1));
+				    }
+				  else
+				    {
+				      itr->second++;
+				    }
+				}
 			    }
+			  ISIZES.erase(i);
 			}
-		    }
-		  else if ( (hasXA(r1) && !hasXA(r2)) ||
-			    (hasXA(r2) && !hasXA(r1)) )
-		    {
-		      //could be ppaired due to rescued read
-		      //make sure both are not labelled XT:A:U or R
-		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
+		      //Putative U/M screening
+		      if (XTval == 'M' || XTval == 'R') //Read is flagged as repetitively-mapping or PE-rescued, resp.
 			{
-			  if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
-			    { 
-			      checkMap(r1,r2,output_files::UMU,of);
+
+			  auto i = UM.find(n);
+			  if( i == UM.end() )
+			    {
+			      //Let's process the M/U pair and thn delete it
+			    }
+			  else //Then this is an M/M or R/M pair, so we can discard it
+			    {
+			      UM.erase(i);
 			    }
 			}
 		    }
@@ -277,6 +297,155 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
+
+  //Print out the PAR/DIV/UL data here
+
+  if(!UM.empty())
+    {
+      cerr << "First pass complete, rewinding to finish scanning for U/M pairs\n";
+      reader.seek( pos, SEEK_SET );
+      
+      while(!reader.eof() && !reader.error()) //This may not be working
+	{
+	  bamrecord b(reader.next_record());
+	  if(b.empty()) break;
+	  samflag r(b.flag());
+	  if(!r.query_unmapped)
+	    {
+	      bamaux ba = b.aux("XT");
+	      if(ba.value[0]=='U') //Read is flagged as uniquely-mapping
+		{
+		  auto n = b.read_name();
+		  auto hash = n.find('#');
+		  n.erase(n.begin()+hash,n.end());
+		  auto i = UM.find(n);
+		  if(i != UM.end()) //then the Unique reads redundant mate exists
+		    {
+		      //get the multiple read now
+		      bamrecord mate = reader.record_at_pos(i->second);
+#ifndef NDEBUG
+		      auto n2=mate.read_name();
+		      n2.erase(n2.end()-2,n2.end());
+		      assert(n == n2);
+#endif
+		      UM.erase(i);
+		      
+		      //We can now print out the data.
+		    }
+		}
+	    }
+	}
+    }
+  //Old version of code
+  /*
+    samrecord r1,r2;
+    map<unsigned,unsigned> mdist; //distribution of insert sizes
+    while( !cin.eof())
+    {
+    cin >> r1 >> ws >> r2 >> ws;
+
+    if ( r1.qname() != r2.qname() )
+    {
+    cerr << "error: alignment records not properly sorted by read name\n"
+    << r1 << '\n'
+    << r2 << '\n';
+    exit(10);
+    }
+ 
+    samflag rf = r1.flag(),
+    rf2 = r2.flag();
+    if((!rf.query_unmapped && !rf.mate_unmapped) &&
+    (!rf2.query_unmapped && !rf2.mate_unmapped) ) //Fixed bug/issue #1 from git
+    {
+    bool ppaired = false;
+    //check if reads in expected orientation.
+    if(r1.rname() == r2.rname() && rf.is_proper_pair)
+    {
+    if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+    {
+    int mdist1 = r1.isize();
+    int pos1 = r1.pos(),pos2=r2.pos();
+    samflag f1 = r1.flag(),f2 = r2.flag();
+    if( 
+    ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
+    || ( f2.qstrand && !f2.mstrand) ) )
+    ||
+    ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
+    || ( !f2.qstrand && f2.mstrand ) ) )
+    )
+    {
+    ppaired = true;
+    #ifndef NDEBUG
+    int mdist2=r2.isize();
+    assert( abs(mdist1) == abs(mdist2) );
+    #endif
+    map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
+    if( itr == mdist.end() )
+    {
+    mdist.insert(make_pair(abs(mdist1),1));
+    }
+    else
+    {
+    itr->second++;
+    }
+    }
+    }
+    }
+    string qref(r1.rname()),mref(r1.mrnm());
+    if(mref != "=" && qref != mref) //UL
+    {
+    assert(!ppaired);
+    checkMap(r1,r2,output_files::UL,of);
+    }
+    else
+    {
+    if(r1.pos() != r1.mpos()) //don't map to same pos on reference
+    {
+    if(rf.qstrand == rf.mstrand)
+    {
+    assert(!ppaired);
+    checkMap(r1,r2,output_files::PAR,of);
+    }
+    else if (rf.qstrand == 0 &&
+    r1.pos() > r1.mpos())
+    {
+    assert(!ppaired);
+    checkMap(r1,r2,output_files::DIV,of);
+    }
+    else if (rf.mstrand == 0 &&
+    r1.mpos() > r1.pos())
+    {
+    assert(!ppaired);
+    checkMap(r1,r2,output_files::DIV,of);
+    }
+    else if(!rf.is_proper_pair)//is a putative UM
+    {
+    if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
+    {
+    if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
+    { 
+    checkMap(r1,r2,output_files::UMU,of);
+    }
+    }
+    }
+    else if ( (hasXA(r1) && !hasXA(r2)) ||
+    (hasXA(r2) && !hasXA(r1)) )
+    {
+    //could be ppaired due to rescued read
+    //make sure both are not labelled XT:A:U or R
+    if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
+    {
+    if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
+    { 
+    checkMap(r1,r2,output_files::UMU,of);
+    }
+    }
+    }
+    }
+    }
+    }
+    }
+  */
   //get sum of insert size dist
   long unsigned sum = 0;
   for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
@@ -314,147 +483,147 @@ int main(int argc, char ** argv)
   gzclose(mdistout);
 }
 
-void checkMap(const samrecord & r1,
-	      const samrecord & r2,
+void checkMap(const bamrecord & r1,
+	      const bamrecord & r2,
 	      const output_files::MAPTYPE & m,
 	      output_files & of)
 {
   //make sure no foul-ups get this far
-  string name2 = r2.qname();
+  string name2 = r2.read_name();
  
 #ifndef NDEBUG
-  assert( r1.qname() == r2.qname() );
+  assert( r1.read_name() == r2.read_name() );
 #endif
 
-  bool isU1 = hasXT(r1,"U"),
-    isU2 = hasXT(r2,"U"),
-    isR1 = hasXT(r1,"R"),
-    isR2 = hasXT(r2,"R"),
-    hasXA1 = hasXA(r1),
-    hasXA2 = hasXA(r2);
-  if(isR1 && isR2)
-    {
-      return;
-    }
-  bool written = false;
-  if(isU1 && isU2 )
-    {
-      written = true;
-      ostringstream obuffer;
-      obuffer<< r1.qname() << '\t'
-	     << r1.mapq() << '\t'
-	     << r1.rname() << '\t'
-	     << r1.pos()-1 << '\t'
-	     << r1.pos() + alignment_length(r1) -1 << '\t'
-	     << r1.flag().qstrand << '\t'
-	     << mismatches(r1) << '\t'
-	     << ngaps(r1) << '\t'
-	     << mtype2string(m) << '\t'
-	     << r2.mapq() << '\t'
-	     << r2.rname() << '\t'
-	     << r2.pos()-1 << '\t'
-	     << r2.pos() + alignment_length(r2) -1 << '\t'
-	     << r2.flag().qstrand << '\t'
-	     << mismatches(r2) << '\t'
-	     << ngaps(r2) << '\t'
-	     << mtype2string(m) << '\n';
-      if(!gzwrite(of.stream(m),obuffer.str().c_str(),obuffer.str().size()))
-	{
-	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-      obuffer.str(string());
-      obuffer << r1 << '\n' << r2 << '\n';
-      if(!gzwrite(of.structural_sam,obuffer.str().c_str(),obuffer.str().size()))
-	{
-	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-    }
-  else 
-    {
-      bool U1M2 = (( (isU1||isR1) && !hasXA1 ) && hasXA2);
-      bool U2M1 = (( (isU2||isR2) && !hasXA2 ) && hasXA1);
-      if(U1M2)
-	{
-	  written = true;
+  //OLD version  
+  // bool isU1 = hasXT(r1,"U"),
+  //   isU2 = hasXT(r2,"U"),
+  //   isR1 = hasXT(r1,"R"),
+  //   isR2 = hasXT(r2,"R"),
+  //   hasXA1 = hasXA(r1),
+  //   hasXA2 = hasXA(r2);
+  // if(isR1 && isR2)
+  //   {
+  //     return;
+  //   }
+  // bool written = false;
+  // if(isU1 && isU2 )
+  //   {
+  //     written = true;
+  //     ostringstream obuffer;
+  //     obuffer<< r1.qname() << '\t'
+  // 	     << r1.mapq() << '\t'
+  // 	     << r1.rname() << '\t'
+  // 	     << r1.pos()-1 << '\t'
+  // 	     << r1.pos() + alignment_length(r1) -1 << '\t'
+  // 	     << r1.flag().qstrand << '\t'
+  // 	     << mismatches(r1) << '\t'
+  // 	     << ngaps(r1) << '\t'
+  // 	     << mtype2string(m) << '\t'
+  // 	     << r2.mapq() << '\t'
+  // 	     << r2.rname() << '\t'
+  // 	     << r2.pos()-1 << '\t'
+  // 	     << r2.pos() + alignment_length(r2) -1 << '\t'
+  // 	     << r2.flag().qstrand << '\t'
+  // 	     << mismatches(r2) << '\t'
+  // 	     << ngaps(r2) << '\t'
+  // 	     << mtype2string(m) << '\n';
+  //     if(!gzwrite(of.stream(m),obuffer.str().c_str(),obuffer.str().size()))
+  // 	{
+  // 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 	       << " of " << __FILE__ << '\n';
+  // 	  exit(1);
+  // 	}
+  //     obuffer.str(string());
+  //     obuffer << r1 << '\n' << r2 << '\n';
+  //     if(!gzwrite(of.structural_sam,obuffer.str().c_str(),obuffer.str().size()))
+  // 	{
+  // 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 	       << " of " << __FILE__ << '\n';
+  // 	  exit(1);
+  // 	}
+  //   }
+  // else 
+  //   {
+  //     bool U1M2 = (( (isU1||isR1) && !hasXA1 ) && hasXA2);
+  //     bool U2M1 = (( (isU2||isR2) && !hasXA2 ) && hasXA1);
+  //     if(U1M2)
+  // 	{
+  // 	  written = true;
 	  
-	  ostringstream obuffer;
-	  obuffer << r1.qname() << '\t'
-		  << r1.mapq() << '\t'
-		  << r1.rname() << '\t'
-		  << r1.pos()-1 << '\t'
-		  << r1.pos() + alignment_length(r1) - 2 << '\t'
-		  << r1.flag().qstrand << '\t'
-		  << mismatches(r1) << '\t'
-		  << ngaps(r1) << '\n';
-	  // if( gzprintf(of.stream(output_files::UMU),
-	  // 	       "%s\n",
-	  // 	       obuffer.str().c_str()) <= 0 )
-	  if(!gzwrite(of.stream(output_files::UMU),obuffer.str().c_str(),obuffer.str().size()))
-	    {
-	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
+  // 	  ostringstream obuffer;
+  // 	  obuffer << r1.qname() << '\t'
+  // 		  << r1.mapq() << '\t'
+  // 		  << r1.rname() << '\t'
+  // 		  << r1.pos()-1 << '\t'
+  // 		  << r1.pos() + alignment_length(r1) - 2 << '\t'
+  // 		  << r1.flag().qstrand << '\t'
+  // 		  << mismatches(r1) << '\t'
+  // 		  << ngaps(r1) << '\n';
+  // 	  // if( gzprintf(of.stream(output_files::UMU),
+  // 	  // 	       "%s\n",
+  // 	  // 	       obuffer.str().c_str()) <= 0 )
+  // 	  if(!gzwrite(of.stream(output_files::UMU),obuffer.str().c_str(),obuffer.str().size()))
+  // 	    {
+  // 	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 		   << " of " << __FILE__ << '\n';
+  // 	      exit(1);
+  // 	    }
 	  
-	  outputM( of.stream(output_files::UMM),
-		   r2 );
+  // 	  outputM( of.stream(output_files::UMM),
+  // 		   r2 );
 
-	  obuffer.str(string());
-	  obuffer << r1 << '\n' << r2;
-	  //if( gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0 )
-	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
-	    {
-	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
-	}
-      else if(U2M1 )
-	{
-	  written = true;
-	  outputM( of.stream(output_files::UMM),
-		   r1 );
+  // 	  obuffer.str(string());
+  // 	  obuffer << r1 << '\n' << r2;
+  // 	  //if( gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0 )
+  // 	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
+  // 	    {
+  // 	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 		   << " of " << __FILE__ << '\n';
+  // 	      exit(1);
+  // 	    }
+  // 	}
+  //     else if(U2M1 )
+  // 	{
+  // 	  written = true;
+  // 	  outputM( of.stream(output_files::UMM),
+  // 		   r1 );
 	  
-	  ostringstream obuffer;
-	  obuffer << r2.qname() << '\t'
-		  << r2.mapq() << '\t'
-		  << r2.rname() << '\t'
-		  << r2.pos()-1 << '\t'
-		  << r2.pos() + alignment_length(r2) - 2 << '\t'
-		  << r2.flag().qstrand << '\t'
-		  << mismatches(r2) << '\t'
-	    	  << ngaps(r2) << '\n';
-	  /*
-	  if (gzprintf(of.stream(output_files::UMU),
-		       "%s\n",
-		       obuffer.str().c_str()) <= 0 )
-	  */
-	  if(!gzwrite(of.stream(output_files::UMU),
-		      obuffer.str().c_str(),obuffer.str().size()))
-	    {
-	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
-	  obuffer.str(string());
-	  obuffer << r1 << '\n'<<r2 << '\n';
-	  //if (gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0)
-	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
-	    {
-	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
-	}
-    }
+  // 	  ostringstream obuffer;
+  // 	  obuffer << r2.qname() << '\t'
+  // 		  << r2.mapq() << '\t'
+  // 		  << r2.rname() << '\t'
+  // 		  << r2.pos()-1 << '\t'
+  // 		  << r2.pos() + alignment_length(r2) - 2 << '\t'
+  // 		  << r2.flag().qstrand << '\t'
+  // 		  << mismatches(r2) << '\t'
+  // 	    	  << ngaps(r2) << '\n';
+  // 	  /*
+  // 	  if (gzprintf(of.stream(output_files::UMU),
+  // 		       "%s\n",
+  // 		       obuffer.str().c_str()) <= 0 )
+  // 	  */
+  // 	  if(!gzwrite(of.stream(output_files::UMU),
+  // 		      obuffer.str().c_str(),obuffer.str().size()))
+  // 	    {
+  // 	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 		   << " of " << __FILE__ << '\n';
+  // 	      exit(1);
+  // 	    }
+  // 	  obuffer.str(string());
+  // 	  obuffer << r1 << '\n'<<r2 << '\n';
+  // 	  //if (gzprintf(of.um_sam,"%s\n",obuffer.str().c_str()) <= 0)
+  // 	  if(!gzwrite(of.um_sam,obuffer.str().c_str(),obuffer.str().size()))
+  // 	    {
+  // 	      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 		   << " of " << __FILE__ << '\n';
+  // 	      exit(1);
+  // 	    }
+  // 	}
+  //   }
 }
 
-unsigned alen(const vector< pair<char,
-	      unsigned> > & cigar_data)
+unsigned alen(const vector< pair<char,unsigned> > & cigar_data)
 {
   unsigned sum=0;
   for(unsigned i=0;i<cigar_data.size();++i)
@@ -492,11 +661,9 @@ unsigned ngaps(const vector< pair<char,
   return sum;
 }
 
-vector<pair<char,
-	    unsigned> > parse_cigar(const string & cigar)
+vector<pair<char,unsigned> > parse_cigar(const string & cigar)
 {
-  vector<pair<char,
-	      unsigned> > cigar_data;
+  vector<pair<char,unsigned> > cigar_data;
   
   string::const_iterator pibeg = find_if( cigar.begin(),cigar.end(),::isdigit);
   string::const_iterator piend = find_if( pibeg+1,cigar.end(),::isalpha );
@@ -549,95 +716,99 @@ bool operator<(const mapping_pos & left,
 	  left.strand < right.strand);
 }
 
-vector<mapping_pos> get_mapping_pos(const samrecord & r)
+vector<mapping_pos> get_mapping_pos(const bamrecord & r)
 {
   vector<mapping_pos> rv;
-  rv.push_back( mapping_pos( r.rname(), 
-			     r.pos()-1,
-			     r.pos()+alignment_length(r)-2,
-			     r.flag().qstrand,
-			     mismatches(r),
-			     ngaps(r) ) );
-  string XA;
-  bool found=false;
-  for( samrecord::tag_iterator i = r.tag_begin() ; 
-       !found&&i != r.tag_end() ; ++i )
+  /*
+    rv.push_back( mapping_pos( r.rname(), 
+    r.pos()-1,
+    r.pos()+alignment_length(r)-2,
+    r.flag().qstrand,
+    mismatches(r),
+    ngaps(r) ) );
+    string XA;
+    bool found=false;
+    for( samrecord::tag_iterator i = r.tag_begin() ; 
+    !found&&i != r.tag_end() ; ++i )
     {
-      if(i->tag() == "XA")
-	{
-	  XA=i->value();
-	  found=true;
-	}
-    }
-  if ( found )
+    if(i->tag() == "XA")
     {
-      vector<string::size_type> colons;
-      string::size_type colon = XA.find(";");
-      do
-	{
-	  colons.push_back(colon);
-	  colon = XA.find(";",colon+1);
-	}
-      while(colon != string::npos);
-      string hit;
-      for(unsigned i=0;i<colons.size();++i)
-	{
-	  if( i == 0 )
-	    {
-	      hit = string(XA.begin(),XA.begin()+colons[0]);
-	    }
-	  else
-	    {
-	      hit = string(XA.begin()+colons[i-1]+1,XA.begin()+colons[i]);
-	    }
-	  vector<string::size_type> commas;
-	  string::size_type comma = hit.find(",");
-	  do 
-	    {
-	      commas.push_back(comma);
-	      comma = hit.find(",",comma+1);
-	    }
-	  while(comma != string::npos);
-
-	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
-	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
-	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
-	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-	  unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
-	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
-
-	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
-			     mm(nm,cdata),ngaps(cdata));
-	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
-	    {
-	      rv.push_back(hitmp);
-	    }
-	}
+    XA=i->value();
+    found=true;
     }
+    }
+    if ( found )
+    {
+    vector<string::size_type> colons;
+    string::size_type colon = XA.find(";");
+    do
+    {
+    colons.push_back(colon);
+    colon = XA.find(";",colon+1);
+    }
+    while(colon != string::npos);
+    string hit;
+    for(unsigned i=0;i<colons.size();++i)
+    {
+    if( i == 0 )
+    {
+    hit = string(XA.begin(),XA.begin()+colons[0]);
+    }
+    else
+    {
+    hit = string(XA.begin()+colons[i-1]+1,XA.begin()+colons[i]);
+    }
+    vector<string::size_type> commas;
+    string::size_type comma = hit.find(",");
+    do 
+    {
+    commas.push_back(comma);
+    comma = hit.find(",",comma+1);
+    }
+    while(comma != string::npos);
+
+    string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
+    int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
+    string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
+    vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
+    unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
+    unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
+
+    mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
+    mm(nm,cdata),ngaps(cdata));
+    if(find(rv.begin(),rv.end(),hitmp)==rv.end())
+    {
+    rv.push_back(hitmp);
+    }
+    }
+    }
+  */
   return rv;
 }
 
 void outputM( gzFile gzout,
-	      const samrecord & r )
+	      const bamrecord & r )
 {
-  string name = r.qname();
-  vector<mapping_pos> mpos = get_mapping_pos(r);
-  for( unsigned i=0;i<mpos.size();++i)
+  /*
+    string name = r.qname();
+    vector<mapping_pos> mpos = get_mapping_pos(r);
+    for( unsigned i=0;i<mpos.size();++i)
     {
-      ostringstream out;
-      out << name << '\t' << r.mapq() << '\t'
-	  << mpos[i].chrom << '\t'
-	  << mpos[i].start << '\t'
-	  << mpos[i].stop << '\t'
-	  << mpos[i].strand << '\t'
-	  << mpos[i].mm << '\t'
-	  << mpos[i].gap;// << '\n';
-      //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
-      if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
-	{
-	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
+    ostringstream out;
+    out << name << '\t' << r.mapq() << '\t'
+    << mpos[i].chrom << '\t'
+    << mpos[i].start << '\t'
+    << mpos[i].stop << '\t'
+    << mpos[i].strand << '\t'
+    << mpos[i].mm << '\t'
+    << mpos[i].gap;// << '\n';
+    //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+    if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
+    {
+    cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+    << " of " << __FILE__ << '\n';
+    exit(1);
     }
+    }
+  */
 }

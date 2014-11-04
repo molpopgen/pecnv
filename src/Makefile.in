@@ -101,8 +101,7 @@ cluster_cnv_LDADD = $(LDADD)
 am_filter_edit_OBJECTS = filter_edit.$(OBJEXT)
 filter_edit_OBJECTS = $(am_filter_edit_OBJECTS)
 filter_edit_LDADD = $(LDADD)
-am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
-	bwa_util.$(OBJEXT)
+am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
 am_teclust_OBJECTS = teclust.$(OBJEXT) \
@@ -288,7 +287,7 @@ cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc fil
 teclust_SOURCES = teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
-process_readmappings_SOURCES = process_readmappings.cc bwa_util.cc bwa_util.hpp
+process_readmappings_SOURCES = process_readmappings.cc
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 AM_CXXFLAGS = $(am__append_1)
 all: all-am
@@ -394,7 +393,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_edit.Po@am__quote@
