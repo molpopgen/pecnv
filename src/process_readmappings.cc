@@ -34,8 +34,9 @@ using namespace std;
 using namespace Sequence;
 
 using APAIR = pair<bamrecord,bamrecord>;
-using readbucket = unordered_map< string,APAIR >; //name, pair of alignment
-using Mbucket = unordered_map<string,std::int64_t>; //name, offset in BAM files
+//using readbucket = unordered_map< string,APAIR >; //name, pair of alignment
+//using Mbucket = unordered_map<string,std::int64_t>; //name, offset in BAM files
+using readbucket = unordered_map<string, bamrecord>; //name, alignment
 using PPairData = unordered_map<string,pair<bool,std::int32_t> >; //name, isU, tlen
 
 struct output_files
@@ -163,28 +164,117 @@ unsigned mm(const unsigned & nm,
 	    const vector< pair<char,unsigned> > & cigar_data);
 unsigned ngaps(const vector< pair<char,unsigned> > & cigar_data);
 unsigned alen(const vector< pair<char,unsigned> > & cigar_data);
+void outputU( gzFile gzout,
+	      const bamrecord & r,
+	      const bamreader & reader );
 void outputM( gzFile out,
-	      const bamrecord & r );
-void checkMap(const bamrecord & r1,
-	      const bamrecord & r2,
-	      const output_files::MAPTYPE & m,
-	      output_files & of);
+	      const bamrecord & r,
+	      const bamreader & reader);
+/*
+  void checkMap(const bamrecord & r1,
+  const bamrecord & r2,
+  const output_files::MAPTYPE & m,
+  output_files & of);
+*/
 
-void addRead2bucket( readbucket & rb, bamrecord & b, bool skipSecond = false )
+string editRname( const std::string & readname )
 {
-  string n = b.read_name();
-  auto pound = n.find('#');
-  if(pound != string::npos)
-    n.erase(n.begin()+pound,n.end());
+  auto pound = readname.find('#');
+  if(pound == string::npos) return readname;
+  return string(readname.begin(),readname.begin()+pound);
+}
+
+// void writeCNV( const readbucket & alignments,
+// 	       gzFile rfile,
+// 	       gzFile samfile,
+// 	       const char * maptype,
+// 	       const bamreader & reader);
+
+// void addRead2bucket( readbucket & rb, bamrecord & b, bool skipSecond = false )
+// {
+//   string n = editRname(b.read_name());
+//   auto i = rb.find(n);
+//   if(i == rb.end())
+//     {
+//       rb.insert( make_pair(n, make_pair(std::move(b),bamrecord())) );
+//     }
+//   else if (!skipSecond)
+//     {
+//       i->second.second = std::move(b);
+//       assert(!i->second.second.empty());
+//     }
+// }
+
+void updateBucket( readbucket & rb, bamrecord & b, 
+		   gzFile csvfile, gzFile samfile,
+		   const char * maptype,
+		   const bamreader & reader )
+{
+  string n = editRname(b.read_name());
   auto i = rb.find(n);
   if(i == rb.end())
     {
-      rb.insert( make_pair(n, make_pair(std::move(b),bamrecord())) );
+      rb.insert( make_pair(n, std::move(b)) );
     }
-  else if (!skipSecond)
+  else //We've got our pair, so write it out
     {
-      i->second.second = std::move(b);
-      assert(!i->second.second.empty());
+      //assert(i->second.second.empty());
+      ostringstream o;
+      //auto REF = find_if(reader.ref_cbegin(),
+      //reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
+      //return( __r.second == a.second.first.refid() ); });
+      auto REF = reader.ref_cbegin()+i->second.refid();
+      /*
+	if( REF == reader.ref_cend() )
+	{
+	cerr << "Error: reference ID number : "<< i->second.first.refid()
+	<< " is not present in the BAM file header. "
+	<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
+	exit(1);
+	}
+      */
+      o << editRname(i->second.read_name()) << '\t'
+	<< REF->first << '\t'
+	<< i->second.mapq() << '\t'
+	<< i->second.pos() << '\t'
+	<< i->second.pos() + alignment_length(i->second) - 1 << '\t'
+	<< i->second.flag().qstrand << '\t'
+	<< mismatches(i->second) << '\t'
+	<< ngaps(i->second) << '\t'
+	<< maptype << '\t';
+      REF = reader.ref_cbegin()+b.refid();
+      /*
+	REF = find_if(reader.ref_cbegin(),
+	reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
+	return( __r.second == b.refid() ); });
+	if( REF == reader.ref_cend() )
+	{
+	cerr << "Error: reference ID number : "<< b.refid()
+	<< " is not present in the BAM file header. "
+	<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
+	exit(1);
+	}
+      */
+      //Second read data
+      o << editRname(b.read_name()) << '\t'
+	<< REF->first << '\t'
+	<< b.mapq() << '\t'
+	<< b.pos() << '\t'
+	<< b.pos() + alignment_length(b) - 1 << '\t'
+	<< b.flag().qstrand << '\t'
+	<< mismatches(b) << '\t'
+	<< ngaps(b) << '\t'
+	<< maptype << '\n';
+      if(! gzwrite( csvfile,o.str().c_str(),o.str().size() ) )
+	{
+	  cerr << "Error: gzwrite error at line "
+	       << __LINE__ << " of file "
+	       << __FILE__ << '\n';
+	  exit(1);
+	}
+      rb.erase(i);
+      //i->second.second = std::move(b);
+      //assert(!i->second.second.empty());
     }
 }
 
@@ -199,17 +289,25 @@ int main(int argc, char ** argv)
   
   bamreader reader(bamfile);
 
+  /*
+    for_each(reader.ref_cbegin(),
+    reader.ref_cend(),[](const bamreader::refdataObj & __r){
+    std::cout << __r.first << ' ' << __r.second << '\n';
+    });
+  */
+
   if ( ! reader ) {
     cerr << "Error: " << bamfile 
 	 << " could not be opened for reading\n";
     exit(1);
   }
 
-  readbucket DIV,PAR,UL;
-  Mbucket UM;
+  readbucket DIV,PAR,UL,UM;
+  //Mbucket UM;
   PPairData ISIZES;
   map<unsigned,unsigned> mdist; //distribution of insert sizes
   auto pos = reader.tell(); //After the headers, @ start of 1st alignment
+  unsigned UMFOUND = 0;
   while( !reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
@@ -219,85 +317,122 @@ int main(int argc, char ** argv)
 	  bamaux bXT = b.aux("XT");  //look for XT tag
 	  if(bXT.size) //if it is present
 	    {
+	      const char XTval = bXT.value[0];
 	      bool unusual = false; //A putative DIV/PAR/UL?
 	      //Look for unusual read mappings here
-	      if(bXT.value[0] == 'U') //if read is uniquely-mapping
+	      if(XTval == 'U') //if read is uniquely-mapping
 		{
 		  if( b.refid() != b.next_refid() ) //both map to different scaffolds
 		    {
 		      unusual = true;
-		      addRead2bucket(UL,b);
+		      updateBucket(UL,b,of.structural,of.structural_sam,"UL\0",reader);
+		      //addRead2bucket(UL,b);
 		    }
 		  else if ( b.pos() != b.next_pos()) //Don't map to same position
 		    {
 		      if( sf.qstrand == sf.mstrand )
 			{
 			  unusual = true;
-			  addRead2bucket(PAR,b);
+			  //addRead2bucket(PAR,b);
+			  updateBucket(PAR,b,of.structural,of.structural_sam,"PAR\0",reader);
 			}
 		      else if( (sf.qstrand == 0 && b.pos() > b.next_pos()) ||
 			       (sf.mstrand == 0 && b.next_pos() > b.pos() ) )
 			{
 			  unusual = true;
-			  addRead2bucket(DIV,b);
+			  //addRead2bucket(DIV,b);
+			  updateBucket(DIV,b,of.structural,of.structural_sam,"DIV\0",reader);
 			}
 		    }
 
 		  if(!unusual)
 		    {
-		      const char XTval = bXT.value[0];
-		      auto n = b.read_name();
-		      auto pound = n.find('#');
-		      if(pound != string::npos)
-			n.erase(n.begin()+pound,n.end());
-		      //Test read for contributing to insert size dist
-		      auto i = ISIZES.find(n);
+		      // const char XTval = bXT.value[0];
+		       string n = editRname(b.read_name());
+		      // auto pound = n.find('#');
+		      // if(pound != string::npos)
+		      // 	n.erase(n.begin()+pound,n.end());
+		      // //Test read for contributing to insert size dist
+		      // auto i = ISIZES.find(n);
 
-		      if( i == ISIZES.end() )
-			{
-			  ISIZES[n] = make_pair( (XTval == 'U'), abs(b.tlen()) );
-			}
-		      else
-			{
-			  if(  (i->second.first && (XTval == 'U' || XTval == 'R')) ||
-			       (!i->second.first && XTval == 'U' ) )
-			    {
-			      //update mdist iff tlens agree and then erase this pair
-			      if( abs(i->second.second) == abs(b.tlen()) )
-				{
-				  map<unsigned,unsigned>::iterator itr =  mdist.find(abs(i->second.second));
-				  if( itr == mdist.end() )
-				    {
-				      mdist.insert(make_pair(abs(i->second.second),1));
-				    }
-				  else
-				    {
-				      itr->second++;
-				    }
-				}
-			    }
-			  ISIZES.erase(i);
-			}
+		      // if( i == ISIZES.end() )
+		      // 	{
+		      // 	  ISIZES[n] = make_pair( (XTval == 'U'), abs(b.tlen()) );
+		      // 	}
+		      // else
+		      // 	{
+		      // 	  if(  (i->second.first && (XTval == 'U' || XTval == 'R')) ||
+		      // 	       (!i->second.first && XTval == 'U' ) )
+		      // 	    {
+		      // 	      //update mdist iff tlens agree and then erase this pair
+		      // 	      if( abs(i->second.second) == abs(b.tlen()) )
+		      // 		{
+		      // 		  map<unsigned,unsigned>::iterator itr =  mdist.find(abs(i->second.second));
+		      // 		  if( itr == mdist.end() )
+		      // 		    {
+		      // 		      mdist.insert(make_pair(abs(i->second.second),1));
+		      // 		    }
+		      // 		  else
+		      // 		    {
+		      // 		      itr->second++;
+		      // 		    }
+		      // 		}
+		      // 	    }
+		      // 	  ISIZES.erase(i);
+		      // 	}
 		      //Putative U/M screening
-		      if (XTval == 'M' || XTval == 'R') //Read is flagged as repetitively-mapping or PE-rescued, resp.
-			{
-
-			  auto i = UM.find(n);
-			  if( i == UM.end() )
-			    {
-			      //Let's process the M/U pair and thn delete it
-			    }
-			  else //Then this is an M/M or R/M pair, so we can discard it
-			    {
-			      UM.erase(i);
-			    }
-			}
+		      //if (XTval == 'M' || XTval == 'R') //Read is flagged as repetitively-mapping or PE-rescued, resp.
+		  	//{
+		       auto i = UM.find(n);
+		       if( i != UM.end() )
+			 {
+			   //Let's process the M/U pair and then delete it
+			   //b is the unique-read, and the read
+			   //at position i->second is the M/R read
+			   //bamrecord multi = reader.record_at_pos(i->second);
+			   //assert(!multi.empty());
+			   ++UMFOUND;
+			   if(b.hasTag("XA") == nullptr)
+			     {
+			       outputU(of.um_u,b,reader);
+			       outputM(of.um_m,i->second,reader);
+			     }
+			   UM.erase(i);
+			 }
+		       else 
+			 {
+			   //UM.erase(i);
+			 }
+		       //}
+		    }
+		}
+	      else if (XTval == 'R' || XTval == 'M') //putative U/M pair member
+		{
+		  string n = editRname(b.read_name());
+		  auto i = UM.find(editRname(n));
+		  if(i == UM.end())
+		    {				
+		      //UM.insert(make_pair(n,reader.tell()));
+		      UM.insert(make_pair(move(n),move(b)));
+		    }
+		  else //This is an M/M or M/R pair, so we can delete
+		    {
+		      UM.erase(i);
 		    }
 		}
 	    }
 	}
     }
+  
+  //writeCNV(DIV,of.structural,of.structural_sam,"DIV\0",reader);
+  cerr << UMFOUND << ' ' << UM.size() << '\n';
 
+  //These are done.
+  DIV.clear();
+  PAR.clear();
+  UL.clear();
+  return 0;
+  //exit(1);
   //Print out the PAR/DIV/UL data here
 
   if(!UM.empty())
@@ -321,7 +456,13 @@ int main(int argc, char ** argv)
 		  auto i = UM.find(n);
 		  if(i != UM.end()) //then the Unique reads redundant mate exists
 		    {
+		      if(b.hasTag("XA") == nullptr) //Some unique reads are mislabled in the bam files.
+			{
+			  outputU(of.um_u,b,reader);
+			  outputM(of.um_m,i->second,reader);
+			}
 		      //get the multiple read now
+		      /*
 		      bamrecord mate = reader.record_at_pos(i->second);
 #ifndef NDEBUG
 		      auto n2=mate.read_name();
@@ -329,159 +470,229 @@ int main(int argc, char ** argv)
 		      assert(n == n2);
 #endif
 		      UM.erase(i);
-		      
+		      */
 		      //We can now print out the data.
 		    }
 		}
 	    }
 	}
     }
+   
   //Old version of code
   /*
-    samrecord r1,r2;
-    map<unsigned,unsigned> mdist; //distribution of insert sizes
-    while( !cin.eof())
+  samrecord r1,r2;
+  map<unsigned,unsigned> mdist; //distribution of insert sizes
+  while( !cin.eof())
     {
-    cin >> r1 >> ws >> r2 >> ws;
+      cin >> r1 >> ws >> r2 >> ws;
 
-    if ( r1.qname() != r2.qname() )
-    {
-    cerr << "error: alignment records not properly sorted by read name\n"
-    << r1 << '\n'
-    << r2 << '\n';
-    exit(10);
-    }
+      if ( r1.qname() != r2.qname() )
+	{
+	  cerr << "error: alignment records not properly sorted by read name\n"
+	       << r1 << '\n'
+	       << r2 << '\n';
+	  exit(10);
+	}
  
-    samflag rf = r1.flag(),
-    rf2 = r2.flag();
-    if((!rf.query_unmapped && !rf.mate_unmapped) &&
-    (!rf2.query_unmapped && !rf2.mate_unmapped) ) //Fixed bug/issue #1 from git
-    {
-    bool ppaired = false;
-    //check if reads in expected orientation.
-    if(r1.rname() == r2.rname() && rf.is_proper_pair)
-    {
-    if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
-    {
-    int mdist1 = r1.isize();
-    int pos1 = r1.pos(),pos2=r2.pos();
-    samflag f1 = r1.flag(),f2 = r2.flag();
-    if( 
-    ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
-    || ( f2.qstrand && !f2.mstrand) ) )
-    ||
-    ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
-    || ( !f2.qstrand && f2.mstrand ) ) )
-    )
-    {
-    ppaired = true;
-    #ifndef NDEBUG
-    int mdist2=r2.isize();
-    assert( abs(mdist1) == abs(mdist2) );
-    #endif
-    map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
-    if( itr == mdist.end() )
-    {
-    mdist.insert(make_pair(abs(mdist1),1));
-    }
-    else
-    {
-    itr->second++;
-    }
-    }
-    }
-    }
-    string qref(r1.rname()),mref(r1.mrnm());
-    if(mref != "=" && qref != mref) //UL
-    {
-    assert(!ppaired);
-    checkMap(r1,r2,output_files::UL,of);
-    }
-    else
-    {
-    if(r1.pos() != r1.mpos()) //don't map to same pos on reference
-    {
-    if(rf.qstrand == rf.mstrand)
-    {
-    assert(!ppaired);
-    checkMap(r1,r2,output_files::PAR,of);
-    }
-    else if (rf.qstrand == 0 &&
-    r1.pos() > r1.mpos())
-    {
-    assert(!ppaired);
-    checkMap(r1,r2,output_files::DIV,of);
-    }
-    else if (rf.mstrand == 0 &&
-    r1.mpos() > r1.pos())
-    {
-    assert(!ppaired);
-    checkMap(r1,r2,output_files::DIV,of);
-    }
-    else if(!rf.is_proper_pair)//is a putative UM
-    {
-    if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
-    {
-    if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
-    { 
-    checkMap(r1,r2,output_files::UMU,of);
-    }
-    }
-    }
-    else if ( (hasXA(r1) && !hasXA(r2)) ||
-    (hasXA(r2) && !hasXA(r1)) )
-    {
-    //could be ppaired due to rescued read
-    //make sure both are not labelled XT:A:U or R
-    if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
-    {
-    if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
-    { 
-    checkMap(r1,r2,output_files::UMU,of);
-    }
-    }
-    }
-    }
-    }
-    }
+      samflag rf = r1.flag(),
+	rf2 = r2.flag();
+      if((!rf.query_unmapped && !rf.mate_unmapped) &&
+	 (!rf2.query_unmapped && !rf2.mate_unmapped) ) //Fixed bug/issue #1 from git
+	{
+	  bool ppaired = false;
+	  //check if reads in expected orientation.
+	  if(r1.rname() == r2.rname() && rf.is_proper_pair)
+	    {
+	      if(!hasXT(r1,"R") && !hasXT(r2,"R")) //if reads are unique and/or rescued by sampe
+		{
+		  int mdist1 = r1.isize();
+		  int pos1 = r1.pos(),pos2=r2.pos();
+		  samflag f1 = r1.flag(),f2 = r2.flag();
+		  if( 
+		     ( pos1 < pos2 && ( (!f1.qstrand && f1.mstrand)
+					|| ( f2.qstrand && !f2.mstrand) ) )
+		     ||
+		     ( ( pos2 < pos1 ) && ( (f1.qstrand && !f1.mstrand)
+					    || ( !f2.qstrand && f2.mstrand ) ) )
+		      )
+		    {
+		      ppaired = true;
+#ifndef NDEBUG
+		      int mdist2=r2.isize();
+		      assert( abs(mdist1) == abs(mdist2) );
+#endif
+		      map<unsigned,unsigned>::iterator itr =  mdist.find(abs(mdist1));
+		      if( itr == mdist.end() )
+			{
+			  mdist.insert(make_pair(abs(mdist1),1));
+			}
+		      else
+			{
+			  itr->second++;
+			}
+		    }
+		}
+	    }
+	  string qref(r1.rname()),mref(r1.mrnm());
+	  if(mref != "=" && qref != mref) //UL
+	    {
+	      assert(!ppaired);
+	      checkMap(r1,r2,output_files::UL,of);
+	    }
+	  else
+	    {
+	      if(r1.pos() != r1.mpos()) //don't map to same pos on reference
+		{
+		  if(rf.qstrand == rf.mstrand)
+		    {
+		      assert(!ppaired);
+		      checkMap(r1,r2,output_files::PAR,of);
+		    }
+		  else if (rf.qstrand == 0 &&
+			   r1.pos() > r1.mpos())
+		    {
+		      assert(!ppaired);
+		      checkMap(r1,r2,output_files::DIV,of);
+		    }
+		  else if (rf.mstrand == 0 &&
+			   r1.mpos() > r1.pos())
+		    {
+		      assert(!ppaired);
+		      checkMap(r1,r2,output_files::DIV,of);
+		    }
+		  else if(!rf.is_proper_pair)//is a putative UM
+		    {
+		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
+			{
+			  if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
+			    { 
+			      checkMap(r1,r2,output_files::UMU,of);
+			    }
+			}
+		    }
+		  else if ( (hasXA(r1) && !hasXA(r2)) ||
+			    (hasXA(r2) && !hasXA(r1)) )
+		    {
+		      //could be ppaired due to rescued read
+		      //make sure both are not labelled XT:A:U or R
+		      if( !(hasXT(r1,"U") && hasXT(r2,"U")) )
+			{
+			  if( !(hasXT(r1,"R")&&  hasXT(r2,"R")) )
+			    { 
+			      checkMap(r1,r2,output_files::UMU,of);
+			    }
+			}
+		    }
+		}
+	    }
+	}
     }
   */
   //get sum of insert size dist
-  long unsigned sum = 0;
-  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
-       i != mdist.end() ; ++i )
-    {
-      sum += unsigned(long(i->second));
-    }
+  // long unsigned sum = 0;
+  // for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+  //      i != mdist.end() ; ++i )
+  //   {
+  //     sum += unsigned(long(i->second));
+  //   }
 
-  gzFile mdistout = gzopen(mdistfile,"w");
-  if( mdistout == NULL ) {
-    cerr << "Error: could not open "
-	 << mdistfile
-	 << " for writing\n";
-    exit(1);
-  }
-  if( gzprintf(mdistout,"%s\n","distance\tnumber\tcprob") <= 0 )
-    {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
-      exit(1);
-    }
-  unsigned long cum=0;
-  for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
-       i != mdist.end() ; ++i )
-    {
-      cum += unsigned(long(i->second));
+  // gzFile mdistout = gzopen(mdistfile,"w");
+  // if( mdistout == NULL ) {
+  //   cerr << "Error: could not open "
+  // 	 << mdistfile
+  // 	 << " for writing\n";
+  //   exit(1);
+  // }
+  // if( gzprintf(mdistout,"%s\n","distance\tnumber\tcprob") <= 0 )
+  //   {
+  //     cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+  // 	   << " of " << __FILE__ << '\n';
+  //     exit(1);
+  //   }
+  // unsigned long cum=0;
+  // for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
+  //      i != mdist.end() ; ++i )
+  //   {
+  //     cum += unsigned(long(i->second));
 
-      if( gzprintf(mdistout,"%u\t%u\t%e\n",i->first,i->second,double(cum)/double(sum)) <= 0 )
-	{
-	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-    }
-  gzclose(mdistout);
+  //     if( gzprintf(mdistout,"%u\t%u\t%e\n",i->first,i->second,double(cum)/double(sum)) <= 0 )
+  // 	{
+  // 	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+  // 	       << " of " << __FILE__ << '\n';
+  // 	  exit(1);
+  // 	}
+  //   }
+  // gzclose(mdistout);
 }
+
+
+// void writeCNV( const readbucket & alignments,
+// 	       gzFile rfile,
+// 	       gzFile samfile,
+// 	       const char * maptype,
+// 	       const bamreader & reader)
+// {
+//   std::for_each(alignments.cbegin(),alignments.cend(),
+// 		[&](const pair<string,APAIR> & a) {
+// 		  if(! a.second.second.empty())
+// 		    {
+// 		      //Write the data
+// 		      ostringstream o;
+// 		      //auto REF = find_if(reader.ref_cbegin(),
+// 		      //reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
+// 		      //return( __r.second == a.second.first.refid() ); });
+// 		      auto REF = reader.ref_cbegin()+a.second.first.refid();
+// 		      /*
+// 			if( REF == reader.ref_cend() )
+// 			{
+// 			cerr << "Error: reference ID number : "<< a.second.first.refid()
+// 			<< " is not present in the BAM file header. "
+// 			<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
+// 			exit(1);
+// 			}
+// 		      */
+// 		      o << a.second.first.read_name() << '\t'
+// 			<< REF->first << '\t'
+// 			<< a.second.first.mapq() << '\t'
+// 			<< a.second.first.pos() << '\t'
+// 			<< a.second.first.pos() + alignment_length(a.second.first) - 1 << '\t'
+// 			<< a.second.first.flag().qstrand << '\t'
+// 			<< mismatches(a.second.first) << '\t'
+// 			<< ngaps(a.second.first) << '\t'
+// 			<< maptype << '\t';
+// 		      REF = reader.ref_cbegin()+a.second.second.refid();
+// 		      /*
+// 			REF = find_if(reader.ref_cbegin(),
+// 			reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
+// 			return( __r.second == a.second.second.refid() ); });
+// 			if( REF == reader.ref_cend() )
+// 			{
+// 			cerr << "Error: reference ID number : "<< a.second.second.refid()
+// 			<< " is not present in the BAM file header. "
+// 			<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
+// 			exit(1);
+// 			}
+// 		      */
+// 		      //Second read data
+// 		      o << a.second.second.read_name() << '\t'
+// 			<< REF->first << '\t'
+// 			<< a.second.second.mapq() << '\t'
+// 			<< a.second.second.pos() << '\t'
+// 			<< a.second.second.pos() + alignment_length(a.second.second) - 1 << '\t'
+// 			<< a.second.second.flag().qstrand << '\t'
+// 			<< mismatches(a.second.second) << '\t'
+// 			<< ngaps(a.second.second) << '\t'
+// 			<< maptype << '\n';
+// 		      if(! gzwrite( rfile,o.str().c_str(),o.str().size() ) )
+// 			{
+// 			  cerr << "Error: gzwrite error at line "
+// 			       << __LINE__ << " of file "
+// 			       << __FILE__ << '\n';
+// 			  exit(1);
+// 			}
+// 		    }
+// 		});
+// }
 
 void checkMap(const bamrecord & r1,
 	      const bamrecord & r2,
@@ -708,6 +919,7 @@ bool operator==(const mapping_pos & left,
 		left.gap == right.gap);
   return same;
 }
+
 bool operator<(const mapping_pos & left, 
 	       const mapping_pos & right)
 {
@@ -716,99 +928,118 @@ bool operator<(const mapping_pos & left,
 	  left.strand < right.strand);
 }
 
-vector<mapping_pos> get_mapping_pos(const bamrecord & r)
+
+//FXN NEED AUDITING
+//The XA positions need to be turned into 0 offset
+vector<mapping_pos> get_mapping_pos(const bamrecord & r,
+				    const bamreader & reader)
 {
   vector<mapping_pos> rv;
-  /*
-    rv.push_back( mapping_pos( r.rname(), 
-    r.pos()-1,
-    r.pos()+alignment_length(r)-2,
-    r.flag().qstrand,
-    mismatches(r),
-    ngaps(r) ) );
-    string XA;
-    bool found=false;
-    for( samrecord::tag_iterator i = r.tag_begin() ; 
-    !found&&i != r.tag_end() ; ++i )
+  auto REF = reader.ref_cbegin() + r.refid();
+  rv.push_back( mapping_pos( REF->first,
+			     r.pos(),
+			     r.pos()+alignment_length(r)-2,
+			     r.flag().qstrand,
+			     mismatches(r),
+			     ngaps(r) ) );
+  bamaux auxXA = r.aux("XA");
+  if(auxXA.size)
     {
-    if(i->tag() == "XA")
-    {
-    XA=i->value();
-    found=true;
+      string XA(auxXA.value);
+      vector<string::size_type> colons;
+      string::size_type colon = XA.find(";");
+      do
+	{
+	  colons.push_back(colon);
+	  colon = XA.find(";",colon+1);
+	}
+      while(colon != string::npos);
+      string hit;
+      for(unsigned i=0;i<colons.size();++i)
+	{
+	  if( i == 0 )
+	    {
+	      hit = string(XA.begin(),XA.begin()+colons[0]);
+	    }
+	  else
+	    {
+	      hit = string(XA.begin()+colons[i-1]+1,XA.begin()+colons[i]);
+	    }
+	  vector<string::size_type> commas;
+	  string::size_type comma = hit.find(",");
+	  do 
+	    {
+	      commas.push_back(comma);
+	      comma = hit.find(",",comma+1);
+	    }
+	  while(comma != string::npos);
+	  
+	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
+	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
+	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
+	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
+	  unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
+	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
+	  
+	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
+			     mm(nm,cdata),ngaps(cdata));
+	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
+	    {
+	      rv.push_back(hitmp);
+	    }
+	}
     }
-    }
-    if ( found )
-    {
-    vector<string::size_type> colons;
-    string::size_type colon = XA.find(";");
-    do
-    {
-    colons.push_back(colon);
-    colon = XA.find(";",colon+1);
-    }
-    while(colon != string::npos);
-    string hit;
-    for(unsigned i=0;i<colons.size();++i)
-    {
-    if( i == 0 )
-    {
-    hit = string(XA.begin(),XA.begin()+colons[0]);
-    }
-    else
-    {
-    hit = string(XA.begin()+colons[i-1]+1,XA.begin()+colons[i]);
-    }
-    vector<string::size_type> commas;
-    string::size_type comma = hit.find(",");
-    do 
-    {
-    commas.push_back(comma);
-    comma = hit.find(",",comma+1);
-    }
-    while(comma != string::npos);
-
-    string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
-    int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
-    string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
-    vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-    unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
-    unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
-
-    mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
-    mm(nm,cdata),ngaps(cdata));
-    if(find(rv.begin(),rv.end(),hitmp)==rv.end())
-    {
-    rv.push_back(hitmp);
-    }
-    }
-    }
-  */
   return rv;
 }
 
-void outputM( gzFile gzout,
-	      const bamrecord & r )
+void outputU( gzFile gzout,
+	      const bamrecord & r,
+	      const bamreader & reader )
 {
-  /*
-    string name = r.qname();
-    vector<mapping_pos> mpos = get_mapping_pos(r);
-    for( unsigned i=0;i<mpos.size();++i)
+  string name = editRname(r.read_name());
+  ostringstream obuffer;
+  auto REF = reader.ref_cbegin()+r.refid();
+  obuffer << name << '\t'
+	  << r.mapq() << '\t'
+	  << REF->first << '\t'
+	  << r.pos()-1 << '\t'
+	  << r.pos() + alignment_length(r) - 2 << '\t'
+	  << r.flag().qstrand << '\t'
+	  << mismatches(r) << '\t'
+	  << ngaps(r) << '\n'; 
+
+  if(!gzwrite(gzout,obuffer.str().c_str(),obuffer.str().size()))
     {
-    ostringstream out;
-    out << name << '\t' << r.mapq() << '\t'
-    << mpos[i].chrom << '\t'
-    << mpos[i].start << '\t'
-    << mpos[i].stop << '\t'
-    << mpos[i].strand << '\t'
-    << mpos[i].mm << '\t'
-    << mpos[i].gap;// << '\n';
-    //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
-    if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
+      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+}
+
+void outputM( gzFile gzout,
+	      const bamrecord & r,
+	      const bamreader & reader)
+{
+  //string name = r.qname();
+  string name = editRname(r.read_name());
+  vector<mapping_pos> mpos = get_mapping_pos(r,reader);
+  for( unsigned i=0;i<mpos.size();++i)
     {
-    cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-    << " of " << __FILE__ << '\n';
-    exit(1);
+      ostringstream out;
+      out << name << '\t' 
+	  << r.mapq() << '\t'
+	  << mpos[i].chrom << '\t'
+	  << mpos[i].start << '\t'
+	  << mpos[i].stop << '\t'
+	  << mpos[i].strand << '\t'
+	  << mpos[i].mm << '\t'
+	  << mpos[i].gap << '\n';
+      //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+      if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
     }
-    }
-  */
 }
