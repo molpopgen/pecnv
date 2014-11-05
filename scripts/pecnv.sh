@@ -148,7 +148,7 @@ samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings 
 ###5. Get quantile of mapping distance
 Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
 
-MD=`head -n 1 $OUTDIR/mquant.txt`
+MD=`head -n 1 $OUTDIR/$BAMFILESTUB.mquant.txt`
 
 ###6. Cluster
 cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
