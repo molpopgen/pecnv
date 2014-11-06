@@ -144,20 +144,10 @@ std::string mtype2string( const output_files::MAPTYPE & m )
   return "NA";
 }
 
-/*
-  bool hasXA(const samrecord & r)
-  {
-  for( samrecord::tag_iterator i = r.tag_begin();
-  i!=r.tag_end();++i)
-  {
-  if(i->tag() == "XA")
-  {
-  return true;
-  }
-  }
-  return false;
-  }
-*/
+bool hasXA(const bamrecord & r)
+{
+  return r.hasTag("XA") != nullptr;
+}
 
 vector< pair<char,unsigned> > parse_cigar(const string & cigar);
 unsigned mm(const unsigned & nm,
@@ -184,27 +174,6 @@ string editRname( const std::string & readname )
   return string(readname.begin(),readname.begin()+pound);
 }
 
-// void writeCNV( const readbucket & alignments,
-// 	       gzFile rfile,
-// 	       gzFile samfile,
-// 	       const char * maptype,
-// 	       const bamreader & reader);
-
-// void addRead2bucket( readbucket & rb, bamrecord & b, bool skipSecond = false )
-// {
-//   string n = editRname(b.read_name());
-//   auto i = rb.find(n);
-//   if(i == rb.end())
-//     {
-//       rb.insert( make_pair(n, make_pair(std::move(b),bamrecord())) );
-//     }
-//   else if (!skipSecond)
-//     {
-//       i->second.second = std::move(b);
-//       assert(!i->second.second.empty());
-//     }
-// }
-
 void updateBucket( readbucket & rb, bamrecord & b, 
 		   gzFile csvfile, gzFile samfile,
 		   const char * maptype,
@@ -218,21 +187,22 @@ void updateBucket( readbucket & rb, bamrecord & b,
     }
   else //We've got our pair, so write it out
     {
-      //assert(i->second.second.empty());
       ostringstream o;
-      //auto REF = find_if(reader.ref_cbegin(),
-      //reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
-      //return( __r.second == a.second.first.refid() ); });
-      auto REF = reader.ref_cbegin()+i->second.refid();
-      /*
-	if( REF == reader.ref_cend() )
+      if(i->second.refid() > reader.ref_cend()-reader.ref_cbegin())
 	{
-	cerr << "Error: reference ID number : "<< i->second.first.refid()
-	<< " is not present in the BAM file header. "
-	<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
-	exit(1);
+	  cerr << "Error: reference ID number : "<< i->second.refid()
+	       << " is not present in the BAM file header. "
+	       << " Line " << __LINE__ << " of " << __FILE__ << '\n';
+	  exit(1);
 	}
-      */
+      if(b.refid() > reader.ref_cend()-reader.ref_cbegin())
+	{
+	  cerr << "Error: reference ID number : "<< b.refid()
+	       << " is not present in the BAM file header. "
+	       << " Line " << __LINE__ << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      auto REF = reader.ref_cbegin()+i->second.refid();
       o << editRname(i->second.read_name()) << '\t'
 	<< REF->first << '\t'
 	<< i->second.mapq() << '\t'
@@ -243,18 +213,6 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	<< ngaps(i->second) << '\t'
 	<< maptype << '\t';
       REF = reader.ref_cbegin()+b.refid();
-      /*
-	REF = find_if(reader.ref_cbegin(),
-	reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
-	return( __r.second == b.refid() ); });
-	if( REF == reader.ref_cend() )
-	{
-	cerr << "Error: reference ID number : "<< b.refid()
-	<< " is not present in the BAM file header. "
-	<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
-	exit(1);
-	}
-      */
       //Second read data
       o << editRname(b.read_name()) << '\t'
 	<< REF->first << '\t'
@@ -273,8 +231,76 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	  exit(1);
 	}
       rb.erase(i);
-      //i->second.second = std::move(b);
-      //assert(!i->second.second.empty());
+    }
+}
+
+/*
+  Does this pair of alignments represent a unique/multi pair?
+*/
+void evalUM(const bamrecord & b1,
+	    const bamrecord & b2,
+	    const bamreader & reader,
+	    gzFile uout, gzFile mout)
+{
+  if( editRname(b1.read_name()) != editRname(b2.read_name()) )
+    {
+      cerr << "Error: read names don't match at line "
+	   << __LINE__
+	   << " of " << __FILE__ << 'n';
+      exit(1);
+    }
+
+  bamaux XTb1 = b1.aux("XT"),XTb2 = b2.aux("XT");
+  if( XTb1.size && XTb2.size )
+    {
+      const char XTv1 = XTb1.value[0],
+	XTv2 = XTb2.value[0];
+      if ( (XTv1 == 'M' && XTv2 == 'M') ||
+	   (XTv1 == 'R' && XTv2 == 'R') ) 
+	return;
+  //     bool U1M2 = (( (isU1||isR1) && !hasXA1 ) && hasXA2);
+  //     bool U2M1 = (( (isU2||isR2) && !hasXA2 ) && hasXA1);
+      //     outputU(of.um_u,b,reader);
+      //     outputM(of.um_m,i->second,reader);
+      bool U1M2 = ( ((XTv1=='U'||XTv1=='R') && b1.hasTag("XA")==nullptr) && b2.hasTag("XA") != nullptr );
+      bool U2M1 = ( ((XTv2=='U'||XTv2=='R') && b2.hasTag("XA")==nullptr) && b1.hasTag("XA") != nullptr );
+      auto NN = editRname(b1.read_name());
+      //if(editRname(b1.read_name()) == string("HWUSI-EAS1562_0017_FC:6:120:19659:12718"))
+      if( NN == string("HWUSI-EAS1562_0009:6:118:17530:18353") ||
+	  NN == string("HWUSI-EAS1562_0009:6:27:5132:14678") ||
+	  NN == string("HWUSI-EAS1562_0009:6:49:11088:9226") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:107:14146:14493") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:110:8978:7718") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:119:2580:3215") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:16:9265:17340") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:31:6526:20108") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:41:15624:4245") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:71:13707:4234") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:9:12840:16961") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:95:18546:18047") )
+	{
+	  cerr << NN << ' '
+	       << U1M2 << ' '
+	       << (XTv1=='U'||XTv1=='R') << ' '
+	       << (b1.hasTag("XA")==nullptr) << ' ' 
+	       << (b2.hasTag("XA") != nullptr) << ' '
+	       << U2M1 << ' '
+	       << (XTv2=='U'||XTv2=='R') << ' '
+	       << (b2.hasTag("XA")==nullptr) << ' ' 
+	       << (b1.hasTag("XA") != nullptr) << '\n';
+	}
+      if(U1M2)
+	{
+	  outputU(uout,b1,reader);
+	  outputM(mout,b2,reader);
+	  assert( !(XTv1=='M' && XTv2 == 'M') );
+	}
+      else if (U2M1)
+	{
+	  outputU(uout,b2,reader);
+	  outputM(mout,b1,reader);
+	  assert( !(XTv1=='M' && XTv2 == 'M') );
+	}
     }
 }
 
@@ -311,12 +337,35 @@ int main(int argc, char ** argv)
   while( !reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
+      auto NN = editRname(b.read_name());
+      bool SPECIAL = false;
+      if( NN == string("HWUSI-EAS1562_0009:6:118:17530:18353") ||
+	  NN == string("HWUSI-EAS1562_0009:6:27:5132:14678") ||
+	  NN == string("HWUSI-EAS1562_0009:6:49:11088:9226") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:107:14146:14493") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:110:8978:7718") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:119:2580:3215") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:16:9265:17340") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:31:6526:20108") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:41:15624:4245") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:71:13707:4234") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:9:12840:16961") ||
+	  NN == string("HWUSI-EAS1562_0017_FC:6:95:18546:18047") )
+	{
+	  SPECIAL=true;
+	  cerr << "found " << NN << " on the outside ";
+	}
       samflag sf(b.flag());
       if(!sf.query_unmapped  && !sf.mate_unmapped) //Both reads are mapped
       	{
+	  if( SPECIAL )
+	    {
+	      cerr << "inside ";
+	    }
 	  bamaux bXT = b.aux("XT");  //look for XT tag
 	  if(bXT.size) //if it is present
 	    {
+	      if(SPECIAL) cerr << " bXT exists ";
 	      const char XTval = bXT.value[0];
 	      bool unusual = false; //A putative DIV/PAR/UL?
 	      //Look for unusual read mappings here
@@ -326,25 +375,28 @@ int main(int argc, char ** argv)
 		    {
 		      unusual = true;
 		      updateBucket(UL,b,of.structural,of.structural_sam,"UL\0",reader);
-		      //addRead2bucket(UL,b);
 		    }
 		  else if ( b.pos() != b.next_pos()) //Don't map to same position
 		    {
 		      if( sf.qstrand == sf.mstrand )
 			{
 			  unusual = true;
-			  //addRead2bucket(PAR,b);
 			  updateBucket(PAR,b,of.structural,of.structural_sam,"PAR\0",reader);
 			}
 		      else if( (sf.qstrand == 0 && b.pos() > b.next_pos()) ||
 			       (sf.mstrand == 0 && b.next_pos() > b.pos() ) )
 			{
 			  unusual = true;
-			  //addRead2bucket(DIV,b);
 			  updateBucket(DIV,b,of.structural,of.structural_sam,"DIV\0",reader);
 			}
 		    }
 
+
+		  //if(editRname(b1.read_name()) == string("HWUSI-EAS1562_0017_FC:6:120:19659:12718"))
+		  if( SPECIAL )
+		    {
+		      cerr << "unusual="<<unusual << ' ';
+		    }
 		  if(!unusual)
 		    {
 		      // const char XTval = bXT.value[0];
@@ -392,11 +444,17 @@ int main(int argc, char ** argv)
 			   //bamrecord multi = reader.record_at_pos(i->second);
 			   //assert(!multi.empty());
 			   ++UMFOUND;
-			   if(b.hasTag("XA") == nullptr)
-			     {
-			       outputU(of.um_u,b,reader);
-			       outputM(of.um_m,i->second,reader);
-			     }
+			   // assert(XTval == 'U');
+			   // bamaux XTp = i->second.aux("XT");
+			   // char XT2 = XTp.value[0];
+			   // if( (XTval == 'U' && (XT2 == 'R'||XT2=='M')) ||
+			   //     (XTval == 'R' && XT2 == 'M' ) )
+			   //   {
+			   //     outputU(of.um_u,b,reader);
+			   //     outputM(of.um_m,i->second,reader);
+			   //   }
+			   if(SPECIAL) cerr << "evaluating ";
+			   evalUM(b,i->second,reader,of.um_u,of.um_m);
 			   UM.erase(i);
 			 }
 		       else 
@@ -406,8 +464,28 @@ int main(int argc, char ** argv)
 		       //}
 		    }
 		}
-	      else if (XTval == 'R' || XTval == 'M') //putative U/M pair member
+	      //putative U/M pair member, reads don't hit same position on same chromo
+	      else if ((XTval == 'R' || XTval == 'M') && 
+		       ( (b.refid() != b.next_refid()) ||
+			 (b.refid() == b.next_refid() && b.pos() != b.next_pos()) ) )
 		{
+		  if(SPECIAL)
+		  // if( NN == string("HWUSI-EAS1562_0009:6:118:17530:18353") ||
+		  //     NN == string("HWUSI-EAS1562_0009:6:27:5132:14678") ||
+		  //     NN == string("HWUSI-EAS1562_0009:6:49:11088:9226") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:107:14146:14493") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:110:8978:7718") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:119:2580:3215") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:16:9265:17340") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:31:6526:20108") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:41:15624:4245") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:71:13707:4234") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:9:12840:16961") ||
+		  //     NN == string("HWUSI-EAS1562_0017_FC:6:95:18546:18047") )
+		    {
+		      cerr << " is putative M ";
+		      cerr << b.aux("XT").value[0] << ' ';
+		    }
 		  string n = editRname(b.read_name());
 		  auto i = UM.find(editRname(n));
 		  if(i == UM.end())
@@ -415,13 +493,15 @@ int main(int argc, char ** argv)
 		      //UM.insert(make_pair(n,reader.tell()));
 		      UM.insert(make_pair(move(n),move(b)));
 		    }
-		  else //This is an M/M or M/R pair, so we can delete
+		  else //This is an M/M or M/R pair, so we can evaluate and then delete
 		    {
+		      evalUM(b,i->second,reader,of.um_u,of.um_m);
 		      UM.erase(i);
 		    }
 		}
 	    }
 	}
+      if(SPECIAL) cerr << '\n';
     }
   
   //writeCNV(DIV,of.structural,of.structural_sam,"DIV\0",reader);
@@ -431,7 +511,7 @@ int main(int argc, char ** argv)
   DIV.clear();
   PAR.clear();
   UL.clear();
-  return 0;
+  //return 0;
   //exit(1);
   //Print out the PAR/DIV/UL data here
 
@@ -448,19 +528,25 @@ int main(int argc, char ** argv)
 	  if(!r.query_unmapped)
 	    {
 	      bamaux ba = b.aux("XT");
-	      if(ba.value[0]=='U') //Read is flagged as uniquely-mapping
+	      if(ba.value[0]=='U' || ba.value[0]=='R') //Read is flagged as uniquely-mapping or rescued
 		{
-		  auto n = b.read_name();
-		  auto hash = n.find('#');
-		  n.erase(n.begin()+hash,n.end());
+		  string n = editRname(b.read_name());
+		  // auto n = b.read_name();
+		  // auto hash = n.find('#');
+		  // n.erase(n.begin()+hash,n.end());
 		  auto i = UM.find(n);
 		  if(i != UM.end()) //then the Unique reads redundant mate exists
 		    {
-		      if(b.hasTag("XA") == nullptr) //Some unique reads are mislabled in the bam files.
-			{
-			  outputU(of.um_u,b,reader);
-			  outputM(of.um_m,i->second,reader);
-			}
+		      evalUM(b,i->second,reader,of.um_u,of.um_m);
+		      // auto mXT = i->second.aux("XT");
+		      // char XT2 = mXT.value[0];
+		      // if( (ba.value[0] == 'U' && (XT2=='R'||XT2=='M')) ||
+		      // 	  (ba.value[0] == 'R' && XT2 == 'M' ) )
+		      // 	{
+		      // 	  outputU(of.um_u,b,reader);
+		      // 	  outputM(of.um_m,i->second,reader);
+		      // 	}
+
 		      //get the multiple read now
 		      /*
 		      bamrecord mate = reader.record_at_pos(i->second);
@@ -625,74 +711,6 @@ int main(int argc, char ** argv)
   // gzclose(mdistout);
 }
 
-
-// void writeCNV( const readbucket & alignments,
-// 	       gzFile rfile,
-// 	       gzFile samfile,
-// 	       const char * maptype,
-// 	       const bamreader & reader)
-// {
-//   std::for_each(alignments.cbegin(),alignments.cend(),
-// 		[&](const pair<string,APAIR> & a) {
-// 		  if(! a.second.second.empty())
-// 		    {
-// 		      //Write the data
-// 		      ostringstream o;
-// 		      //auto REF = find_if(reader.ref_cbegin(),
-// 		      //reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
-// 		      //return( __r.second == a.second.first.refid() ); });
-// 		      auto REF = reader.ref_cbegin()+a.second.first.refid();
-// 		      /*
-// 			if( REF == reader.ref_cend() )
-// 			{
-// 			cerr << "Error: reference ID number : "<< a.second.first.refid()
-// 			<< " is not present in the BAM file header. "
-// 			<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
-// 			exit(1);
-// 			}
-// 		      */
-// 		      o << a.second.first.read_name() << '\t'
-// 			<< REF->first << '\t'
-// 			<< a.second.first.mapq() << '\t'
-// 			<< a.second.first.pos() << '\t'
-// 			<< a.second.first.pos() + alignment_length(a.second.first) - 1 << '\t'
-// 			<< a.second.first.flag().qstrand << '\t'
-// 			<< mismatches(a.second.first) << '\t'
-// 			<< ngaps(a.second.first) << '\t'
-// 			<< maptype << '\t';
-// 		      REF = reader.ref_cbegin()+a.second.second.refid();
-// 		      /*
-// 			REF = find_if(reader.ref_cbegin(),
-// 			reader.ref_cend(),[&](const bamreader::refdataObj & __r) {
-// 			return( __r.second == a.second.second.refid() ); });
-// 			if( REF == reader.ref_cend() )
-// 			{
-// 			cerr << "Error: reference ID number : "<< a.second.second.refid()
-// 			<< " is not present in the BAM file header. "
-// 			<< " Line " << __LINE__ << " of " << __FILE__ << '\n';
-// 			exit(1);
-// 			}
-// 		      */
-// 		      //Second read data
-// 		      o << a.second.second.read_name() << '\t'
-// 			<< REF->first << '\t'
-// 			<< a.second.second.mapq() << '\t'
-// 			<< a.second.second.pos() << '\t'
-// 			<< a.second.second.pos() + alignment_length(a.second.second) - 1 << '\t'
-// 			<< a.second.second.flag().qstrand << '\t'
-// 			<< mismatches(a.second.second) << '\t'
-// 			<< ngaps(a.second.second) << '\t'
-// 			<< maptype << '\n';
-// 		      if(! gzwrite( rfile,o.str().c_str(),o.str().size() ) )
-// 			{
-// 			  cerr << "Error: gzwrite error at line "
-// 			       << __LINE__ << " of file "
-// 			       << __FILE__ << '\n';
-// 			  exit(1);
-// 			}
-// 		    }
-// 		});
-// }
 
 void checkMap(const bamrecord & r1,
 	      const bamrecord & r2,
@@ -938,7 +956,7 @@ vector<mapping_pos> get_mapping_pos(const bamrecord & r,
   auto REF = reader.ref_cbegin() + r.refid();
   rv.push_back( mapping_pos( REF->first,
 			     r.pos(),
-			     r.pos()+alignment_length(r)-2,
+			     r.pos()+alignment_length(r)-1,
 			     r.flag().qstrand,
 			     mismatches(r),
 			     ngaps(r) ) );
@@ -996,14 +1014,16 @@ void outputU( gzFile gzout,
 	      const bamrecord & r,
 	      const bamreader & reader )
 {
+  assert( ! r.flag().query_unmapped );
+  assert( ! r.flag().mate_unmapped );
   string name = editRname(r.read_name());
   ostringstream obuffer;
   auto REF = reader.ref_cbegin()+r.refid();
   obuffer << name << '\t'
 	  << r.mapq() << '\t'
 	  << REF->first << '\t'
-	  << r.pos()-1 << '\t'
-	  << r.pos() + alignment_length(r) - 2 << '\t'
+	  << r.pos() << '\t'
+	  << r.pos() + alignment_length(r) - 1 << '\t'
 	  << r.flag().qstrand << '\t'
 	  << mismatches(r) << '\t'
 	  << ngaps(r) << '\n'; 
@@ -1020,7 +1040,8 @@ void outputM( gzFile gzout,
 	      const bamrecord & r,
 	      const bamreader & reader)
 {
-  //string name = r.qname();
+  assert( ! r.flag().query_unmapped );
+  assert( ! r.flag().mate_unmapped );
   string name = editRname(r.read_name());
   vector<mapping_pos> mpos = get_mapping_pos(r,reader);
   for( unsigned i=0;i<mpos.size();++i)
@@ -1034,7 +1055,7 @@ void outputM( gzFile gzout,
 	  << mpos[i].strand << '\t'
 	  << mpos[i].mm << '\t'
 	  << mpos[i].gap << '\n';
-      //if( gzprintf(gzout,"%s\n",out.str().c_str()) <= 0 )
+
       if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
 	{
 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
