@@ -123,9 +123,10 @@ do
     fi
     #ALIGN THIS PAIR 
     #We go straight to sorted BAM output via process substitution
-    bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/$align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
+    bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
     PAIR=$(($PAIR+1))
 done
+
 
 ###2. Merge bam files if necessary
 if [ $NPAIRS -gt 1 ]

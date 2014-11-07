@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#Change this if your system has < 32 CPU
-CPU=8
+CPU=4
 
 command_exists () {
     type "$1" &> /dev/null ;
@@ -28,22 +27,33 @@ fi
 
 if [ $WGET -eq 1 ]
 then
-    wget http://devlaeminck.bio.uci.edu/Data/references/dyak-all-chromosome-r1.3-newnames.fasta
-#Download two lanes of data for 1 sample--that's enough to see how things progress
-    wget http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_06_21_2010_54_1.fastq.gz
-    wget http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_06_21_2010_54_2.fastq.gz
-    wget http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_09_07_2010_75_1.fastq.gz
-    wget http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_09_07_2010_75_2.fastq.gz
+    if [ ! -e dyak-all-chromosome-r1.3-newnames.fasta ]
+	then
+	wget http://devlaeminck.bio.uci.edu/Data/references/dyak-all-chromosome-r1.3-newnames.fasta
+    fi
+    for READFILE in NY42_06_21_2010_54_1.fastq.gz NY42_06_21_2010_54_2.fastq.gz NY42_09_07_2010_75_1.fastq.gz NY42_09_07_2010_75_2.fastq.gz
+    do
+	if ! [ -e $READFILE ]
+	then
+	    wget http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/$READFILE
+	fi
+    done
 else
-    curl http://devlaeminck.bio.uci.edu/references/dyak-all-chromosome-r1.3-newnames.fasta -o dyak-all-chromosome-r1.3-newnames.fasta
+    if [ ! -e dyak-all-chromosome-r1.3-newnames.fasta ]
+    then
+	curl http://devlaeminck.bio.uci.edu/references/dyak-all-chromosome-r1.3-newnames.fasta -o dyak-all-chromosome-r1.3-newnames.fasta
+    fi
 #Download two lanes of data for 1 sample--that's enough to see how things progress
-    curl http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_06_21_2010_54_1.fastq.gz -o NY42_06_21_2010_54_1.fastq.gz
-    curl http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_06_21_2010_54_2.fastq.gz -o NY42_06_21_2010_54_2.fastq.gz
-    curl http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_09_07_2010_75_1.fastq.gz -o NY42_09_07_2010_75_1.fastq.gz
-    curl http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/NY42_09_07_2010_75_2.fastq.gz -o NY42_09_07_2010_75_2.fastq.gz
+    for READFILE in NY42_06_21_2010_54_1.fastq.gz NY42_06_21_2010_54_2.fastq.gz NY42_09_07_2010_75_1.fastq.gz NY42_09_07_2010_75_2.fastq.gz
+    do
+	if ! [ -e $READFILE ]
+	then
+	    curl http://devlaeminck.bio.uci.edu/Data/dyak_genomic_reads/$READFILE -o $READFILE
+	fi
+    done
 fi
 
-bwa index dyak-all-chromosome-r1.3-newnames.fasta
+#bwa index dyak-all-chromosome-r1.3-newnames.fasta
 
 #Make the input file. 
 #This command is specific to these data
@@ -52,7 +62,4 @@ bwa index dyak-all-chromosome-r1.3-newnames.fasta
 #etc. for all lanes
 paste <(ls *_1.fastq.gz) <(ls *_2.fastq.gz) > INFILE
 
-#ls -1 *.fastq.gz | sort > infile
-
-#pecnv.pl -infile infile -ref dyak-all-chromosome-r1.3-newnames.fasta -sample 0 -cpu $CPU
-pecnv.sh -i infile -r dyak-all-chromosome-r1.3-newnames.fasta -cpu $CPU
+pecnv.sh -i INFILE -r dyak-all-chromosome-r1.3-newnames.fasta -c $CPU
