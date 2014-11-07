@@ -172,78 +172,79 @@ int main(int argc, char ** argv)
   while( !reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
-      samflag sf(b.flag());
-      if(!sf.query_unmapped  && !sf.mate_unmapped) //Both reads are mapped
-      	{
-	  bamaux bXT = b.aux("XT");  //look for XT tag
-	  if(bXT.size) //if it is present
+      if(!b.empty())
+	{
+	  samflag sf(b.flag());
+	  if(!sf.query_unmapped  && !sf.mate_unmapped) //Both reads are mapped
 	    {
-	      const char XTval = bXT.value[0];
-	      bool unusual = false; //A putative DIV/PAR/UL?
-	      //Look for unusual read mappings here
-	      if(XTval == 'U') //if read is uniquely-mapping
+	      bamaux bXT = b.aux("XT");  //look for XT tag
+	      if(bXT.size) //if it is present
 		{
-		  if( b.refid() != b.next_refid() ) //both map to different scaffolds
+		  const char XTval = bXT.value[0];
+		  bool unusual = false; //A putative DIV/PAR/UL?
+		  //Look for unusual read mappings here
+		  if(XTval == 'U') //if read is uniquely-mapping
 		    {
-		      unusual = true;
-		      updateBucket(UL,b,of.structural,of.structural_sam,"UL\0",reader);
-		    }
-		  else if ( b.pos() != b.next_pos()) //Don't map to same position
-		    {
-		      if( sf.qstrand == sf.mstrand )
+		      if( b.refid() != b.next_refid() ) //both map to different scaffolds
 			{
 			  unusual = true;
-			  updateBucket(PAR,b,of.structural,of.structural_sam,"PAR\0",reader);
+			  updateBucket(UL,b,of.structural,of.structural_sam,"UL\0",reader);
 			}
-		      else if( (sf.qstrand == 0 && b.pos() > b.next_pos()) ||
-			       (sf.mstrand == 0 && b.next_pos() > b.pos() ) )
+		      else if ( b.pos() != b.next_pos()) //Don't map to same position
 			{
-			  unusual = true;
-			  updateBucket(DIV,b,of.structural,of.structural_sam,"DIV\0",reader);
+			  if( sf.qstrand == sf.mstrand )
+			    {
+			      unusual = true;
+			      updateBucket(PAR,b,of.structural,of.structural_sam,"PAR\0",reader);
+			    }
+			  else if( (sf.qstrand == 0 && b.pos() > b.next_pos()) ||
+				   (sf.mstrand == 0 && b.next_pos() > b.pos() ) )
+			    {
+			      unusual = true;
+			      updateBucket(DIV,b,of.structural,of.structural_sam,"DIV\0",reader);
+			    }
+			}
+
+		      if(!unusual)
+			{
+			  string n = editRname(b.read_name());
+			  auto i = UM.find(n);
+			  if( i != UM.end() )
+			    {
+			      //Let's process the M/U pair and then delete it
+			      //b is the unique-read, and the read
+			      //at position i->second is the M/R read
+			      //bamrecord multi = reader.record_at_pos(i->second);
+			      //assert(!multi.empty());
+			      evalUM(b,i->second,reader,of.um_u,of.um_m,of.um_sam);
+			      UM.erase(i);
+			    }
+			  else 
+			    {
+			    }
 			}
 		    }
-
-
-		  if(!unusual)
+		  //putative U/M pair member, reads don't hit same position on same chromo
+		  else if ((XTval == 'R' || XTval == 'M') && 
+			   ( (b.refid() != b.next_refid()) ||
+			     (b.refid() == b.next_refid() && b.pos() != b.next_pos()) ) )
 		    {
-		       string n = editRname(b.read_name());
-		       auto i = UM.find(n);
-		       if( i != UM.end() )
-			 {
-			   //Let's process the M/U pair and then delete it
-			   //b is the unique-read, and the read
-			   //at position i->second is the M/R read
-			   //bamrecord multi = reader.record_at_pos(i->second);
-			   //assert(!multi.empty());
-			   evalUM(b,i->second,reader,of.um_u,of.um_m,of.um_sam);
-			   UM.erase(i);
-			 }
-		       else 
-			 {
-			 }
-		    }
-		}
-	      //putative U/M pair member, reads don't hit same position on same chromo
-	      else if ((XTval == 'R' || XTval == 'M') && 
-		       ( (b.refid() != b.next_refid()) ||
-			 (b.refid() == b.next_refid() && b.pos() != b.next_pos()) ) )
-		{
-		  string n = editRname(b.read_name());
-		  auto i = UM.find(editRname(n));
-		  if(i == UM.end())
-		    {				
-		      UM.insert(make_pair(move(n),move(b)));
-		    }
-		  else //This is an M/M or M/R pair, so we can evaluate and then delete
-		    {
-		      evalUM(b,i->second,reader,of.um_u,of.um_m,of.um_sam);
-		      UM.erase(i);
+		      string n = editRname(b.read_name());
+		      auto i = UM.find(editRname(n));
+		      if(i == UM.end())
+			{				
+			  UM.insert(make_pair(move(n),move(b)));
+			}
+		      else //This is an M/M or M/R pair, so we can evaluate and then delete
+			{
+			  evalUM(b,i->second,reader,of.um_u,of.um_m,of.um_sam);
+			  UM.erase(i);
+			}
 		    }
 		}
 	    }
 	}
     }
-
   //These are done.
   DIV.clear();
   PAR.clear();
