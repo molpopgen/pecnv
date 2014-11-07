@@ -16,13 +16,13 @@ usage(){
     >&2 echo " -s/--sortmem = Memory to be used by samtools sort.  Default = 50000000"
     >&2 echo " -a/--alnmem = Memory to be use by bwa aln step.  Default = 5000000"
     >&2 echo " -b/--bamfilebase = Prefix for bam file.  Default = pecnv_bamfile"
+    >&2 echo " -u/--ulimit = max RAM usage for processing BAM file.  Unit is in gigabytes, e.g., 5 will be converted to 5*1024^2 bytes"
     >&2 echo "Example:"
     >&2 echo "$0 -i readfile.txt -r reference.fa"
     exit 1
 }
 
 OUTDIR="pecnv_output";
-SAMPLEID=0;
 MINQUAL=30;
 MISMATCHES=3;
 GAPS=0;
@@ -43,6 +43,7 @@ while true; do
 	-s | --sortmem ) SORTMEM="$2"; shift 2;;
 	-a | --alnmem ) ALNMEM="$2"; shift 2;;
 	-b | --bamfilebase ) BAMFILESTUB="$2" ; shift 2;;
+	-u | --ulimit ) MAXRAM=`echo "$2*1025^2"|bc -l` ; shift 2;;
 	-- ) shift; break ;;
     * ) break ;;
   esac
@@ -50,6 +51,10 @@ done
 
 ##These params are important for TE detection (Cridland et al.)
 BWAEXTRAPARMS="-l 13 -m $ALNMEM -I -R 5000"
+
+##VALIDATE THE INPUT PARAMS
+if [ -z ${SAMPLES+x} ]; then >&2 echo "Error: no input file specified"; usage; else echo "Input file name is set to '$SAMPLES'"; fi
+if [ -z ${REFERENCE+x} ]; then >&2 echo "Error: no reference file specified"; usage; else echo "Reference file name is set to '$REFERENCE'"; fi
 
 #Check for executable dependencies
 for needed in bwa samtools process_readmappings Rscript cluster_cnv
@@ -63,10 +68,6 @@ do
 	echo "$needed is $PM"; 
     fi;
 done
-
-##VALIDATE THE INPUT PARAMS
-if [ -z ${SAMPLES+x} ]; then >&2 echo "Error: no input file specified"; usage; else echo "Input file name is set to '$SAMPLES'"; fi
-if [ -z ${REFERENCE+x} ]; then >&2 echo "Error: no reference file specified"; usage; else echo "Reference file name is set to '$REFERENCE'"; fi
 
 if [ ! -e $SAMPLES ]
 then
@@ -133,17 +134,23 @@ then
 fi
 
 ###3. Sort bam file by read name.  This is done 2x b/c samtools sorting on read name has been unreliable in the past
-samtools sort -n -m $SORTMEM $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/temp
-samtools sort -n -m $SORTMEM $OUTDIR/temp.bam $OUTDIR/"$BAMFILESTUB"_readsorted
+#samtools sort -n -m $SORTMEM $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/temp
+#samtools sort -n -m $SORTMEM $OUTDIR/temp.bam $OUTDIR/"$BAMFILESTUB"_readsorted
 
-if [ -s $OUTDIR/"$BAMFILESTUB"_readsorted ]
+#if [ -s $OUTDIR/"$BAMFILESTUB"_readsorted ]
+#then
+#    rm -f $OUTDIR/temp*.bam
+#fi
+
+
+###4. Collect unusual read pairings and estimate insert size distributions
+if [ -z ${MAXRAM+x} ]
 then
-    rm -f $OUTDIR/temp*.bam
+    ulimit -v $MAXRAM
 fi
-
-
-###4. Collect unusual read pairings
-samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um $OUTDIR/$BAMFILESTUB.mdist.gz
+process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
+bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
+#samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###5. Get quantile of mapping distance
 Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
