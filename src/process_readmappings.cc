@@ -1,12 +1,18 @@
 /*
-  Assumptions: bam file is sorted be read name and generted with BWA + samtools
-  Also, this code has only been tested (and results independently validated with long-read sequencing)
-  on alignments generated with bwa 0.5.9 using the command lines provided in Rogers et al.
+  The program processes a BAM file and collects the following unusual read pairs:
+  1. Divergent orientation
+  2. Parallel orientation
+  3. Mapping to different chromosomes
+  4. One unique read paired with one non-unique read
 
-  A merge of the features in bwa_bam_tomapfiles2.cc and bwa_mapdistance.cc
-  1.  assumes alignment records are sorted by read name
-  2.  assumes only paired reads are in the stream (e.g. samtools view -f 1 [bamfile] | ./this_program
+  For details, see:
+  Cridland, J.M. and K.R Thornton (2010) Validation of rearrangement breakpoints identified by paired-end sequencing in natural populations of Drosophila melanogaster. Genome Biology and Evolution. 2010: 83-101. PMID 20333226
+
+  Cridland, J.M., S.J. MacDonald, A.D. Long, and K.R Thornton (2013) Abundance and Distribution of Transposable Elements in Two Drosophila QTL Mapping Resources Molecular Biology and Evolution 30: 2311-2327. PMID 23883524
+
+  Rogers, R. L., J. M. Cridland, L. Shao, T. T. Hu, P. Andolfatto and K. R. Thornton (2014) Landscape of standing variation for tandem duplications in Drosophila yakuba and Drosophila simulans. Molecular Biology and Evolution 31: 1750-1766 PMID 24710518
 */
+
 #include <Sequence/bamreader.hpp>
 #include <Sequence/bamrecord.hpp>
 #include <Sequence/samfunctions.hpp>
@@ -23,7 +29,6 @@ using namespace Sequence;
 
 using APAIR = pair<bamrecord,bamrecord>;
 using readbucket = unordered_map<string, bamrecord>; //name, alignment
-using PPairData = unordered_map<string,pair<bool,std::int32_t> >; //name, isU, tlen
 
 struct output_files
 {
@@ -91,20 +96,6 @@ struct output_files
     gzclose(um_m);
     gzclose(um_sam);
   }
-
-  gzFile stream(const MAPTYPE & m)
-  {
-    if (m == UMU)
-      {
-	return um_u;
-      }
-    else if (m == UMM)
-      {
-	return um_m;
-      }
-    assert( m == DIV || m == PAR || m == UL );
-    return structural;
-  }
 };
 
 vector< pair<char,unsigned> > parse_cigar(const string & cigar);
@@ -154,7 +145,18 @@ int main(int argc, char ** argv)
   const char * bamfile = argv[argn++];
   const char * structural_base = argv[argn++];
   const char * um_base = argv[argn++];
-  const char * mdistfile = argv[argn++];
+
+  if( argc != 4 )
+    {
+      cerr << "Usage:\n"
+	   << argv[0]
+	   << " bamfile structural_base um_base\n"
+	   << "Where:\n"
+	   << "\tbamfile = the bam file containing alignments\n"
+	   << "\tstructural_base = prefix for file names containing PAR/DIV/UL read pairs\n"
+	   << "\tum_base = prefix for file names containing unique/multi read pairs\n";
+      exit(0);
+    }
   struct output_files of(structural_base,um_base);
   
   bamreader reader(bamfile);
@@ -166,8 +168,6 @@ int main(int argc, char ** argv)
   }
 
   readbucket DIV,PAR,UL,UM;
-  PPairData ISIZES;
-  map<unsigned,unsigned> mdist; //distribution of insert sizes
   auto pos = reader.tell(); //After the headers, @ start of 1st alignment
   while( !reader.eof() && !reader.error() )
     {
@@ -252,7 +252,6 @@ int main(int argc, char ** argv)
 
   if(!UM.empty())
     {
-      cerr << "First pass complete, rewinding to finish scanning for U/M pairs\n";
       reader.seek( pos, SEEK_SET );
       
       while(!reader.eof() && !reader.error()) //This may not be working
@@ -275,42 +274,6 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
-   
-  //get sum of insert size dist
-  // long unsigned sum = 0;
-  // for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
-  //      i != mdist.end() ; ++i )
-  //   {
-  //     sum += unsigned(long(i->second));
-  //   }
-
-  // gzFile mdistout = gzopen(mdistfile,"w");
-  // if( mdistout == NULL ) {
-  //   cerr << "Error: could not open "
-  // 	 << mdistfile
-  // 	 << " for writing\n";
-  //   exit(1);
-  // }
-  // if( gzprintf(mdistout,"%s\n","distance\tnumber\tcprob") <= 0 )
-  //   {
-  //     cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-  // 	   << " of " << __FILE__ << '\n';
-  //     exit(1);
-  //   }
-  // unsigned long cum=0;
-  // for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
-  //      i != mdist.end() ; ++i )
-  //   {
-  //     cum += unsigned(long(i->second));
-
-  //     if( gzprintf(mdistout,"%u\t%u\t%e\n",i->first,i->second,double(cum)/double(sum)) <= 0 )
-  // 	{
-  // 	  cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-  // 	       << " of " << __FILE__ << '\n';
-  // 	  exit(1);
-  // 	}
-  //   }
-  // gzclose(mdistout);
 }
 
 
