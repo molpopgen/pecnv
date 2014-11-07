@@ -6,6 +6,7 @@
 #include <Sequence/bamreader.hpp>
 #include <Sequence/samflag.hpp>
 #include <map>
+#include <limits>
 #include <unordered_map>
 #include <iostream>
 #include <zlib.h>
@@ -36,6 +37,11 @@ int main( int argc, char ** argv )
   const char * bamfilename = argv[argn++];
   const char * ofilename = argv[argn++];
 
+  unsigned MAXPAIRS = numeric_limits<unsigned>::max();
+  if( argc == 4 )
+    {
+      MAXPAIRS = stoi(argv[argn]);
+    }
   unsigned nproc=0;
   bamreader reader(bamfilename);
   if( ! reader )
@@ -47,6 +53,7 @@ int main( int argc, char ** argv )
 
   map<unsigned,unsigned> mdist;
   unordered_map<string,bamrecord> reads;
+  unsigned PAIRS_EVALUATED = 0;
   while(!reader.eof()&&!reader.error())
     {
       bamrecord b = reader.next_record();
@@ -85,7 +92,10 @@ int main( int argc, char ** argv )
 				      mdist.insert(make_pair(abs(b.tlen()),1));
 				    }
 				  else
-				    mitr->second++;
+				    {
+				      mitr->second++;
+				      ++PAIRS_EVALUATED;
+				    }
 				}
 			    }
 			  reads.erase(itr);
@@ -94,7 +104,9 @@ int main( int argc, char ** argv )
 		}
 	    }
 	}
+      if( MAXPAIRS != numeric_limits<unsigned>::max() && PAIRS_EVALUATED >= MAXPAIRS ) break;
     }
+
   unsigned sum = 0;
   for( map<unsigned,unsigned>::const_iterator i = mdist.begin(); 
        i != mdist.end() ; ++i )
