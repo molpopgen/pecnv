@@ -78,7 +78,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = cluster_cnv$(EXEEXT) teclust$(EXEEXT) \
 	umm_te_finder$(EXEEXT) filter_edit$(EXEEXT) \
-	process_readmappings$(EXEEXT)
+	process_readmappings$(EXEEXT) bwa_mapdistance$(EXEEXT)
 @HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -94,6 +94,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am_bwa_mapdistance_OBJECTS = bwa_mapdistance.$(OBJEXT)
+bwa_mapdistance_OBJECTS = $(am_bwa_mapdistance_OBJECTS)
+bwa_mapdistance_LDADD = $(LDADD)
 am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
 	string_unsigned_lookup.$(OBJEXT) file_util.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
@@ -152,12 +155,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(cluster_cnv_SOURCES) $(filter_edit_SOURCES) \
-	$(process_readmappings_SOURCES) $(teclust_SOURCES) \
-	$(umm_te_finder_SOURCES)
-DIST_SOURCES = $(cluster_cnv_SOURCES) $(filter_edit_SOURCES) \
-	$(process_readmappings_SOURCES) $(teclust_SOURCES) \
-	$(umm_te_finder_SOURCES)
+SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
+	$(filter_edit_SOURCES) $(process_readmappings_SOURCES) \
+	$(teclust_SOURCES) $(umm_te_finder_SOURCES)
+DIST_SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
+	$(filter_edit_SOURCES) $(process_readmappings_SOURCES) \
+	$(teclust_SOURCES) $(umm_te_finder_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -281,7 +284,7 @@ top_srcdir = @top_srcdir@
 
 #fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
-#bwa_mapdistance_SOURCES=bwa_mapdistance.cc bwa_util.cc isbinary.cc
+bwa_mapdistance_SOURCES = bwa_mapdistance.cc
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
 teclust_SOURCES = teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hpp
@@ -367,6 +370,10 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
+bwa_mapdistance$(EXEEXT): $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_DEPENDENCIES) $(EXTRA_bwa_mapdistance_DEPENDENCIES) 
+	@rm -f bwa_mapdistance$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_LDADD) $(LIBS)
+
 cluster_cnv$(EXEEXT): $(cluster_cnv_OBJECTS) $(cluster_cnv_DEPENDENCIES) $(EXTRA_cluster_cnv_DEPENDENCIES) 
 	@rm -f cluster_cnv$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(cluster_cnv_OBJECTS) $(cluster_cnv_LDADD) $(LIBS)
@@ -393,6 +400,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_edit.Po@am__quote@
