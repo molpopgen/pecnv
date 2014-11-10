@@ -135,29 +135,20 @@ then
     rm -f $OUTDIR/intermediate_bamfile*.bam
 fi
 
-###3. Sort bam file by read name.  This is done 2x b/c samtools sorting on read name has been unreliable in the past
-#samtools sort -n -m $SORTMEM $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/temp
-#samtools sort -n -m $SORTMEM $OUTDIR/temp.bam $OUTDIR/"$BAMFILESTUB"_readsorted
-
-#if [ -s $OUTDIR/"$BAMFILESTUB"_readsorted ]
-#then
-#    rm -f $OUTDIR/temp*.bam
-#fi
-
-
-###4. Collect unusual read pairings and estimate insert size distributions
+###3. Collect unusual read pairings and estimate insert size distributions
 if [ -z ${MAXRAM+x} ]
 then
     ulimit -v $MAXRAM
 fi
+
 process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
 bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
 #samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um $OUTDIR/$BAMFILESTUB.mdist.gz
 
-###5. Get quantile of mapping distance
+###4. Get quantile of mapping distance
 Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
 
 MD=`head -n 1 $OUTDIR/$BAMFILESTUB.mquant.txt`
 
-###6. Cluster
+###5. Cluster
 cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
