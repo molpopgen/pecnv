@@ -24,6 +24,8 @@
 #include <sstream>
 #include <zlib.h>
 
+#include <common.hpp>
+
 using namespace std;
 using namespace Sequence;
 
@@ -117,10 +119,6 @@ void outputM( gzFile out,
 	      gzFile gzoutSAM,
 	      const bamrecord & r,
 	      const bamreader & reader);
-//Turn a read name from XXX#something to XXX
-string editRname( const std::string & readname );
-
-
 
 /*
   Does this pair of alignments represent a unique/multi pair?
@@ -274,14 +272,6 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
-}
-
-
-string editRname( const std::string & readname )
-{
-  auto pound = readname.find('#');
-  if(pound == string::npos) return readname;
-  return string(readname.begin(),readname.begin()+pound);
 }
 
 void evalUM(const bamrecord & b1,

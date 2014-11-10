@@ -11,16 +11,9 @@
 #include <iostream>
 #include <zlib.h>
 
+#include <common.hpp>
 using namespace std;
 using namespace Sequence;
-
-
-string editRname( const std::string & readname )
-{
-  auto pound = readname.find('#');
-  if(pound == string::npos) return readname;
-  return string(readname.begin(),readname.begin()+pound);
-}
 
 int main( int argc, char ** argv )
 {
