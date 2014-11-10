@@ -96,9 +96,14 @@ Optional arguments are:
  -s/--sortmem = Memory to be used by samtools sort.  Default = 50000000
  -a/--alnmem = Memory to be use by bwa aln step.  Default = 5000000
  -b/--bamfilebase = Prefix for bam file.  Default = pecnv_bamfile
+ -u/--ulimit = MAX RAM usage for processing BAM file.  Unit is in gigabytes, e.g., 5 will be converted to 5*1024^2 bytes
 Example:
 /home/krthornt/bin/pecnv.sh -i readfile.txt -r reference.fa
 ```
+
+####Comments on command-line options:
+
+* The -u/--ulimit option allows the user to provide a hard RAM limit to the step where the program process_readmappings reads the BAM file.  For complex genomes with a large number of repetitively-mapping reads, the RAM usage may get quite high.  Thus, this option is provided so that the process may be killed rather than taking down the user's system.  Note that, if you use this option, you may see bizarre errors reported to stderr.  It is unlikely that these errors are actual segfaults, etc., in the program.  Rather, they are the outcome of what happens when a kill signal is sent by the system and not handled directly by the affected program.  In practice, the sorts of signals sent by ulimit violations are not always handleable, and thus the program makes no attempt to do so.
 
 For the -o option, . or ./ are allowed, and the output will be written to the current directory.  The -b option is used to ensure that each sample gets a unique name prefix, _e.g._  -b SAMPLEID would be a good idea, where SAMPLEID is something informative about this particular sample.
 

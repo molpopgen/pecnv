@@ -138,7 +138,8 @@ fi
 ###3. Collect unusual read pairings and estimate insert size distributions
 if [ -z ${MAXRAM+x} ]
 then
-    ulimit -v $MAXRAM
+    MM=`echo "$MAXRAM*1024^2"|bc -l`
+    ulimit -v $MM
 fi
 
 process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
