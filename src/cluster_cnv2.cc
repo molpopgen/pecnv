@@ -143,6 +143,7 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
     {
       //Very lazy input method...
       auto data = Sequence::IOhelp::gzreadline(lin);
+      if(!data.second) break;
       istringstream pdata(data.first);
       pdata >> pairname
 	    >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
@@ -189,6 +190,11 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 	    }
 	  else if (type == "UL")
 	    {
+	      if(chrom==chrom2)
+		{
+		  cerr << chrom << ' ' <<chrom2 << '\n';
+		  cerr << data.first << '\n';
+		}
 	      assert(chrom != chrom2);
 	      if( chrom > chrom2 )
 		{
@@ -258,11 +264,13 @@ int main(int argc, char ** argv)
   //make sure output files are writable
   const string header = "id\tchrom1\tcoverage\tstrand1\tstart1\tstop1\tchrom2\tstrand2\tstart2\tstop2\treads";
 
+  /*
   if( file_exists(divfile) )
     {
       cerr << "error: " << divfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
+  */
 
   gzFile divstream = gzopen(divfile,"wb");
   if(divstream==NULL) {
@@ -276,12 +284,13 @@ int main(int argc, char ** argv)
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
+ /*
   if( file_exists(parfile) )
     {
       cerr << "error: " << parfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
-
+ */
   gzFile parstream = gzopen(parfile,"wb");
   if(parstream == NULL) {
     cerr << "Error: could not open "
@@ -295,11 +304,13 @@ int main(int argc, char ** argv)
       exit(1);
     }
 
+  /*
   if( file_exists(ulfile) )
     {
       cerr << "error: " << ulfile << " already exists, and we don't want to accidentally over-write something important!\n";
       exit(10);
     }
+  */
   gzFile ulstream = gzopen(ulfile,"wb");
   if(ulstream == NULL)
     {
@@ -559,17 +570,12 @@ void write_clusters( gzFile gzout,
 	    << clusters[i][j]->strand2;
 	  if ( readnames.empty() )
 	    {
-	      auto hashpos = clusters[i][j]->readname.find('#');
-	      readnames += string(clusters[i][j]->readname.begin(),
-				  clusters[i][j]->readname.begin()+hashpos);
+	      readnames += clusters[i][j]->readname;
 	    }
 	  else
 	    {
 	      readnames += "|";
-	      auto hashpos = clusters[i][j]->readname.find('#');
-	      readnames += string(clusters[i][j]->readname.begin(),
-				  clusters[i][j]->readname.begin()+hashpos);
-	      //readnames += clusters[i][j]->readname;
+	      readnames += clusters[i][j]->readname;
 	    }
 	  readnames += t.str();
 	}
