@@ -581,8 +581,8 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	}
       auto REF = reader.ref_cbegin()+i->second.refid();
       o << editRname(i->second.read_name()) << '\t'
-	<< REF->first << '\t'
 	<< i->second.mapq() << '\t'
+	<< REF->first << '\t'
 	<< i->second.pos() << '\t'
 	<< i->second.pos() + alignment_length(i->second) - 1 << '\t'
 	<< i->second.flag().qstrand << '\t'
@@ -591,9 +591,9 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	<< maptype << '\t';
       REF = reader.ref_cbegin()+b.refid();
       //Second read data
-      o << editRname(b.read_name()) << '\t'
+      //o << editRname(b.read_name()) << '\t'
+      o << b.mapq() << '\t'
 	<< REF->first << '\t'
-	<< b.mapq() << '\t'
 	<< b.pos() << '\t'
 	<< b.pos() + alignment_length(b) - 1 << '\t'
 	<< b.flag().qstrand << '\t'
