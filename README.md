@@ -24,7 +24,7 @@ This code has been used by the lab for detecting tandem duplications from short-
 
 ##Tentative plan for future releases
 
-1.  0.1.4 will integrate the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach
+1.  0.1.4 will integrate the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  This version is likely to add a dependency on the [boost](http://www.boost.org) program_options library, in order to make simplify the interface to the TE calling programs.
 
 #Installation
 
