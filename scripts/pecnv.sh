@@ -132,6 +132,7 @@ done
 if [ $NPAIRS -gt 1 ]
 then
     samtools merge $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/intermediate_bamfile*.bam
+    rm -f $OUTDIR/intermediate_bamfile*.bam
 fi
 
 ###3. Sort bam file by read name.  This is done 2x b/c samtools sorting on read name has been unreliable in the past
