@@ -104,8 +104,21 @@ Example:
 ####Comments on command-line options:
 
 * The -u/--ulimit option allows the user to provide a hard RAM limit to the step where the program process_readmappings reads the BAM file.  For complex genomes with a large number of repetitively-mapping reads, the RAM usage may get quite high.  Thus, this option is provided so that the process may be killed rather than taking down the user's system.  Note that, if you use this option, you may see bizarre errors reported to stderr.  It is unlikely that these errors are actual segfaults, etc., in the program.  Rather, they are the outcome of what happens when a kill signal is sent by the system and not handled directly by the affected program.  In practice, the sorts of signals sent by ulimit violations are not always handleable, and thus the program makes no attempt to do so.
+* For the -o option, . or ./ are allowed, and the output will be written to the current directory.  The -b option is used to ensure that each sample gets a unique name prefix, _e.g._  -b SAMPLEID would be a good idea, where SAMPLEID is something informative about this particular sample.
 
-For the -o option, . or ./ are allowed, and the output will be written to the current directory.  The -b option is used to ensure that each sample gets a unique name prefix, _e.g._  -b SAMPLEID would be a good idea, where SAMPLEID is something informative about this particular sample.
+####What the script does
+
+Starting from raw FASTQ files from a paired-end sequencing run, the steps are:
+
+1. Align the data to a reference genome using bwa.  The alignment parameters are as described in Rogers _et al._ and Cridland _et al._.   Please note that the parameters are not the default BWA parameters.
+2. The program process_readmappings reads the resulting BAM file, and collects reads in unusual mapping orientations, writing data to several output files.
+3. The program bwa_mapdistance estimates the insert size distribution from the BAM file.  This is done separately from step 2 to minimize RAM use.  Also, power users can modify the work flow to separate these tasks out on a cluster.
+4. Rscript is invoked to get the 99.9th quantile of the insert size distribution
+5. cluster_cnv clusters the divergent, parallel, and unlinked read pairs into putative CNV calls.  The output files are described below.
+
+####General comments on the work flow
+
+* If the bam file exists, the script will skip the alignment step.  However, it will automatically redo the scanning and clustering steps.
 
 ###The output
 
@@ -134,13 +147,4 @@ The format of the output files is as follows:
 
 ###Running on pre-existing bam files
 
-```
-#Process the (readname-sorted) bam file, and collect abnormal PE mappings:
-samtools view -f 1 readsorted_bam.bam | process_readmappings cnv_mappings um mdist.gz
-#Get the 99.95th quantile of fragment sizes based on unique/unique read pairs:
-Rscript -e "x=read.table(\"mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"mquant.txt\")"
-#Store that value in a shell variable:
-MAXDIST=`head -n 1 mquant.txt`
-#Cluster the reads:
-cluster_cnv minqual max_mismatches max_gaps $MAXDIST div_clusters.gz par_clusters.gz ul_clusters.gz cnv_mappings.csv.gz
-```
+The main script, pecnv.sh expects a bamfile called PREFIX_sorted.bam, where PREFIX is the value passed to the -b/--bamfile option (see above).  If you already have an existing BAM file, but its name is not what is expected, you may make a symbolic link that has the correct name pattern, and then run the script.
