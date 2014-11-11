@@ -98,8 +98,7 @@ am_bwa_mapdistance_OBJECTS = bwa_mapdistance.$(OBJEXT) \
 	common.$(OBJEXT)
 bwa_mapdistance_OBJECTS = $(am_bwa_mapdistance_OBJECTS)
 bwa_mapdistance_LDADD = $(LDADD)
-am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
-	string_unsigned_lookup.$(OBJEXT) file_util.$(OBJEXT)
+am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
 cluster_cnv_LDADD = $(LDADD)
 am_filter_edit_OBJECTS = filter_edit.$(OBJEXT)
@@ -287,7 +286,7 @@ top_srcdir = @top_srcdir@
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
-cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
+cluster_cnv_SOURCES = cluster_cnv2.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
 teclust_SOURCES = teclust.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
@@ -404,10 +403,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_edit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string_unsigned_lookup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umm_te_finder.Po@am__quote@
 

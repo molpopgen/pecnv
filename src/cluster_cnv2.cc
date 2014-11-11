@@ -32,7 +32,7 @@
 #include <limits>
 #include <Sequence/IOhelp.hpp>
 #include <zlib.h>
-#include <string_unsigned_lookup.hpp>
+//#include <string_unsigned_lookup.hpp>
 #include <file_util.hpp>
 
 using namespace std;
@@ -120,9 +120,9 @@ void write_clusters( gzFile o,
 		     unsigned * eventid );
 
 
-void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
-		       map<unsigned,vector<linkeddata> > & raw_par,
-		       map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
+void read_data_details(map<string,vector<linkeddata> > & raw_div,
+		       map<string,vector<linkeddata> > & raw_par,
+		       map<string,map<string,vector<linkeddata> > > & raw_ul,
 		       gzFile lin,
 		       const unsigned & min_mqual,
 		       const unsigned & max_mm,
@@ -130,9 +130,14 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
 		       vector<pair<string,unsigned> > * chrom_labels,
 		       unsigned * chrom_index)
 {
+  /*
   string chrom_label,chrom_label2,pairname,pairname2;
   unsigned mqual,chrom,strand,mm,gap,
     mqual2,chrom2,strand2,mm2,gap2;
+  */
+  string chrom,chrom2,pairname,pairname2;
+  unsigned mqual,strand,mm,gap,
+    mqual2,strand2,mm2,gap2;
 
   int start,stop,start2,stop2;
   std::string type,type2;
@@ -144,10 +149,10 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
       if(!data.second) break;
       istringstream pdata(data.first);
       pdata >> pairname
-	    >> mqual >> chrom_label >> start >> stop >> strand >> mm >> gap >> type
-	    >> mqual2 >> chrom_label2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
-      chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
+	    >> mqual >> chrom >> start >> stop >> strand >> mm >> gap >> type
+	    >> mqual2 >> chrom2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
+      //chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
+      //chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
 
       if( mqual >= min_mqual && mqual2 >= min_mqual &&
 	  mm <= max_mm && gap <= max_gap &&
@@ -217,9 +222,9 @@ void read_data_details(map<unsigned,vector<linkeddata> > & raw_div,
     } while(!gzeof(lin));
 }
 
-void read_data( map<unsigned,vector<linkeddata> > & raw_div,
-		map<unsigned,vector<linkeddata> > & raw_par,
-		map<unsigned,map<unsigned,vector<linkeddata> > > & raw_ul,
+void read_data( map<string,vector<linkeddata> > & raw_div,
+		map<string,vector<linkeddata> > & raw_par,
+		map<string,map<string,vector<linkeddata> > > & raw_ul,
 		const char * left,
 		const unsigned & min_mqual,
 		const unsigned & max_mm,
@@ -324,9 +329,9 @@ int main(int argc, char ** argv)
       exit(1);
     }
 
-  map<unsigned, vector<linkeddata> > raw_div;
-  map<unsigned, vector<linkeddata> > raw_par;
-  map<unsigned, map<unsigned,vector<linkeddata> > > raw_ul;
+  map<string, vector<linkeddata> > raw_div;
+  map<string, vector<linkeddata> > raw_par;
+  map<string, map<string,vector<linkeddata> > > raw_ul;
   vector<pair<string,unsigned> > chrom_labels;
   unsigned chrom_index=0;
   for(int i = argn;i<argc;++i)//i+=2)
@@ -338,7 +343,7 @@ int main(int argc, char ** argv)
 
   unsigned eventid=0;
   cerr << "clustering div\n";
-  for(map<unsigned,vector<linkeddata> >::iterator itr = raw_div.begin();
+  for(map<string,vector<linkeddata> >::iterator itr = raw_div.begin();
       itr != raw_div.end();++itr)
     {
       sort(itr->second.begin(),
@@ -347,14 +352,15 @@ int main(int argc, char ** argv)
       cluster_container clusters2(clusters);
       sort(clusters.begin(),clusters.end(),order_clusters());
       write_clusters( divstream, 
-		      lookup_string(chrom_labels,itr->first), 
-		      lookup_string(chrom_labels,itr->first),
+		      itr->first,itr->first,
+		      //lookup_string(chrom_labels,itr->first), 
+		      //lookup_string(chrom_labels,itr->first),
 		      clusters,&eventid );
     }
 
   cerr << "clustering par\n";
   eventid=0;
-  for(map<unsigned,vector<linkeddata> >::iterator itr = raw_par.begin();
+  for(map<string,vector<linkeddata> >::iterator itr = raw_par.begin();
       itr != raw_par.end();++itr)
     {
       sort(itr->second.begin(),
@@ -362,17 +368,19 @@ int main(int argc, char ** argv)
       cluster_container clusters = cluster_linked(itr->second,mdist);
       sort(clusters.begin(),clusters.end(),order_clusters());
       write_clusters( parstream, 
-		      lookup_string(chrom_labels,itr->first),
-		      lookup_string(chrom_labels,itr->first),
+		      itr->first,
+		      itr->first,
+		      //lookup_string(chrom_labels,itr->first),
+		      //lookup_string(chrom_labels,itr->first),
 		      clusters,&eventid );
     }
 
   cerr << "clustering ul\n";
   eventid=0;
-  for( map<unsigned, map<unsigned,vector<linkeddata> > >::iterator itr = raw_ul.begin() ;
+  for( map<string, map<string,vector<linkeddata> > >::iterator itr = raw_ul.begin() ;
        itr != raw_ul.end() ; ++itr )
     {
-      for( map<unsigned,vector<linkeddata> >::iterator itr2 = itr->second.begin() ; 
+      for( map<string,vector<linkeddata> >::iterator itr2 = itr->second.begin() ; 
 	   itr2 != itr->second.end() ; ++itr2 )
 	{
 	  assert(itr->first < itr2->first);
@@ -380,8 +388,10 @@ int main(int argc, char ** argv)
 	  cluster_container clusters = cluster_linked(itr2->second,mdist);
 	  sort(clusters.begin(),clusters.end(),order_clusters());
 	  write_clusters( ulstream, 
-			  lookup_string(chrom_labels,itr->first),
-			  lookup_string(chrom_labels,itr2->first),
+			  itr->first,
+			  itr->first,
+			  //lookup_string(chrom_labels,itr->first),
+			  //lookup_string(chrom_labels,itr2->first),
 			  clusters,&eventid );
 	}
     }
