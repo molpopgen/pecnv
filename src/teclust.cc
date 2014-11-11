@@ -32,7 +32,10 @@
 #include <zlib.h>
 #include <Sequence/IOhelp.hpp>
 
+#include <boost/program_options.hpp>
+
 using namespace std;
+using namespace boost::program_options;
 
 // DEFINITIONS OF DATA TYPES
 typedef pair<unsigned,unsigned> puu;
@@ -59,62 +62,62 @@ struct cluster
 // THE BELOW ARE STRUCTURES THAT ARE USED EITHER WITH THE "SORT" OR "FIND_IF" ALGORITHMS
 
 
-template<typename T>
-struct pair_less : public binary_function< pair<T,T>, pair<T,T>, bool>
-{
-  /*
-    used to sort data--for an pair, return true if the first member of
-    pair1 <= the first member of pair 2
-  */
-  inline bool operator()(  const pair<T,T> & lhs, const  pair<T,T> & rhs ) const
-  {
-    return lhs.first <= rhs.first;// && lhs.first <= lhs.second;
-  }
-};
+// template<typename T>
+// struct pair_less : public binary_function< pair<T,T>, pair<T,T>, bool>
+// {
+//   /*
+//     used to sort data--for an pair, return true if the first member of
+//     pair1 <= the first member of pair 2
+//   */
+//   inline bool operator()(  const pair<T,T> & lhs, const  pair<T,T> & rhs ) const
+//   {
+//     return lhs.first <= rhs.first;// && lhs.first <= lhs.second;
+//   }
+// };
 
-struct puu_less : public binary_function<puu,puu,bool>
-/*
-  return true if the first element of the first puu <= the first element of the second puu
-*/
-{
-  inline bool operator()( const puu & lhs, const puu & rhs) const
-  {
-    return lhs.first < rhs.first;//&& lhs.second <= rhs.second;
-  }
-};
+// struct puu_less : public binary_function<puu,puu,bool>
+// /*
+//   return true if the first element of the first puu <= the first element of the second puu
+// */
+// {
+//   inline bool operator()( const puu & lhs, const puu & rhs) const
+//   {
+//     return lhs.first < rhs.first;//&& lhs.second <= rhs.second;
+//   }
+// };
 
-struct within : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
-/*
-  returns true if the unsigned integer is within the range specified by the pair
-*/
-{
-  inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
-  {
-    return ( rhs >= lhs.first && rhs <= lhs.second );
-  }
-};
+// struct within : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
+// /*
+//   returns true if the unsigned integer is within the range specified by the pair
+// */
+// {
+//   inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
+//   {
+//     return ( rhs >= lhs.first && rhs <= lhs.second );
+//   }
+// };
 
-struct closest_plus : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
-/*
-  used to find the closest TE in the reference 3' of a certain position
-*/
-{
-  inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
-  {
-    return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-  }
-};
+// struct closest_plus : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
+// /*
+//   used to find the closest TE in the reference 3' of a certain position
+// */
+// {
+//   inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
+//   {
+//     return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+//   }
+// };
 
-struct closest_minus : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
-/*
-  used to find the closest TE in the reference 5' of a certain position
-*/
-{
-  inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
-  {
-    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-  }
-};
+// struct closest_minus : public binary_function< pair<unsigned,unsigned>,unsigned, bool>
+// /*
+//   used to find the closest TE in the reference 5' of a certain position
+// */
+// {
+//   inline bool operator()(const pair<unsigned,unsigned> & lhs, const unsigned & rhs) const
+//   {
+//     return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+//   }
+// };
 
 struct close_enough_minus : public binary_function< cluster,cluster,bool >
 {
@@ -327,8 +330,11 @@ void get_ref_te(  map< unsigned, vector< pair<unsigned,unsigned> > > & reference
   //sort TE positions by start position for each chromosome
   for( itr = reference_te.begin() ; itr != reference_te.end() ; ++itr )
     {
-      sort( itr->second.begin(), itr->second.end(),puu_less() );
-      //pair_less<unsigned>() );
+      sort( itr->second.begin(), itr->second.end(),
+	    [&](const pair<unsigned,unsigned> & lhs,
+		const pair<unsigned,unsigned> & rhs) {
+	      return lhs.first <= rhs.first;
+	    });
     }
 }
 
@@ -595,7 +601,12 @@ void output_results( ostringstream & out,
 	      << clusters[i].first.positions.second << '\t';
 	  mind = find_if(ref_te_chromo.begin(),
 			 ref_te_chromo.end(),
-			 bind2nd(closest_plus(),clusters[i].first.positions.second));
+			 [&]( const pair<unsigned,unsigned> & lhs ) {
+			   //This is the old closest_plus function object from 0.1.0
+			   //Finds the closest TE in the reference 3' of this position
+			   const unsigned rhs = clusters[i].first.positions.second;
+			   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+			 });
 	  if(mind != ref_te_chromo.end())
 	    {
 	      mindist = (mind->first < clusters[i].first.positions.first) ?
@@ -603,9 +614,17 @@ void output_results( ostringstream & out,
 		mind->first - clusters[i].first.positions.first;
 	    }
 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
+			       [&](const pair<unsigned,unsigned> & refTE) {
+				 return clusters[i].first.positions.first >= refTE.first ||
+				 clusters[i].first.positions.first <= refTE.second;
+			       }) != ref_te_chromo.end() ||
+			       //bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       bind2nd(within(),clusters[i].first.positions.second)) 
+			       [&](const pair<unsigned,unsigned> & refTE) {
+				 return clusters[i].first.positions.second >= refTE.first || 
+				 clusters[i].first.positions.second <= refTE.second;
+			       })
+			       //bind2nd(within(),clusters[i].first.positions.second)) 
 		       != ref_te_chromo.end() );
 	  if (mind != ref_te_chromo.end())
 	    {
@@ -630,17 +649,30 @@ void output_results( ostringstream & out,
 	      << clusters[i].second.positions.second << '\t';
 	  mindr = find_if(ref_te_chromo.rbegin(),
 			  ref_te_chromo.rend(),
-			  bind2nd(closest_minus(),clusters[i].second.positions.first));
+			  //This is the old closest_minus from 0.1.0
+			  //Finds the closest reference TE 5' of this position
+			  [&](const pair<unsigned,unsigned> & lhs) {
+			    const unsigned rhs = clusters[i].second.positions.first;
+			    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+			  });
 	  if(mindr != ref_te_chromo.rend())
 	    {
 	      mindist = (mindr->first < clusters[i].second.positions.second) ? 
 		clusters[i].second.positions.second-mindr->first : mindr->first - clusters[i].second.positions.second;
 	    }
 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       bind2nd(within(),clusters[i].second.positions.second)) 
+			       [&](const pair<unsigned,unsigned> & refTE) {
+				 return clusters[i].second.positions.second >= refTE.first ||
+				 clusters[i].second.positions.second <= refTE.second;
+			       })
+			       //bind2nd(within(),clusters[i].second.positions.second)) 
 		       != ref_te_chromo.end() ||
 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       bind2nd(within(),clusters[i].second.positions.first))
+			       [&](const pair<unsigned,unsigned> & refTE) {
+				 return clusters[i].second.positions.first >= refTE.first ||
+				 clusters[i].second.positions.first <= refTE.second;
+			       })
+			       //bind2nd(within(),clusters[i].second.positions.first))
 		       != ref_te_chromo.end() );
 	  if (mindr != ref_te_chromo.rend())
 	    {
