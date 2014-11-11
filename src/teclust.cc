@@ -59,7 +59,37 @@ struct cluster
   }
 };
 
+struct params //Command-line parameter options
+{
+  /*
+    The reference TE positions, 
+    output file name, 
+    input bam file name, 
+    file name listing the FASTQ files
+    the um_u file that is the output of cluster_cnv
+    */
+  char * reference_datafile, * outfile, * bamfile, * readfile, * umufile;
+  /*
+    Upper limit on insert size distribution
+    Maximum distance used for matching up left and right ends of putative TE calls
+   */
+  unsigned INSERTSIZE,MDIST;
+  params();
+};
+
+params::params() : reference_datafile(nullptr),
+		   outfile(nullptr),
+		   bamfile(nullptr),
+		   readfile(nullptr),
+		   umufile(nullptr),
+		   INSERTSIZE(UMAX),
+		   MDIST(UMAX)
+{
+}
+
 //DEFINITION OF FUNCTIONS
+
+params parseargs(const int argc, char ** argv);
 
 void get_ref_te(  map< unsigned, vector< pair<unsigned,unsigned> > > & reference_te,
 		  const char * reference_datafile,
@@ -72,7 +102,8 @@ void reduce_ends( vector<cluster> & clusters,
 
 void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
-		    const string & chrom_label , const vector< pair<unsigned,unsigned> > & ref_te_chromo);
+		    const string & chrom_label, 
+		    const vector< pair<unsigned,unsigned> > & ref_te_chromo);
 
 void read_raw_data(gzFile gzin,
 		   map<unsigned,vector<puu> > & raw_data,
@@ -113,6 +144,7 @@ void read_raw_data(gzFile gzin,
 
 int main( int argc, char ** argv )
 {
+  const params pars = parseargs(argc,argv);
   if( argc < 5 )
     {
       cerr << "usage: teclust reference_datafile INSERTSIZE MDIST outfile.gz [input_files]\n";
@@ -190,6 +222,16 @@ int main( int argc, char ** argv )
     }
   gzclose(gzout);
   exit(0);
+}
+
+params parseargs(const int argc, char ** argv)
+{
+  params rv;
+  options_description desc("Cluster reads into putative transposable element calls.\nUsage: tclust -h to see help");
+  desc.add_options()
+    ("help,h", "Produce help message")
+    ;
+  return rv;
 }
 
 void get_ref_te(  map< unsigned, vector< pair<unsigned,unsigned> > > & reference_te,
