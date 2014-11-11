@@ -38,8 +38,6 @@
 using namespace std;
 
 const unsigned UMAX = numeric_limits<unsigned>::max();
-std::string make_readname(const unsigned & line,
-			  const unsigned & lane, const unsigned & pair);
 
 struct linkeddata
 {
@@ -599,12 +597,3 @@ void write_clusters( gzFile gzout,
       ++(*eventid);
     } 
 }
-
-std::string make_readname(const unsigned & line,
-			  const unsigned & lane, const unsigned & pair)
-{
-  ostringstream o;
-  o << line << ':' << lane << ':' << pair;
-  return o.str();
-}  
-
