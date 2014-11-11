@@ -145,6 +145,7 @@ void read_raw_data(gzFile gzin,
 int main( int argc, char ** argv )
 {
   const params pars = parseargs(argc,argv);
+  /*
   if( argc < 5 )
     {
       cerr << "usage: teclust reference_datafile INSERTSIZE MDIST outfile.gz [input_files]\n";
@@ -155,10 +156,8 @@ int main( int argc, char ** argv )
   const unsigned INSERTSIZE = atoi(argv[argn++]);
   const unsigned MDIST = atoi(argv[argn++]);
   const char * outfile = argv[argn++];
-  /*
-    << "common\t"
-    << "ttl\n";
   */
+
   /*
     a map is like a hash in perl
     The "key" is an unsigned integer, representing the chromosome
@@ -167,6 +166,7 @@ int main( int argc, char ** argv )
     reference on the chromosome
   */
   //read the raw data in from STDIN
+  /*
   map< unsigned, vector<puu> > raw_data;
   vector<pair<string,unsigned> > chrom_labels;
   for(int i = argn;i<argc;++i)
@@ -197,7 +197,9 @@ int main( int argc, char ** argv )
       << "mlast\t"
       << "mdist\t"
       << "min\n";
+  */
   //go through each chromosome, cluster results for each chromosome, and print results to screen`
+  /*
   map< unsigned, vector<puu> >::iterator itr;
   for( itr = raw_data.begin() ; itr != raw_data.end() ; ++itr )
     {
@@ -222,6 +224,7 @@ int main( int argc, char ** argv )
     }
   gzclose(gzout);
   exit(0);
+  */
 }
 
 params parseargs(const int argc, char ** argv)
