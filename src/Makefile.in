@@ -109,8 +109,7 @@ am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
 	common.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
-am_teclust_OBJECTS = teclust.$(OBJEXT) \
-	string_unsigned_lookup.$(OBJEXT)
+am_teclust_OBJECTS = teclust.$(OBJEXT)
 teclust_OBJECTS = $(am_teclust_OBJECTS)
 teclust_LDADD = $(LDADD)
 am_umm_te_finder_OBJECTS = umm_te_finder.$(OBJEXT)
@@ -289,7 +288,7 @@ top_srcdir = @top_srcdir@
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 cluster_cnv_SOURCES = cluster_cnv2.cc string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
-teclust_SOURCES = teclust.cc string_unsigned_lookup.cc string_unsigned_lookup.hpp
+teclust_SOURCES = teclust.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp
