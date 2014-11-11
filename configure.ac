@@ -42,8 +42,6 @@ AC_CHECK_HEADER(htslib/bgzf.h,FOUND_HTSLIB_HEADERS=1,[AC_MSG_ERROR([htslib/bgzf.
 AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_HEADERS = x1 )
 
 dnl specific libsequence features
-dnl AC_CHECK_HEADER(Sequence/samrecord.hpp,,[AC_MSG_ERROR([Sequence/samrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
-dnl AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/bamrecord.hpp,,[AC_MSG_ERROR([Sequence/bamrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/bamreader.hpp,,[AC_MSG_ERROR([Sequence/bamreader.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
