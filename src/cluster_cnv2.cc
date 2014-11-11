@@ -60,12 +60,8 @@ struct linkeddata
   }
 };
 
-struct order_clusters : public binary_function< vector<vector<linkeddata>::const_iterator>,
-						vector<vector<linkeddata>::const_iterator>,
-						bool >
-{
-  inline bool operator()( const vector<vector<linkeddata>::const_iterator> & a,
-			  const vector<vector<linkeddata>::const_iterator> & b ) const
+auto order_clusters = []( const vector<vector<linkeddata>::const_iterator> & a,
+			  const vector<vector<linkeddata>::const_iterator> & b ) 
   {
     unsigned min1 = numeric_limits<unsigned>::max(),
       min2 = numeric_limits<unsigned>::max();
@@ -79,7 +75,6 @@ struct order_clusters : public binary_function< vector<vector<linkeddata>::const
       }
     return min1 < min2;
   };
-};
 
 typedef vector< vector<vector<linkeddata>::const_iterator> >  cluster_container;
 
@@ -345,7 +340,7 @@ int main(int argc, char ** argv)
 	   });
       cluster_container clusters = cluster_linked(itr->second,mdist);
       cluster_container clusters2(clusters);
-      sort(clusters.begin(),clusters.end(),order_clusters());
+      sort(clusters.begin(),clusters.end(),order_clusters);
       write_clusters( divstream, 
 		      itr->first,itr->first,
 		      //lookup_string(chrom_labels,itr->first), 
@@ -364,7 +359,7 @@ int main(int argc, char ** argv)
 	     return lhs.a < rhs.a && lhs.b < rhs.b;
 	   });
       cluster_container clusters = cluster_linked(itr->second,mdist);
-      sort(clusters.begin(),clusters.end(),order_clusters());
+      sort(clusters.begin(),clusters.end(),order_clusters);
       write_clusters( parstream, 
 		      itr->first,
 		      itr->first,
@@ -387,7 +382,7 @@ int main(int argc, char ** argv)
 		 return lhs.a < rhs.a && lhs.b < rhs.b;
 	       });
 	  cluster_container clusters = cluster_linked(itr2->second,mdist);
-	  sort(clusters.begin(),clusters.end(),order_clusters());
+	  sort(clusters.begin(),clusters.end(),order_clusters);
 	  write_clusters( ulstream, 
 			  itr->first,
 			  itr->first,
