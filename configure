@@ -4918,6 +4918,13 @@ else
 fi
 
 
+ac_fn_cxx_check_header_mongrel "$LINENO" "boost/program_options.hpp" "ac_cv_header_boost_program_options_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_boost_program_options_hpp" = xyes; then :
+
+else
+  as_fn_error $? "boost/program_options.hpp no found.  Please install boost, either via your favorite package manager or from http://www.boost.org" "$LINENO" 5
+fi
+
 
 
 ac_fn_cxx_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
@@ -4977,6 +4984,47 @@ _ACEOF
 
 else
   echo "libsequence runtime library does not seem to be here";exit 1
+fi
+
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lboost_program_options" >&5
+$as_echo_n "checking for main in -lboost_program_options... " >&6; }
+if ${ac_cv_lib_boost_program_options_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lboost_program_options  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_boost_program_options_main=yes
+else
+  ac_cv_lib_boost_program_options_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_boost_program_options_main" >&5
+$as_echo "$ac_cv_lib_boost_program_options_main" >&6; }
+if test "x$ac_cv_lib_boost_program_options_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBBOOST_PROGRAM_OPTIONS 1
+_ACEOF
+
+  LIBS="-lboost_program_options $LIBS"
+
+else
+  echo "boost_program_options runtime library does not seem to be here.  Please install.";exit 1
 fi
 
 ac_ext=cpp
