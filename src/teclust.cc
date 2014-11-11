@@ -751,10 +751,10 @@ void output_results( ostringstream & out,
 	  << clusters[i].second.nreads << '\t';
       if( clusters[i].first.positions.first == UMAX )
 	{
-	  out << "NA\t"
-	      << "NA\t"
-	      << "NA\t"
-	      << "NA\t";
+	  out << "-1\t"
+	      << "-1\t"
+	      << "-1\t"
+	      << "-1\t";
 	}
       else
 	{
@@ -807,16 +807,17 @@ void output_results( ostringstream & out,
 	    }
 	  else
 	    {
-	      out << "NA\t";
+	      out << "-1\t";
 	    }
-	  out << withinTE << '\t';
+	  //out << withinTE << '\t';
+	  out << ((!reftes.empty())?int(withinTE):-1) << '\t';
 	}
       if( clusters[i].second.positions.first == UMAX )
 	{
-	  out << "NA\t"
-	      << "NA\t"
-	      << "NA\t"
-	      << "NA" << endl;
+	  out << "-1\t"
+	      << "-1\t"
+	      << "-1\t"
+	      << "-1" << endl;
 	}
       else
 	{
@@ -872,9 +873,9 @@ void output_results( ostringstream & out,
 	    }
 	  else
 	    {
-	      out << "NA\t";
+	      out << "-1\t";
 	    }
-	  out << withinTE << endl;
+	  out << ((!reftes.empty())?int(withinTE):-1) << endl;
 	}
       out.flush();
     }
