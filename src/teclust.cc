@@ -277,19 +277,6 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		{
 		  plus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
 		}
-	      //because positions are sorted in ascending order, we only need to check for overlap
-	      //with previous entry
-	      /*
-		if( raw_data[i].first - plus[plus.size()-1].positions.second <= INSERTSIZE )
-		{
-		plus[plus.size()-1].positions.second = raw_data[i].first;
-		plus[plus.size()-1].nreads++;
-		}
-		else
-		{
-		plus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
-		}
-	      */
 	    }
 	}
       else //minus strand works same as plus strand
@@ -305,7 +292,6 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		{
 		  if( max(raw_data[i].first,minus[j].positions.second)-
 		      min(raw_data[i].first,minus[j].positions.second) <= INSERTSIZE )
-		    //if( raw_data[i].first - minus[minus.size()-1].positions.first <= INSERTSIZE )
 		    {
 		      assert( raw_data[i].first >= minus[j].positions.second );
 		      minus[j].positions.second = raw_data[i].first;
@@ -318,18 +304,6 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		{
 		  minus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
 		}
-	      /*
-		if( raw_data[i].first - minus[minus.size()-1].positions.second <= INSERTSIZE )
-		//if( raw_data[i].first - minus[minus.size()-1].positions.first <= INSERTSIZE )
-		{
-		minus[minus.size()-1].positions.second = raw_data[i].first;
-		minus[minus.size()-1].nreads++;
-		}
-		else
-		{
-		minus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
-		}
-	      */
 	    }
 	}
     }
@@ -385,7 +359,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	    }
 	}
     }
-  //cerr << "here2 " << minus.size() << '\n';
+
   //now, add in the minuses
   for( unsigned i = 0 ; i < minus.size() ; ++i  )
     {
@@ -421,67 +395,12 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		  j=clusters.size();
 		}
 	    }
-	  // 	  else
-	  // 	    {
-	  // 	      pushed=true;
-	  // 	      clusters.push_back(make_pair(cluster(),minus[i]));
-	  // 	      j=clusters.size();
-	  // 	    }
 	}
       if(!pushed)
 	{
 	  clusters.push_back(make_pair(cluster(),minus[i]));
-	  //cerr << minus[i].positions.first << '\t' << minus[i].positions.second << '\n';
 	}
     }
-  /*
-    for( unsigned i = 0 ; i < minus.size() ; ++i  )
-    {
-    for(unsigned j = 0 ; j < clusters.size() ; ++j )
-    {
-    if( clusters[j].first.positions.first != UMAX )
-    {
-    if( minus[i].positions.first < clusters[j].first.positions.first )
-    {
-    //add it
-    clusters.insert(clusters.begin()+j,make_pair(cluster(),minus[i]));
-    j=clusters.size();
-    }
-    else if ( clusters[j].second.positions.first != UMAX )
-    {
-    if( minus[i].positions.first <  clusters[j].second.positions.first )
-    {
-    clusters.insert(clusters.begin()+j,make_pair(cluster(),minus[i]));
-    j=clusters.size();
-    }
-    }
-    }
-    else if( minus[i].positions.first < clusters[j].second.positions.first )
-    {
-    assert( clusters[j].second.positions.first != UMAX );
-    clusters.insert(clusters.begin()+j,make_pair(cluster(),minus[i]));
-    j=clusters.size();
-		
-    }
-    else
-    {
-    clusters.push_back(make_pair(cluster(),minus[i]));
-    j=clusters.size();
-    }
-    }
-    }
-  */
-  /*
-    for(unsigned i=0;i<clusters.size();++i)
-    {
-    cout << clusters[i].first.positions.first << '\t'
-    << clusters[i].first.positions.second << '\t'
-    << clusters[i].first.nreads << '\t'
-    << clusters[i].second.positions.first << '\t'
-    << clusters[i].second.positions.first << '\t'
-    << clusters[i].second.nreads << '\n';
-    }
-  */
 }
 
 void output_results( ostringstream & out,
