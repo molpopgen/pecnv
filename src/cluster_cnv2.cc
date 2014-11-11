@@ -76,10 +76,11 @@ auto order_clusters = []( const vector<vector<linkeddata>::const_iterator> & a,
     return min1 < min2;
   };
 
-typedef vector< vector<vector<linkeddata>::const_iterator> >  cluster_container;
+using cluster_container = vector< vector<vector<linkeddata>::const_iterator> >;
+using lvector = vector<linkeddata>;
+using putCNVs = map<string,lvector>;
 
-
-cluster_container cluster_linked( const vector<linkeddata> & raw,
+cluster_container cluster_linked( const lvector & raw,
 				  const unsigned & mdist );
 
 void reduce_clusters( cluster_container & clusters,
@@ -90,15 +91,15 @@ unsigned mindist(const unsigned & st1,
 		 const unsigned & st2,
 		 const unsigned & stp2);
 
-bool pair_should_cluster( vector<linkeddata>::const_iterator & pair,
-			  vector<vector<linkeddata>::const_iterator> & cluster,
+bool pair_should_cluster( lvector::const_iterator & pair,
+			  vector<lvector::const_iterator> & cluster,
 			  const unsigned & mdist);
 
-bool unique_positions(const vector<linkeddata> & data,
+bool unique_positions(const lvector & data,
 		      const unsigned & start,
-		      const unsigned & stop,
-		      const unsigned & start2,
-		      const unsigned & stop2);
+		      //const unsigned & stop,
+		      const unsigned & start2);
+		      //const unsigned & stop2);
 
 void write_clusters( gzFile o,
 		     const string & chrom1,
@@ -107,15 +108,13 @@ void write_clusters( gzFile o,
 		     unsigned * eventid );
 
 
-void read_data_details(map<string,vector<linkeddata> > & raw_div,
-		       map<string,vector<linkeddata> > & raw_par,
-		       map<string,map<string,vector<linkeddata> > > & raw_ul,
+void read_data_details(putCNVs & raw_div,
+		       putCNVs & raw_par,
+		       map<string,putCNVs > & raw_ul,
 		       gzFile lin,
 		       const unsigned & min_mqual,
 		       const unsigned & max_mm,
-		       const unsigned & max_gap,
-		       vector<pair<string,unsigned> > * chrom_labels,
-		       unsigned * chrom_index)
+		       const unsigned & max_gap)
 {
   /*
   string chrom_label,chrom_label2,pairname,pairname2;
@@ -149,9 +148,9 @@ void read_data_details(map<string,vector<linkeddata> > & raw_div,
 	    {
 	      if ( unique_positions(raw_div[chrom],
 				    (strand==0) ? start2 : start,
-				    (strand==0) ? stop2 : stop,
-				    (strand==0) ? start : start2,
-				    (strand==0) ? stop : stop2 ) )
+				    //(strand==0) ? stop2 : stop,
+				    (strand==0) ? start : start2) )
+				    //(strand==0) ? stop : stop2 ) )
 		{
 		  assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
 		  raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
@@ -165,9 +164,9 @@ void read_data_details(map<string,vector<linkeddata> > & raw_div,
 	    {
 	      if ( unique_positions(raw_par[chrom],
 				    (start<start2) ? start : start2,
-				    (start<start2) ? stop : stop2,
-				    (start<start2) ? start2 : start,
-				    (start<start2) ? stop2 : stop) )
+				    //(start<start2) ? stop : stop2,
+				    (start<start2) ? start2 : start) )
+				    //(start<start2) ? stop2 : stop) )
 		{
 		  raw_par[chrom].push_back( linkeddata( (start<start2) ? start : start2,
 							(start<start2) ? stop : stop2,
@@ -193,7 +192,7 @@ void read_data_details(map<string,vector<linkeddata> > & raw_div,
 		  swap(stop,stop2);
 		  swap(strand,strand2);
 		}
-	      if ( unique_positions(raw_ul[chrom][chrom2],start,stop,start2,stop2) )
+	      if ( unique_positions(raw_ul[chrom][chrom2],start,start2) )
 		{
 		  raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
 							      pairname,strand,strand2) );
@@ -209,15 +208,13 @@ void read_data_details(map<string,vector<linkeddata> > & raw_div,
     } while(!gzeof(lin));
 }
 
-void read_data( map<string,vector<linkeddata> > & raw_div,
-		map<string,vector<linkeddata> > & raw_par,
-		map<string,map<string,vector<linkeddata> > > & raw_ul,
+void read_data( putCNVs & raw_div,
+		putCNVs & raw_par,
+		map<string,putCNVs > & raw_ul,
 		const char * left,
 		const unsigned & min_mqual,
 		const unsigned & max_mm,
-		const unsigned & max_gap,
-		vector<pair<string,unsigned> > * chrom_labels,
-		unsigned * chrom_index)
+		const unsigned & max_gap)
 {
   gzFile input = gzopen(left,"r");
   if(input == NULL) {
@@ -226,7 +223,7 @@ void read_data( map<string,vector<linkeddata> > & raw_div,
 	 << " for reading\n";
     exit(1);
   }
-  read_data_details( raw_div,raw_par,raw_ul , input, min_mqual,max_mm,max_gap,chrom_labels,chrom_index );
+  read_data_details( raw_div,raw_par,raw_ul , input, min_mqual,max_mm,max_gap );
   gzclose(input);
 }
 		
@@ -316,21 +313,19 @@ int main(int argc, char ** argv)
       exit(1);
     }
 
-  map<string, vector<linkeddata> > raw_div;
-  map<string, vector<linkeddata> > raw_par;
-  map<string, map<string,vector<linkeddata> > > raw_ul;
-  vector<pair<string,unsigned> > chrom_labels;
-  unsigned chrom_index=0;
+  map<string, lvector > raw_div;
+  map<string, lvector > raw_par;
+  map<string, putCNVs > raw_ul;
   for(int i = argn;i<argc;++i)//i+=2)
     {
       cerr << "processing " << argv[i] << '\n';
       read_data(raw_div,raw_par,raw_ul,
-		argv[i],min_mqual,max_mm,max_gap,&chrom_labels,&chrom_index);
+		argv[i],min_mqual,max_mm,max_gap);
     }
 
   unsigned eventid=0;
   cerr << "clustering div\n";
-  for(map<string,vector<linkeddata> >::iterator itr = raw_div.begin();
+  for(putCNVs::iterator itr = raw_div.begin();
       itr != raw_div.end();++itr)
     {
       sort(itr->second.begin(),
@@ -350,7 +345,7 @@ int main(int argc, char ** argv)
 
   cerr << "clustering par\n";
   eventid=0;
-  for(map<string,vector<linkeddata> >::iterator itr = raw_par.begin();
+  for(putCNVs::iterator itr = raw_par.begin();
       itr != raw_par.end();++itr)
     {
       sort(itr->second.begin(),
@@ -370,10 +365,10 @@ int main(int argc, char ** argv)
 
   cerr << "clustering ul\n";
   eventid=0;
-  for( map<string, map<string,vector<linkeddata> > >::iterator itr = raw_ul.begin() ;
+  for( map<string, putCNVs >::iterator itr = raw_ul.begin() ;
        itr != raw_ul.end() ; ++itr )
     {
-      for( map<string,vector<linkeddata> >::iterator itr2 = itr->second.begin() ; 
+      for( putCNVs::iterator itr2 = itr->second.begin() ; 
 	   itr2 != itr->second.end() ; ++itr2 )
 	{
 	  assert(itr->first < itr2->first);
@@ -393,11 +388,11 @@ int main(int argc, char ** argv)
     }
 }
 
-bool unique_positions(const vector<linkeddata> & data,
+bool unique_positions(const lvector & data,
 		      const unsigned & start,
-		      const unsigned & stop,
-		      const unsigned & start2,
-		      const unsigned & stop2)
+		      //const unsigned & stop,
+		      const unsigned & start2)
+		      //const unsigned & stop2)
 {
   for(unsigned i=0;i<data.size();++i)
     {
@@ -412,8 +407,8 @@ bool unique_positions(const vector<linkeddata> & data,
 
 /*
   OLD VERSION, USED IN DGRP
-bool pair_should_cluster( vector<linkeddata>::const_iterator & pair,
-			  vector<vector<linkeddata>::const_iterator> & cluster,
+bool pair_should_cluster( lvector::const_iterator & pair,
+			  vector<lvector::const_iterator> & cluster,
 			  const unsigned & mdist)
 {
   for( unsigned i = 0 ; i < cluster.size() ; ++i )
@@ -458,8 +453,8 @@ unsigned mindist(const unsigned & st1,
 
 
 
-bool pair_should_cluster( vector<linkeddata>::const_iterator & pair,
-			  vector<vector<linkeddata>::const_iterator> & cluster,
+bool pair_should_cluster( lvector::const_iterator & pair,
+			  vector<lvector::const_iterator> & cluster,
 			  const unsigned & mdist)
 {
   for( unsigned i = 0 ; i < cluster.size() ; ++i )
@@ -486,10 +481,10 @@ bool pair_should_cluster( vector<linkeddata>::const_iterator & pair,
   return false;
 }
 
-cluster_container cluster_linked( const vector<linkeddata> & raw,
+cluster_container cluster_linked( const lvector & raw,
 				  const unsigned & mdist )
 {
-  typedef vector<linkeddata>::const_iterator citr;
+  using citr = lvector::const_iterator;
   cluster_container clusters;
 
   clusters.push_back( vector<citr>(1,raw.begin()) );
