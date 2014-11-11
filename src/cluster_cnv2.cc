@@ -33,7 +33,7 @@
 #include <Sequence/IOhelp.hpp>
 #include <zlib.h>
 //#include <string_unsigned_lookup.hpp>
-#include <file_util.hpp>
+//#include <file_util.hpp>
 
 using namespace std;
 
