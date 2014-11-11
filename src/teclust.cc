@@ -29,7 +29,6 @@
 #include <limits>
 #include <cassert>
 #include <sstream>
-//#include <string_unsigned_lookup.hpp>
 #include <zlib.h>
 #include <Sequence/IOhelp.hpp>
 #include <Sequence/bamreader.hpp>
@@ -99,7 +98,6 @@ params::params() : reference_datafile(string()),
 		   readfile(string()),
 		   umufile(string()),
 		   ummfile(string()),
-		   //teclust_ref(string()),
 		   INSERTSIZE(UMAX),
 		   MDIST(UMAX)
 {
@@ -109,18 +107,14 @@ params::params() : reference_datafile(string()),
 params parseargs(const int argc, char ** argv);
 vector<pair<string,int32_t> > make_lookup(const bamreader & reader);
 vector<teinfo> read_refdata( const params & p );
-
 void procUMM(const vector<teinfo> & reftes,
-	     //const map< string, vector< puu > > & reftes,
 	     const string & umufilename,
 	     const string & ummfilename,
-	     map<string,vector<pair<unsigned,unsigned> > > * data);
-
- void output_results(ostringstream & out,
-		     const vector<pair<cluster,cluster> > & clusters, 
-		     const string & chrom_label, 
-		     const vector< teinfo > & reftes );
-		     //const vector< pair<unsigned,unsigned> > & ref_te_chromo);
+	     map<string,vector< puu > > * data);
+void output_results(ostringstream & out,
+		    const vector<pair<cluster,cluster> > & clusters, 
+		    const string & chrom_label, 
+		    const vector< teinfo > & reftes );
 //OLD
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
@@ -176,7 +170,7 @@ int main( int argc, char ** argv )
 
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
-  //auto refTEs = get_ref_te(pars.reference_datafile);
+
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
@@ -246,92 +240,8 @@ int main( int argc, char ** argv )
       exit(10);
     }
   gzclose(gzout);
-  /*
-  if( argc < 5 )
-    {
-      cerr << "usage: teclust reference_datafile INSERTSIZE MDIST outfile.gz [input_files]\n";
-      exit(10);
-    }
-  int argn = 1;
-  const char * reference_datafile = argv[argn++];
-  const unsigned INSERTSIZE = atoi(argv[argn++]);
-  const unsigned MDIST = atoi(argv[argn++]);
-  const char * outfile = argv[argn++];
-  */
-
-  /*
-    a map is like a hash in perl
-    The "key" is an unsigned integer, representing the chromosome
-    The "value" is a vector of pairs of unsigned integers,
-    where each pair is the start and stop of a TE in the 
-    reference on the chromosome
-  */
-  //read the raw data in from STDIN
-  /*
-  map< unsigned, vector<puu> > raw_data;
-  vector<pair<string,unsigned> > chrom_labels;
-  for(int i = argn;i<argc;++i)
-    {
-      cerr << "processing " << argv[i] << '\n';
-      gzFile in = gzopen(argv[i],"r");
-      if(in == NULL) {
-	cerr << "Error: cannot open " 
-	     << argv[i] 
-	     << " for reading.\n";
-	exit(10);
-      }
-      read_raw_data(in,raw_data, &chrom_labels );
-    }
-
-  map< unsigned, vector< pair<unsigned,unsigned> > > reference_te;
-  get_ref_te(reference_te, reference_datafile,chrom_labels);
-  
-  ostringstream out;
-  out << "chromo\t"
-      << "nplus\t"
-      << "nminus\t"
-      << "pfirst\t"
-      << "plast\t"
-      << "pdist\t"
-      << "pin\t"
-      << "mfirst\t"
-      << "mlast\t"
-      << "mdist\t"
-      << "min\n";
-  */
-  //go through each chromosome, cluster results for each chromosome, and print results to screen`
-  /*
-  map< unsigned, vector<puu> >::iterator itr;
-  for( itr = raw_data.begin() ; itr != raw_data.end() ; ++itr )
-    {
-      vector<pair<cluster,cluster> > clusters;
-      cluster_data(clusters,itr->second,INSERTSIZE,MDIST)
-;      output_results(out,clusters,
-		     lookup_string(chrom_labels,itr->first),
-		     reference_te[itr->first]);
-    }
-  gzFile gzout = gzopen(outfile,"w");
-  if(gzout == NULL) {
-    cerr << "Error: could not open "
-	 << outfile
-	 << " for writing\n";
-    exit(10);
-  }
-  if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
-    {
-      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
-      exit(1);
-    }
-  gzclose(gzout);
-  exit(0);
-  */
 }
 
-/*
-  string  reference_datafile,  outfile,  bamfile,  readfile,  umufile,  umufile_ref;
-  unsigned INSERTSIZE,MDIST;
-*/
 params parseargs(const int argc, char ** argv)
 {
   params rv;
@@ -354,8 +264,6 @@ params parseargs(const int argc, char ** argv)
 
   if( argc == 1 || 
       vm.count("help") ||
-      //!vm.count("bamfile") || 
-      //!vm.count("tepos") ||
       !vm.count("outfile") ||
       !vm.count("umu") ||
       !vm.count("umm") ||
@@ -497,83 +405,6 @@ void procUMM(const vector<teinfo> & reftes,
   gzclose(gzin);
 }
 
-
-//OLD
-/*
-void get_ref_te(  map< unsigned, vector< pair<unsigned,unsigned> > > & reference_te,
-		  const char * reference_datafile,
-		  const vector<pair<string,unsigned> > & chrom_labels) 
-*/
-// map< string, vector< puu > >
-// get_ref_te( const string & reference_datafile )
-// /*
-//   This function reads in the start/stop positions of every TE in the reference genome
-//   The input file is in the following format:
-//   chrom start stop
-  
-//   for each TE, and chrom is an unsigned integer representing each chromosome
-// */
-// {
-//   map< string, vector< puu > > reference_te;
-//   if(reference_datafile.empty()) return reference_te;
-//   string chrom_label;
-//   unsigned chrom,i,j;
-
-//   gzFile gzin = gzopen(reference_datafile.c_str(),"r");
-//   if(gzin == NULL)
-//     {
-//       cerr << "Error: could not open "
-// 	   << reference_datafile
-// 	   << " for reading.\n";
-//       exit(1);
-//     }
-//   // ifstream in(reference_datafile);
-//   // if(!in)
-//   //   {
-//   //     cerr << "Could not open " << reference_datafile << " for reading\n";
-//   //     exit(10);
-//   //   }
-
-//   //Read in TE positions
-//   //map< unsigned, vector< pair<unsigned,unsigned> > >::iterator itr;
-//   //while(!in.eof())
-//   do
-//     {
-//       auto line = IOhelp::gzreadline(gzin);
-//       if(!line.second)break;
-//       istringstream in(line.first);
-//       in >> chrom_label >> i >> j >> ws;
-//       //chrom = lookup_unsigned(chrom_labels,chrom_label);
-//       auto itr = reference_te.find(chrom_label);
-//       if(  itr == reference_te.end() ) //if chromosome is not present as a key
-// 	{
-// 	  /*
-// 	    add this key/value -- the key is chrom, and the value is a 
-// 	    vector<pair<unsigned,unsigned> > with 1 value, which is a pair with values i and j
-// 	  */
-// 	  reference_te.insert( make_pair(chrom_label, vector<pair<unsigned,unsigned> >(1,make_pair(i-1,j-1))) );
-// 	}
-//       else //chromosome exists, so just add i and j to the vector of TE positions
-// 	{
-// 	  itr->second.push_back(make_pair(i-1,j-1));
-// 	}
-//     }
-//  while(!gzeof(gzin));
-
-// //in.close();
-
-//   //sort TE positions by start position for each chromosome
-//   for( auto itr = reference_te.begin() ; itr != reference_te.end() ; ++itr )
-//     {
-//       sort( itr->second.begin(), itr->second.end(),
-// 	    [&](const pair<unsigned,unsigned> & lhs,
-// 		const pair<unsigned,unsigned> & rhs) {
-// 	      return lhs.first <= rhs.first;
-// 	    });
-//     }
-//   return reference_te;
-// }
-
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
 		   const unsigned & INSERTSIZE, const unsigned & MDIST )
@@ -639,7 +470,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
   
   reduce_ends( plus, INSERTSIZE );
   reduce_ends( minus, INSERTSIZE );
-  //cerr << "here\n";
+
   //now, we have to match up plus and minus based on MDIST
   vector<short> matched(plus.size(),0);
   for(unsigned i=0;i<plus.size();++i)
