@@ -110,41 +110,45 @@ then
     exit
 fi
 
-NPAIRS=${#LEFTS[@]}
-PAIR=0
-while [ $PAIR -lt $NPAIRS ]
-do
-    LEFTREADS=${LEFTS[$PAIR]}
-    RIGHTREADS=${RIGHTS[$PAIR]}
-    BAMFILEBASE="$OUTDIR/intermediate_bamfile$PAIR"
-    if [ $NPAIRS -eq 1 ]
-    then
-	BAMFILEBASE="$OUTDIR/$BAMFILESTUB"
-    fi
+if [ ! -e $OUTDIR/"$BAMFILESTUB"_sorted.bam ]
+then
+    NPAIRS=${#LEFTS[@]}
+    PAIR=0
+    while [ $PAIR -lt $NPAIRS ]
+    do
+	LEFTREADS=${LEFTS[$PAIR]}
+	RIGHTREADS=${RIGHTS[$PAIR]}
+	BAMFILEBASE="$OUTDIR/intermediate_bamfile$PAIR"
+	if [ $NPAIRS -eq 1 ]
+	then
+	    BAMFILEBASE="$OUTDIR/$BAMFILESTUB"
+	fi
     #ALIGN THIS PAIR 
     #We go straight to sorted BAM output via process substitution
-    bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
-    PAIR=$(($PAIR+1))
-done
-
+	bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
+	PAIR=$(($PAIR+1))
+    done
 
 ###2. Merge bam files if necessary
-if [ $NPAIRS -gt 1 ]
-then
-    samtools merge $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/intermediate_bamfile*.bam
-    rm -f $OUTDIR/intermediate_bamfile*.bam
+    if [ $NPAIRS -gt 1 ]
+    then
+	samtools merge $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/intermediate_bamfile*.bam
+	rm -f $OUTDIR/intermediate_bamfile*.bam
+    fi
+else
+    echo $OUTDIR/"$BAMFILESTUB"_sorted.bam exists, so skipping alignment step
 fi
 
 ###3. Collect unusual read pairings and estimate insert size distributions
 if [ -z ${MAXRAM+x} ]
 then
-    MM=`echo "$MAXRAM*1024^2"|bc -l`
+    >&2 echo "Using default ulimit"
+else
     ulimit -v $MM
 fi
 
 process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
 bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
-#samtools view -f 1 $OUTDIR/"$BAMFILESTUB"_readsorted.bam | process_readmappings $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###4. Get quantile of mapping distance
 Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
