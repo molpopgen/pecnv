@@ -119,16 +119,16 @@ struct cluster
 //   }
 // };
 
-struct close_enough_minus : public binary_function< cluster,cluster,bool >
-{
-  inline bool operator()(const cluster & minus, const cluster & plus,
-			 const unsigned & MDIST) const
-  {
-    if( minus.positions.first < plus.positions.second ) return false;
-    if( minus.positions.first - plus.positions.second <= MDIST) return true;
-    return false;
-  }
-};
+// struct close_enough_minus : public binary_function< cluster,cluster,bool >
+// {
+//   inline bool operator()(const cluster & minus, const cluster & plus,
+// 			 const unsigned & MDIST) const
+//   {
+//     if( minus.positions.first < plus.positions.second ) return false;
+//     if( minus.positions.first - plus.positions.second <= MDIST) return true;
+//     return false;
+//   }
+// };
 
 /*
   struct sort_clusters : public binary_function< pair<cluster,cluster>,
@@ -438,7 +438,11 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	{
 	  vector<cluster>::iterator j = find_if(minus.begin(),
 						minus.end(),
-						std::bind(close_enough_minus(),std::placeholders::_1,plus[i],MDIST));
+						//The old close_enough_minus function object from 0.1.0
+						[&](const cluster & minus){
+						       if( minus.positions.first < plus[i].positions.second ) return false;
+						       if( minus.positions.first - plus[i].positions.second <= MDIST) return true;
+						});
 	  if( j != minus.end() )
 	    {
 	      //is there a better match in plus for this minus?
@@ -446,7 +450,9 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      unsigned winner = i;
 	      for(unsigned k=i+1;k<plus.size();++k)
 		{
-		  if ( close_enough_minus()(*j,plus[k],MDIST) )
+		  //In 0.1.0, this was another call to an instantiaion of close_enough_minus
+		  if( j->positions.first < plus[k].positions.second ||
+		      j->positions.first - plus[k].positions.second <= MDIST )
 		    {
 		      if( j->positions.first - plus[k].positions.second < dist )
 			{
