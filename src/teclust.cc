@@ -600,9 +600,9 @@ void output_results( ostringstream & out,
 	  // 		   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
 	  // 		 });
 	  auto mind = find_if( reftes.cbegin(), reftes.cend(),
-			       [&](const teinfo __t) {
+			       [&](const teinfo & __t) {
 				 const unsigned rhs = clusters[i].first.positions.second;
-				 return __t.chrom == chrom_label && rhs >= __t.start && rhs <= __t.stop;
+				 return (chrom_label == __t.chrom && ( __t.start >= rhs || ( rhs >= __t.start && rhs <= __t.stop ) ));
 			       });
 	  if(mind != reftes.end())//ref_te_chromo.end())
 	    {
@@ -669,7 +669,7 @@ void output_results( ostringstream & out,
 			       [&](const teinfo __t){
 				 const unsigned rhs = clusters[i].second.positions.first;
 				 return chrom_label == __t.chrom &&
-				 (__t.start <= rhs || ( rhs >= __t.start && rhs <= __t.stop ));
+				 (__t.stop <= rhs || ( rhs >= __t.start && rhs <= __t.stop ));
 			       });
 	  if(mindr != reftes.crend())//ref_te_chromo.rend())
 	    {
