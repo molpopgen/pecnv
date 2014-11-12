@@ -35,7 +35,7 @@ int main( int argc, char ** argv )
     {
       MAXPAIRS = stoi(argv[argn]);
     }
-  unsigned nproc=0;
+
   bamreader reader(bamfilename);
   if( ! reader )
     {
