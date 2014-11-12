@@ -282,10 +282,11 @@ refIDlookup
 make_lookup(const bamreader & reader)
 {
   refIDlookup rv;
+  unsigned I=0;
   for_each(reader.ref_cbegin(),reader.ref_cend(),
 	   [&](const pair<string,int32_t> & __p)
 	   {
-	     rv[__p.second]=__p.first;
+	     rv[I++]=__p.first;
 	   });
   return rv;
 }
@@ -454,6 +455,7 @@ unordered_set<string> scan_bamfile(const params & p,
 	//then both reads are mapped 
 	{
 	  auto itr = lookup.find(b.refid());
+
 	  if(itr == lookup.end())
 	    {
 	      cerr << "Error: reference ID " << b.refid()
