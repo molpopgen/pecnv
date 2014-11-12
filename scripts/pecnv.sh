@@ -121,7 +121,7 @@ then
 	BAMFILEBASE="$OUTDIR/intermediate_bamfile$PAIR"
 	if [ $NPAIRS -eq 1 ]
 	then
-	    BAMFILEBASE="$OUTDIR/$BAMFILESTUB"
+	    BAMFILEBASE="$OUTDIR/$BAMFILESTUB"_sorted
 	fi
     #ALIGN THIS PAIR 
     #We go straight to sorted BAM output via process substitution
