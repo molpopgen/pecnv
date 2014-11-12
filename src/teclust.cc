@@ -521,7 +521,7 @@ unordered_set<string> scan_bamfile(const params & p,
 	    {
 	      //Our check for uniqueness is the existence of an XO flag with a value of 0
 	      bamaux ba = b.aux("XO");
-	      if(ba.size && ba.value[0] == '0')
+	      if(ba.size && ba.value[0] == '1')
 		{
 		  int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
 		  auto CHROM = refTEs.find(itr->second);
