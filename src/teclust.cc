@@ -118,9 +118,9 @@ void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
 		    const refTEcont & reftes);
-void scan_bamfile(const params & p,
-		  const refTEcont & refTEs,
-		  map<string,vector< puu > > * data);
+unordered_set<string> scan_bamfile(const params & p,
+				   const refTEcont & refTEs,
+				   map<string,vector< puu > > * data);
 //OLD
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
@@ -426,11 +426,11 @@ make_lookup(const bamreader & reader)
    gzclose(gzin);
  }
 
- void scan_bamfile(const params & p,
-		   const refTEcont & refTEs,
-		   map<string,vector< puu > > * data)
+unordered_set<string> scan_bamfile(const params & p,
+				   const refTEcont & refTEs,
+				   map<string,vector< puu > > * data)
  {
-   if( refTEs.empty() || p.bamfile.empty() ) return;
+   if( refTEs.empty() || p.bamfile.empty() ) return unordered_set<string>();
 
    bamreader reader(p.bamfile.c_str());
    if(! reader )
@@ -473,11 +473,23 @@ make_lookup(const bamreader & reader)
 				    bool B = (stop >= __t.start() && stop <= __t.stop());
 				    return A||B;
 				  }) != CHROM->second.cend();
-	   //OK, now does its mate?
-	   //Note: we are now asking if start position alone does NOT overlap a TE
 	   if( hitsTE )
 	     {
-	       TEhitters.insert( editRname(b.read_name()) );
+	       //We can do a check here:
+	       //If mate is mapped to same chromo & hits a TE,
+	       //we can skip storing it
+	       bool OK = true;
+	       if( b.refid() == b.next_refid())
+		 {
+		   int32_t mstart = b.next_pos();
+		   OK = find_if( CHROM->second.cbegin(),
+				 CHROM->second.cend(),
+				 [&](const teinfo & __t) {
+				   return (mstart >= __t.start() && mstart <= __t.stop());
+				 }) == CHROM->second.cend();
+		 }
+	       if(OK)
+		 TEhitters.insert( editRname(b.read_name()) );
 	    }
 	 }
      }
@@ -501,6 +513,10 @@ make_lookup(const bamreader & reader)
 	       exit(1);
 	     }
 	   auto n = editRname(b.read_name());
+	   /*
+	     Ideally, I think that we'd check if this read is also uniquely-mapping,
+	     but Julie's script does not do that...
+	   */
 	   if( TEhitters.find(n) != TEhitters.end() )
 	     {
 	       int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
@@ -532,6 +548,7 @@ make_lookup(const bamreader & reader)
 	     }
 	 }
      }
+   return TEhitters;
  }
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
