@@ -514,36 +514,41 @@ unordered_set<string> scan_bamfile(const params & p,
 	     }
 	   auto n = editRname(b.read_name());
 	   /*
-	     Ideally, I think that we'd check if this read is also uniquely-mapping,
-	     but Julie's script does not do that...
+	     Note: Julie's script does not check that these reads map uniquely.
+	     Here, we do.
 	   */
 	   if( TEhitters.find(n) != TEhitters.end() )
 	     {
-	       int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
-	       auto CHROM = refTEs.find(itr->second);
-	       bool hitsTE = find_if( CHROM->second.cbegin(),
-				      CHROM->second.cend(),
-				      [&](const teinfo & __t) {
-					bool A = (start >= __t.start() && start <= __t.stop());
-					bool B = (stop >= __t.start() && stop <= __t.stop());
-					return A||B;
-				      }) != CHROM->second.cend();
-	       if(hitsTE) //no good
+	       //Our check for uniqueness is the existence of an XO flag with a value of 0
+	       bamaux ba = b.aux("XO");
+	       if(ba.size && ba.value[0] == '0')
 		 {
-		   TEhitters.erase(n);
-		 }
-	       else
-		 {
-	       	   auto DCHROM = data->find(itr->second);
-	       	   if(DCHROM == data->end())
-	       	     {
-	       	       data->insert( make_pair(itr->second,
-	       				       vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
-	       	     }
-	       	   else
-	       	     {
-	       	       DCHROM->second.emplace_back(make_pair(start,f.qstrand));
-	       	     }
+		   int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
+		   auto CHROM = refTEs.find(itr->second);
+		   bool hitsTE = find_if( CHROM->second.cbegin(),
+					  CHROM->second.cend(),
+					  [&](const teinfo & __t) {
+					    bool A = (start >= __t.start() && start <= __t.stop());
+					    bool B = (stop >= __t.start() && stop <= __t.stop());
+					    return A||B;
+					  }) != CHROM->second.cend();
+		   if(hitsTE) //no good
+		     {
+		       TEhitters.erase(n);
+		     }
+		   else
+		     {
+		       auto DCHROM = data->find(itr->second);
+		       if(DCHROM == data->end())
+			 {
+			   data->insert( make_pair(itr->second,
+						   vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+			 }
+		       else
+			 {
+			   DCHROM->second.emplace_back(make_pair(start,f.qstrand));
+			 }
+		     }
 		 }
 	     }
 	 }
