@@ -625,11 +625,17 @@ void output_results( ostringstream & out,
 	  // 	       != ref_te_chromo.end() );
 	  withinTE = ( find_if(reftes.cbegin(),reftes.cend(),
 			       [&](const teinfo & __t) {
+				bool A = chrom_label == __t.chrom;
+				bool B = (clusters[i].first.positions.first >= __t.start || clusters[i].first.positions.first <= __t.stop);
+				bool C = (clusters[i].first.positions.second >= __t.start || clusters[i].first.positions.second <= __t.stop);
+				return A&&(B||C);
+				/*
 				 return __t.chrom == chrom_label &&
 				 ((clusters[i].first.positions.first >= __t.start ||
 				   clusters[i].first.positions.first <= __t.stop) ||
 				  (clusters[i].first.positions.second >= __t.start ||
 				   clusters[i].first.positions.second <= __t.stop));
+				*/
 			       }) != reftes.cend() );
 	  
 	  if (mind != reftes.end())//ref_te_chromo.end())
@@ -692,11 +698,15 @@ void output_results( ostringstream & out,
 	  // 	       != ref_te_chromo.end() );
 	  withinTE = (find_if(reftes.cbegin(),reftes.cend(),
 			      [&](const teinfo & __t) {
-				return chrom_label == __t.chrom &&
-				((clusters[i].first.positions.first >= __t.start ||
-				  clusters[i].first.positions.first <= __t.stop) ||
-				 (clusters[i].first.positions.second >= __t.start ||
-				  clusters[i].first.positions.second <= __t.stop));
+				bool A = chrom_label == __t.chrom;
+				bool B = (clusters[i].first.positions.first >= __t.start || clusters[i].first.positions.first <= __t.stop);
+				bool C = (clusters[i].first.positions.second >= __t.start || clusters[i].first.positions.second <= __t.stop);
+				return A&&(B||C);
+				// return chrom_label == __t.chrom &&
+				// ((clusters[i].first.positions.first >= __t.start ||
+				//   clusters[i].first.positions.first <= __t.stop) ||
+				//  (clusters[i].first.positions.second >= __t.start ||
+				//   clusters[i].first.positions.second <= __t.stop));
 			      }) != reftes.cend());
 	  if (mindr != reftes.crend()) // ref_te_chromo.rend())
 	    {
