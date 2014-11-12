@@ -100,15 +100,15 @@ struct output_files
   }
 };
 
-vector< pair<char,unsigned> > parse_cigar(const string & cigar);
+// vector< pair<char,unsigned> > parse_cigar(const string & cigar);
 
-//No. mismatches
-unsigned mm(const unsigned & nm,
-	    const vector< pair<char,unsigned> > & cigar_data);
-//No. gaps
-unsigned ngaps(const vector< pair<char,unsigned> > & cigar_data);
-//Alignment length
-unsigned alen(const vector< pair<char,unsigned> > & cigar_data);
+// //No. mismatches
+// unsigned mm(const unsigned & nm,
+// 	    const vector< pair<char,unsigned> > & cigar_data);
+// //No. gaps
+// unsigned ngaps(const vector< pair<char,unsigned> > & cigar_data);
+// //Alignment length
+// unsigned alen(const vector< pair<char,unsigned> > & cigar_data);
 //Write U reads in U/P pair to files
 void outputU( gzFile gzout,
 	      gzFile gzoutSAM,
@@ -313,59 +313,6 @@ void evalUM(const bamrecord & b1,
     }
 }
 
-unsigned alen(const vector< pair<char,unsigned> > & cigar_data)
-{
-  unsigned sum=0;
-  for(unsigned i=0;i<cigar_data.size();++i)
-    {
-      if ( cigar_data[i].first == 'M' ||
-	   cigar_data[i].first == 'I' ||
-	   cigar_data[i].first == 'D' ||
-	   cigar_data[i].first == 'N' )
-	{
-	  sum += cigar_data[i].second;
-	}
-    }
-  return sum;
-}
-
-unsigned mm(const unsigned & nm,  const vector< pair<char, unsigned> > & cigar_data)
-{
-  return nm - ngaps(cigar_data);
-}
-
-unsigned ngaps(const vector< pair<char,
-	       unsigned> > & cigar_data)
-{
-  unsigned sum=0;
-  for(unsigned i=0;i<cigar_data.size();++i)
-    {
-      if ( cigar_data[i].first == 'I' ||
-	   cigar_data[i].first == 'D' )
-	{
-	  sum += cigar_data[i].second;
-	}
-    }
-  return sum;
-}
-
-vector<pair<char,unsigned> > parse_cigar(const string & cigar)
-{
-  vector<pair<char,unsigned> > cigar_data;
-  
-  string::const_iterator pibeg = find_if( cigar.begin(),cigar.end(),::isdigit);
-  string::const_iterator piend = find_if( pibeg+1,cigar.end(),::isalpha );
-  char * endptr;
-  while( pibeg != cigar.end() )
-    {
-      cigar_data.push_back( make_pair( *piend, 
-				       strtoul( string(pibeg,piend).c_str(),&endptr,10 ) ) );
-      pibeg = find_if( piend+1, cigar.end(), ::isdigit );
-      piend = find_if( pibeg+1,cigar.end(),::isalpha);
-    }
-  return cigar_data;
-}
-
 struct mapping_pos
 {
   string chrom;
@@ -454,12 +401,14 @@ vector<mapping_pos> get_mapping_pos(const bamrecord & r,
 	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
 	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
 	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
-	  vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-	  unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
+	  //vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
+	  //unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
+	  unsigned hit_stop = abs(hit_start) + alignment_length(r) -2 ;//cdata) - 2;
 	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
 	  
 	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
-			     mm(nm,cdata),ngaps(cdata));
+			     mismatches(r),ngaps(r) );
+			     //mm(nm,cdata),ngaps(r));//cdata));
 	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
 	    {
 	      rv.push_back(hitmp);
