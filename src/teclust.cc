@@ -471,7 +471,8 @@ make_lookup(const bamreader & reader)
 	   //Note: we are now asking if start position alone does NOT overlap a TE
 	   if( hitsTE )
 	     {
-	       int32_t mstart = start + b.next_pos();
+	       int32_t mstart = b.next_pos();
+	       assert(mstart>=0);
 	       bool mateHitsTE =  find_if( CHROM->second.cbegin(),
 					   CHROM->second.cend(),
 					   [&](const teinfo & __t) {
