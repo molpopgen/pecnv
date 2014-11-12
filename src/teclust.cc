@@ -481,8 +481,8 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 						minus.end(),
 						//The old close_enough_minus function object from 0.1.0
 						[&](const cluster & minus){
-						       if( minus.positions.first < plus[i].positions.second ) return false;
-						       if( minus.positions.first - plus[i].positions.second <= MDIST) return true;
+						  if( minus.positions.first < plus[i].positions.second ) return false;
+						  return (minus.positions.first - plus[i].positions.second) <= MDIST;
 						});
 	  if( j != minus.end() )
 	    {
