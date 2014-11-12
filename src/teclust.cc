@@ -31,6 +31,7 @@
 #include <cassert>
 #include <sstream>
 #include <zlib.h>
+#include <common.hpp>
 #include <Sequence/IOhelp.hpp>
 #include <Sequence/bamreader.hpp>
 #include <Sequence/bamrecord.hpp>
@@ -108,7 +109,6 @@ using refIDlookup = unordered_map<int32_t,string>;
 //DEFINITION OF FUNCTIONS
 params parseargs(const int argc, char ** argv);
 refIDlookup make_lookup(const bamreader & reader);
-//vector<pair<string,int32_t> > make_lookup(const bamreader & reader);
 refTEcont read_refdata( const params & p );
 void procUMM(const refTEcont & reftes,
 	     const string & umufilename,
@@ -118,7 +118,6 @@ void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
 		    const refTEcont & reftes);
-		    //const vector< teinfo > & reftes );
 void scan_bamfile(const params & p,
 		  const refTEcont & refTEs,
 		  map<string,vector< puu > > * data);
@@ -186,6 +185,12 @@ int main( int argc, char ** argv )
   map<string,vector< pair<unsigned,unsigned> > > rawData;
   procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
   
+  /*
+    Scan the BAM file to look for reads whose
+    primary alignment hits a known TE in
+    the reference, and whose mate is 
+    mapped but does not hit a TE
+  */
   scan_bamfile(pars,refTEs,&rawData);
 
 
@@ -438,14 +443,15 @@ make_lookup(const bamreader & reader)
 
    auto lookup = make_lookup(reader);
 
+   unordered_set<string> TEhitters;
+   auto firstREC = reader.tell();
    while(! reader.eof() && !reader.error() )
      {
        bamrecord b = reader.next_record();
        if(b.empty()) break;
        samflag f(b.flag());
-       if( !f.query_unmapped && !f.mate_unmapped &&
-	   b.refid() == b.next_refid() ) 
-	 //then both reads are mapped to the same chromosome
+       if( !f.query_unmapped && !f.mate_unmapped )
+	 //then both reads are mapped 
 	 {
 	   auto itr = lookup.find(b.refid());
 	   if(itr == lookup.end())
@@ -471,30 +477,62 @@ make_lookup(const bamreader & reader)
 	   //Note: we are now asking if start position alone does NOT overlap a TE
 	   if( hitsTE )
 	     {
-	       int32_t mstart = b.next_pos();
-	       assert(mstart>=0);
-	       bool mateHitsTE =  find_if( CHROM->second.cbegin(),
-					   CHROM->second.cend(),
-					   [&](const teinfo & __t) {
-					     return  (mstart >= __t.start() && mstart <= __t.stop());
-					   }) != CHROM->second.cend();
-	       if(! mateHitsTE )
-		 {
-		   auto DCHROM = data->find(itr->second);
-		   if(DCHROM == data->end())
-		     {
-		       data->insert( make_pair(itr->second,
-					       vector<pair<unsigned,unsigned> >(1,make_pair(mstart,f.mstrand) ) ) );
-		     }
-		   else
-		     {
-		       DCHROM->second.emplace_back(make_pair(mstart,f.mstrand));
-		     }
-		}
+	       TEhitters.insert( editRname(b.read_name()) );
 	    }
-	}
-    }
-}
+	 }
+     }
+   //Second pass
+   reader.seek( firstREC, SEEK_SET );
+   while(! reader.eof() && !reader.error() )
+     {
+       bamrecord b = reader.next_record();
+       if(b.empty()) break;
+       samflag f(b.flag());
+       if( !f.query_unmapped && !f.mate_unmapped )
+	 //then both reads are mapped 
+	 {
+	   auto itr = lookup.find(b.refid());
+	   if(itr == lookup.end())
+	     {
+	       cerr << "Error: reference ID " << b.refid()
+		    << " not found in BAM file header. Line "
+		    << __LINE__ 
+		    << " of " << __FILE__ << '\n';
+	       exit(1);
+	     }
+	   auto n = editRname(b.read_name());
+	   if( TEhitters.find(n) != TEhitters.end() )
+	     {
+	       int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
+	       auto CHROM = refTEs.find(itr->second);
+	       bool hitsTE = find_if( CHROM->second.cbegin(),
+				      CHROM->second.cend(),
+				      [&](const teinfo & __t) {
+					bool A = (start >= __t.start() && start <= __t.stop());
+					bool B = (stop >= __t.start() && stop <= __t.stop());
+					return A||B;
+				      }) != CHROM->second.cend();
+	       if(hitsTE) //no good
+		 {
+		   TEhitters.erase(n);
+		 }
+	       else
+		 {
+	       	   auto DCHROM = data->find(itr->second);
+	       	   if(DCHROM == data->end())
+	       	     {
+	       	       data->insert( make_pair(itr->second,
+	       				       vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+	       	     }
+	       	   else
+	       	     {
+	       	       DCHROM->second.emplace_back(make_pair(start,f.qstrand));
+	       	     }
+		 }
+	     }
+	 }
+     }
+ }
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
