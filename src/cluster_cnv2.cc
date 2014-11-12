@@ -32,8 +32,6 @@
 #include <limits>
 #include <Sequence/IOhelp.hpp>
 #include <zlib.h>
-//#include <string_unsigned_lookup.hpp>
-//#include <file_util.hpp>
 
 using namespace std;
 
@@ -97,9 +95,7 @@ bool pair_should_cluster( lvector::const_iterator & pair,
 
 bool unique_positions(const lvector & data,
 		      const unsigned & start,
-		      //const unsigned & stop,
 		      const unsigned & start2);
-		      //const unsigned & stop2);
 
 void write_clusters( gzFile o,
 		     const string & chrom1,
@@ -116,11 +112,6 @@ void read_data_details(putCNVs & raw_div,
 		       const unsigned & max_mm,
 		       const unsigned & max_gap)
 {
-  /*
-  string chrom_label,chrom_label2,pairname,pairname2;
-  unsigned mqual,chrom,strand,mm,gap,
-    mqual2,chrom2,strand2,mm2,gap2;
-  */
   string chrom,chrom2,pairname,pairname2;
   unsigned mqual,strand,mm,gap,
     mqual2,strand2,mm2,gap2;
@@ -137,8 +128,6 @@ void read_data_details(putCNVs & raw_div,
       pdata >> pairname
 	    >> mqual >> chrom >> start >> stop >> strand >> mm >> gap >> type
 	    >> mqual2 >> chrom2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-      //chrom = update_lookup(chrom_labels,chrom_index,chrom_label);
-      //chrom2 = update_lookup(chrom_labels,chrom_index,chrom_label2);
 
       if( mqual >= min_mqual && mqual2 >= min_mqual &&
 	  mm <= max_mm && gap <= max_gap &&
@@ -148,9 +137,7 @@ void read_data_details(putCNVs & raw_div,
 	    {
 	      if ( unique_positions(raw_div[chrom],
 				    (strand==0) ? start2 : start,
-				    //(strand==0) ? stop2 : stop,
 				    (strand==0) ? start : start2) )
-				    //(strand==0) ? stop : stop2 ) )
 		{
 		  assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
 		  raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
@@ -164,9 +151,7 @@ void read_data_details(putCNVs & raw_div,
 	    {
 	      if ( unique_positions(raw_par[chrom],
 				    (start<start2) ? start : start2,
-				    //(start<start2) ? stop : stop2,
 				    (start<start2) ? start2 : start) )
-				    //(start<start2) ? stop2 : stop) )
 		{
 		  raw_par[chrom].push_back( linkeddata( (start<start2) ? start : start2,
 							(start<start2) ? stop : stop2,
@@ -251,14 +236,6 @@ int main(int argc, char ** argv)
   //make sure output files are writable
   const string header = "id\tchrom1\tcoverage\tstrand1\tstart1\tstop1\tchrom2\tstrand2\tstart2\tstop2\treads";
 
-  /*
-  if( file_exists(divfile) )
-    {
-      cerr << "error: " << divfile << " already exists, and we don't want to accidentally over-write something important!\n";
-      exit(10);
-    }
-  */
-
   gzFile divstream = gzopen(divfile,"wb");
   if(divstream==NULL) {
     cerr << "Error: could not open "
@@ -271,13 +248,7 @@ int main(int argc, char ** argv)
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
- /*
-  if( file_exists(parfile) )
-    {
-      cerr << "error: " << parfile << " already exists, and we don't want to accidentally over-write something important!\n";
-      exit(10);
-    }
- */
+
   gzFile parstream = gzopen(parfile,"wb");
   if(parstream == NULL) {
     cerr << "Error: could not open "
@@ -291,13 +262,6 @@ int main(int argc, char ** argv)
       exit(1);
     }
 
-  /*
-  if( file_exists(ulfile) )
-    {
-      cerr << "error: " << ulfile << " already exists, and we don't want to accidentally over-write something important!\n";
-      exit(10);
-    }
-  */
   gzFile ulstream = gzopen(ulfile,"wb");
   if(ulstream == NULL)
     {
@@ -338,8 +302,6 @@ int main(int argc, char ** argv)
       sort(clusters.begin(),clusters.end(),order_clusters);
       write_clusters( divstream, 
 		      itr->first,itr->first,
-		      //lookup_string(chrom_labels,itr->first), 
-		      //lookup_string(chrom_labels,itr->first),
 		      clusters,&eventid );
     }
 
@@ -358,8 +320,6 @@ int main(int argc, char ** argv)
       write_clusters( parstream, 
 		      itr->first,
 		      itr->first,
-		      //lookup_string(chrom_labels,itr->first),
-		      //lookup_string(chrom_labels,itr->first),
 		      clusters,&eventid );
     }
 
@@ -380,9 +340,7 @@ int main(int argc, char ** argv)
 	  sort(clusters.begin(),clusters.end(),order_clusters);
 	  write_clusters( ulstream, 
 			  itr->first,
-			  itr->first,
-			  //lookup_string(chrom_labels,itr->first),
-			  //lookup_string(chrom_labels,itr2->first),
+			  itr2->first,
 			  clusters,&eventid );
 	}
     }
@@ -390,9 +348,7 @@ int main(int argc, char ** argv)
 
 bool unique_positions(const lvector & data,
 		      const unsigned & start,
-		      //const unsigned & stop,
 		      const unsigned & start2)
-		      //const unsigned & stop2)
 {
   for(unsigned i=0;i<data.size();++i)
     {
