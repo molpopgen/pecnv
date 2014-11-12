@@ -19,7 +19,6 @@
   within mdist base pairs of each other on the same strand
 */
 
-#include <cstdlib>
 #include <string>
 #include <sstream>
 #include <map>
@@ -28,7 +27,6 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
-#include <fstream>
 #include <limits>
 #include <Sequence/IOhelp.hpp>
 #include <zlib.h>
