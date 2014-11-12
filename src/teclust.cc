@@ -44,13 +44,22 @@ using puu = pair<unsigned,unsigned>;
 
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
 
-struct teinfo
-//! Where TEs are in the reference genome
+// struct teinfo
+// //! Where TEs are in the reference genome
+// {
+//   string chrom;
+//   unsigned start,stop;
+//   teinfo( const string & c, const unsigned & st, const unsigned & sto) :
+//   chrom(c),start(st),stop(sto)
+//   {
+//   }
+// };
+
+struct teinfo : public pair<unsigned,unsigned>
 {
-  string chrom;
-  unsigned start,stop;
-  teinfo( const string & c, const unsigned & st, const unsigned & sto) :
-  chrom(c),start(st),stop(sto)
+  unsigned start() const { return this->first; }
+  unsigned stop() const { return this->second; }
+  teinfo( unsigned __s, unsigned __st ) : pair<unsigned,unsigned>(move(__s),move(__st))
   {
   }
 };
@@ -103,18 +112,23 @@ params::params() : reference_datafile(string()),
 {
 }
 
+using refTEcont = map<string,vector<teinfo> >;
 //DEFINITION OF FUNCTIONS
 params parseargs(const int argc, char ** argv);
 vector<pair<string,int32_t> > make_lookup(const bamreader & reader);
-vector<teinfo> read_refdata( const params & p );
-void procUMM(const vector<teinfo> & reftes,
+refTEcont read_refdata( const params & p );
+void procUMM(const refTEcont & reftes,
 	     const string & umufilename,
 	     const string & ummfilename,
 	     map<string,vector< puu > > * data);
 void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
-		    const vector< teinfo > & reftes );
+		    const refTEcont & reftes);
+		    //const vector< teinfo > & reftes );
+void scan_bamfile(const params & p,
+		  const refTEcont & refTEs,
+		  map<string,vector< puu > > * data);
 //OLD
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
@@ -178,19 +192,7 @@ int main( int argc, char ** argv )
   map<string,vector< pair<unsigned,unsigned> > > rawData;
   procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
   
-  if(!refTEs.empty() && !pars.bamfile.empty())
-    {
-      //Can the bam file like Julie's script does
-      bamreader reader(pars.bamfile.c_str());
-      
-      if(! reader )
-	{
-	  cerr << "Error: " 
-	       << pars.bamfile
-	       << " could not be opened for reading.\n";
-	  exit(0);
-	}
-    }
+  scan_bamfile(pars,refTEs,&rawData);
 
 
   //Sort the raw data
@@ -285,9 +287,9 @@ vector<pair<string,int32_t> > make_lookup(const bamreader & reader)
   return rv;
 }
 
-vector<teinfo> read_refdata( const params & p )
+refTEcont read_refdata( const params & p )
 {
-  vector<teinfo> rv;
+  refTEcont rv;
 
   if(p.reference_datafile.empty()) return rv;
 
@@ -309,17 +311,33 @@ vector<teinfo> read_refdata( const params & p )
       unsigned start,stop;
       instream >> chrom >> start >> stop >> ws;
       //We subtract 1 to convert to a 0-offest system
-      rv.emplace_back( teinfo(chrom,start-1,stop-1) );
+      rv[chrom].emplace_back( teinfo(start-1,stop-1) );
     }
   while(!gzeof(in));
 
   gzclose(in);
 
+  //Sort the data
+  for( auto __v = rv.begin() ; __v != rv.end() ; ++__v )
+    {
+      sort(__v->second.begin(),__v->second.end(),[](const teinfo & __l,const teinfo __r) {
+  	  return __l.start() < __r.start();
+  	});
+    }
+  // for_each(rv.begin(),rv.end(),
+  // 	   []( const pair<string,vector<teinfo>> & data )
+  // 	   {
+  // 	     for_each(data.second.begin(),data.second.end(),[&](const teinfo & __t)
+  // 		      {
+  // 			cout << data.first << ' ' << __t.start() << ' ' << __t.stop() << '\n';
+  // 		      });
+  // 	   });
+  // exit(0);
   return rv;
 }
 
 
-void procUMM(const vector<teinfo> & reftes,
+void procUMM(const refTEcont & reftes,
 	     const string & umufilename,
 	     const string & ummfilename,
 	     map<string,vector<pair<unsigned,unsigned> > > * data)
@@ -350,13 +368,13 @@ void procUMM(const vector<teinfo> & reftes,
 	  //Don't re-process a read if we already know it has a mapping to a TE
 	  if( mTE.find(name) != mTE.end() )
 	    {
-	      if( find_if(reftes.cbegin(),
-			  reftes.cend(),
+	      auto __itr = reftes.find(chrom);
+	      if( find_if(__itr->second.cbegin(),
+			  __itr->second.cend(),
 			  [&](const teinfo & __t) {
-			    return (__t.chrom == chrom && 
-				    ( (start >= __t.start && start <= __t.stop) ||
-				      (stop >= __t.start && stop <= __t.stop) ) );
-			  }) != reftes.end() )
+			    return ( (start >= __t.start() && start <= __t.stop()) ||
+				     (stop >= __t.start() && stop <= __t.stop()) );
+			  }) != __itr->second.cend() )
 		{
 		  //Then read hits a known TE
 		  mTE.insert(name);
@@ -403,6 +421,24 @@ void procUMM(const vector<teinfo> & reftes,
   while(!gzeof(gzin));
 
   gzclose(gzin);
+}
+
+void scan_bamfile(const params & p,
+		  const refTEcont & refTEs,
+		  map<string,vector< puu > > * data)
+{
+  if( refTEs.empty() || p.bamfile.empty() ) return;
+
+  bamreader reader(p.bamfile.c_str());
+  if(! reader )
+    {
+      cerr << "Error: " 
+	   << p.bamfile
+	   << " could not be opened for reading.\n";
+      exit(0);
+    }
+
+  auto lookup = make_lookup(reader);
 }
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
@@ -471,6 +507,15 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
   reduce_ends( plus, INSERTSIZE );
   reduce_ends( minus, INSERTSIZE );
 
+  auto close_enough_minus = [](const cluster & __minus,
+			       const cluster & __plus,
+			       const unsigned & __MDIST)
+    {
+      if( __minus.positions.first < __plus.positions.second ) return false;
+      if( __minus.positions.first - __plus.positions.second <= __MDIST) return true;
+      return false;
+    };
+
   //now, we have to match up plus and minus based on MDIST
   vector<short> matched(plus.size(),0);
   for(unsigned i=0;i<plus.size();++i)
@@ -479,11 +524,12 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	{
 	  vector<cluster>::iterator j = find_if(minus.begin(),
 						minus.end(),
-						//The old close_enough_minus function object from 0.1.0
-						[&](const cluster & minus){
-						  if( minus.positions.first < plus[i].positions.second ) return false;
-						  return (minus.positions.first - plus[i].positions.second) <= MDIST;
-						});
+						bind(close_enough_minus,placeholders::_1,plus[i],MDIST));
+						// //The old close_enough_minus function object from 0.1.0
+						// [&](const cluster & minus){
+						//   if( minus.positions.first < plus[i].positions.second ) return false;
+						//   return (minus.positions.first - plus[i].positions.second) <= MDIST;
+						// });
 	  if( j != minus.end() )
 	    {
 	      //is there a better match in plus for this minus?
@@ -492,8 +538,9 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      for(unsigned k=i+1;k<plus.size();++k)
 		{
 		  //In 0.1.0, this was another call to an instantiaion of close_enough_minus
-		  if( j->positions.first > plus[k].positions.second &&
-		      j->positions.first - plus[k].positions.second <= MDIST )
+		  if( close_enough_minus(*j,plus[k],MDIST) )
+		  // if( j->positions.first > plus[k].positions.second &&
+		  //     j->positions.first - plus[k].positions.second <= MDIST )
 		    {
 		      if( j->positions.first - plus[k].positions.second < dist )
 			{
@@ -566,14 +613,30 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 void output_results( ostringstream & out,
 		     const vector<pair<cluster,cluster> > & clusters, 
 		     const string & chrom_label , 
-		     const vector< teinfo > & reftes )
+		     const refTEcont & reftes )
+		     //const vector< teinfo > & reftes )
 		     
 {
   vector<pair<unsigned,unsigned> >::const_iterator mind;
   vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
-  unsigned mindist = numeric_limits<unsigned>::max();
+  //unsigned mindist = numeric_limits<unsigned>::max();
+  int32_t mindist = -1;
   bool withinTE;
   out.flush();
+
+  auto closest_plus = [](const teinfo & __t,
+			 const unsigned & rhs)
+    {
+      return  (__t.start() >= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
+    };
+
+  auto closest_minus = [](const teinfo & __t,
+			  const unsigned & rhs)
+    {
+      return (__t.start() <= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
+    };
+
+  auto refItr = reftes.find(chrom_label);
   for(unsigned i=0;i<clusters.size();++i)
     {
       out.flush();
@@ -599,17 +662,23 @@ void output_results( ostringstream & out,
 	  // 		   const unsigned rhs = clusters[i].first.positions.second;
 	  // 		   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
 	  // 		 });
-	  auto mind = find_if( reftes.cbegin(), reftes.cend(),
-			       [&](const teinfo & __t) {
-				 const unsigned rhs = clusters[i].first.positions.second;
-				 return (chrom_label == __t.chrom && ( __t.start >= rhs || ( rhs >= __t.start && rhs <= __t.stop ) ));
-			       });
-	  if(mind != reftes.end())//ref_te_chromo.end())
+	  mindist = -1;
+	  withinTE = false;
+	  if(!reftes.empty())
 	    {
-	      mindist = (mind->start < clusters[i].first.positions.first) ?
-		clusters[i].first.positions.first-mind->start : 
-		mind->start - clusters[i].first.positions.first;
-	    }
+	      auto mind = find_if( refItr->second.cbegin(), refItr->second.cend(),
+				   bind(closest_plus,placeholders::_1,clusters[i].first.positions.second) );
+	      // [&](const teinfo & __t) {
+	      // 	 const unsigned rhs = clusters[i].first.positions.second;
+	      // 	 return (chrom_label == __t.chrom && ( __t.start >= rhs || ( rhs >= __t.start && rhs <= __t.stop ) ));
+	      // });
+	      if(mind != refItr->second.end())//ref_te_chromo.end())
+		{
+		  mindist = (mind->start() < clusters[i].first.positions.first) ?
+		    clusters[i].first.positions.first-mind->start() : 
+		    mind->start() - clusters[i].first.positions.first;
+		}
+	    
 	  // withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
 	  // 		       [&](const pair<unsigned,unsigned> & refTE) {
 	  // 			 return clusters[i].first.positions.first >= refTE.first ||
@@ -623,31 +692,31 @@ void output_results( ostringstream & out,
 	  // 		       })
 	  // 		       //bind2nd(within(),clusters[i].first.positions.second)) 
 	  // 	       != ref_te_chromo.end() );
-	  withinTE = ( find_if(reftes.cbegin(),reftes.cend(),
-			       [&](const teinfo & __t) {
-				bool A = chrom_label == __t.chrom;
-				bool B = (clusters[i].first.positions.first >= __t.start || clusters[i].first.positions.first <= __t.stop);
-				bool C = (clusters[i].first.positions.second >= __t.start || clusters[i].first.positions.second <= __t.stop);
-				return A&&(B||C);
-				/*
-				 return __t.chrom == chrom_label &&
-				 ((clusters[i].first.positions.first >= __t.start ||
-				   clusters[i].first.positions.first <= __t.stop) ||
-				  (clusters[i].first.positions.second >= __t.start ||
-				   clusters[i].first.positions.second <= __t.stop));
-				*/
-			       }) != reftes.cend() );
-	  
-	  if (mind != reftes.end())//ref_te_chromo.end())
-	    {
-	      out << mindist << '\t';
+	  withinTE = reftes.empty() ? false : ( find_if(refItr->second.cbegin(),refItr->second.cend(),
+							[&](const teinfo & __t) {
+							  bool B = (clusters[i].first.positions.first >= __t.start() || clusters[i].first.positions.first <= __t.stop());
+							  bool C = (clusters[i].first.positions.second >= __t.start() || clusters[i].first.positions.second <= __t.stop());
+							  return (B||C);
+							  /*
+							    return __t.chrom == chrom_label &&
+							    ((clusters[i].first.positions.first >= __t.start ||
+							    clusters[i].first.positions.first <= __t.stop) ||
+							    (clusters[i].first.positions.second >= __t.start ||
+							    clusters[i].first.positions.second <= __t.stop));
+							  */
+							}) != refItr->second.cend() );
 	    }
-	  else
-	    {
-	      out << "-1\t";
-	    }
+	  out << mindist << '\t' << withinTE << '\t';	  
+	  // if (mind != refItr->second.end())//ref_te_chromo.end())
+	  //   {
+	  //     out << mindist << '\t';
+	  //   }
+	  // else
+	  //   {
+	  //     out << "-1\t";
+	  //   }
 	  //out << withinTE << '\t';
-	  out << ((!reftes.empty())?int(withinTE):-1) << '\t';
+	  //out << ((!reftes.empty())?int(withinTE):-1) << '\t';
 	}
       if( clusters[i].second.positions.first == UMAX )
 	{
@@ -670,18 +739,25 @@ void output_results( ostringstream & out,
 			    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
 			  });
 	  */
-	  auto mindr = find_if(reftes.crbegin(),
-			       reftes.crend(),
+	  mindist = -1;
+	  withinTE = false;
+	  if(!reftes.empty())
+	    {
+	      auto mindr = find_if(refItr->second.crbegin(),
+				   refItr->second.crend(),
+				   bind(closest_minus,placeholders::_1,clusters[i].second.positions.first));
+	      /*
 			       [&](const teinfo __t){
 				 const unsigned rhs = clusters[i].second.positions.first;
 				 return chrom_label == __t.chrom &&
 				 (__t.stop <= rhs || ( rhs >= __t.start && rhs <= __t.stop ));
 			       });
-	  if(mindr != reftes.crend())//ref_te_chromo.rend())
-	    {
-	      mindist = (mindr->start < clusters[i].second.positions.second) ? 
-		clusters[i].second.positions.second-mindr->start : mindr->start - clusters[i].second.positions.second;
-	    }
+	      */
+	      if(mindr != refItr->second.crend())//ref_te_chromo.rend())
+		{
+		  mindist = (mindr->start() < clusters[i].second.positions.second) ? 
+		    clusters[i].second.positions.second-mindr->start() : mindr->start() - clusters[i].second.positions.second;
+		}
 	  // withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
 	  // 		       [&](const pair<unsigned,unsigned> & refTE) {
 	  // 			 return clusters[i].second.positions.second >= refTE.first ||
@@ -696,149 +772,151 @@ void output_results( ostringstream & out,
 	  // 		       })
 	  // 		       //bind2nd(within(),clusters[i].second.positions.first))
 	  // 	       != ref_te_chromo.end() );
-	  withinTE = (find_if(reftes.cbegin(),reftes.cend(),
-			      [&](const teinfo & __t) {
-				bool A = chrom_label == __t.chrom;
-				bool B = (clusters[i].first.positions.first >= __t.start || clusters[i].first.positions.first <= __t.stop);
-				bool C = (clusters[i].first.positions.second >= __t.start || clusters[i].first.positions.second <= __t.stop);
-				return A&&(B||C);
-				// return chrom_label == __t.chrom &&
-				// ((clusters[i].first.positions.first >= __t.start ||
-				//   clusters[i].first.positions.first <= __t.stop) ||
-				//  (clusters[i].first.positions.second >= __t.start ||
-				//   clusters[i].first.positions.second <= __t.stop));
-			      }) != reftes.cend());
-	  if (mindr != reftes.crend()) // ref_te_chromo.rend())
-	    {
-	      out << mindist << '\t';
+	      withinTE = (find_if(refItr->second.cbegin(),refItr->second.cend(),
+				  [&](const teinfo & __t) {
+				    //bool A = chrom_label == __t.chrom;
+				    bool B = (clusters[i].first.positions.first >= __t.start() || clusters[i].first.positions.first <= __t.stop());
+				    bool C = (clusters[i].first.positions.second >= __t.start() || clusters[i].first.positions.second <= __t.stop());
+				    return (B||C);
+				    // return chrom_label == __t.chrom &&
+				    // ((clusters[i].first.positions.first >= __t.start ||
+				    //   clusters[i].first.positions.first <= __t.stop) ||
+				    //  (clusters[i].first.positions.second >= __t.start ||
+				    //   clusters[i].first.positions.second <= __t.stop));
+				  }) != refItr->second.cend());
 	    }
-	  else
-	    {
-	      out << "-1\t";
-	    }
-	  out << ((!reftes.empty())?int(withinTE):-1) << endl;
+	  out << mindist << '\t' << withinTE << endl;
+	  // if (mindr != refItr->second.crend()) // ref_te_chromo.rend())
+	  //   {
+	  //     out << mindist << '\t';
+	  //   }
+	  // else
+	  //   {
+	  //     out << "-1\t";
+	  //   }
+	  // out << ((!reftes.empty())?int(withinTE):-1) << endl;
 	}
       out.flush();
     }
 }
 
 //OLD
-void output_results( ostringstream & out,
-		     const vector<pair<cluster,cluster> > & clusters, 
-		     const string & chrom_label , 
-		     const vector< pair<unsigned,unsigned> > & ref_te_chromo )
+// void output_results( ostringstream & out,
+// 		     const vector<pair<cluster,cluster> > & clusters, 
+// 		     const string & chrom_label , 
+// 		     const vector< pair<unsigned,unsigned> > & ref_te_chromo )
 		     
-{
-  vector<pair<unsigned,unsigned> >::const_iterator mind;
-  vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
-  unsigned mindist = numeric_limits<unsigned>::max();
-  bool withinTE;
-  out.flush();
-  for(unsigned i=0;i<clusters.size();++i)
-    {
-      out.flush();
-      out << chrom_label << '\t'
-	  << clusters[i].first.nreads << '\t'
-	  << clusters[i].second.nreads << '\t';
-      if( clusters[i].first.positions.first == UMAX )
-	{
-	  out << "NA\t"
-	      << "NA\t"
-	      << "NA\t"
-	      << "NA\t";
-	}
-      else
-	{
-	  out << clusters[i].first.positions.first << '\t'
-	      << clusters[i].first.positions.second << '\t';
-	  mind = find_if(ref_te_chromo.begin(),
-			 ref_te_chromo.end(),
-			 [&]( const pair<unsigned,unsigned> & lhs ) {
-			   //This is the old closest_plus function object from 0.1.0
-			   //Finds the closest TE in the reference 3' of this position
-			   const unsigned rhs = clusters[i].first.positions.second;
-			   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-			 });
-	  if(mind != ref_te_chromo.end())
-	    {
-	      mindist = (mind->first < clusters[i].first.positions.first) ?
-		clusters[i].first.positions.first-mind->first : 
-		mind->first - clusters[i].first.positions.first;
-	    }
-	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       [&](const pair<unsigned,unsigned> & refTE) {
-				 return clusters[i].first.positions.first >= refTE.first ||
-				 clusters[i].first.positions.first <= refTE.second;
-			       }) != ref_te_chromo.end() ||
-			       //bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
-		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       [&](const pair<unsigned,unsigned> & refTE) {
-				 return clusters[i].first.positions.second >= refTE.first || 
-				 clusters[i].first.positions.second <= refTE.second;
-			       })
-			       //bind2nd(within(),clusters[i].first.positions.second)) 
-		       != ref_te_chromo.end() );
-	  if (mind != ref_te_chromo.end())
-	    {
-	      out << mindist << '\t';
-	    }
-	  else
-	    {
-	      out << "NA\t";
-	    }
-	  out << withinTE << '\t';
-	}
-      if( clusters[i].second.positions.first == UMAX )
-	{
-	  out << "NA\t"
-	      << "NA\t"
-	      << "NA\t"
-	      << "NA" << endl;
-	}
-      else
-	{
-	  out << clusters[i].second.positions.first << '\t'
-	      << clusters[i].second.positions.second << '\t';
-	  mindr = find_if(ref_te_chromo.rbegin(),
-			  ref_te_chromo.rend(),
-			  //This is the old closest_minus from 0.1.0
-			  //Finds the closest reference TE 5' of this position
-			  [&](const pair<unsigned,unsigned> & lhs) {
-			    const unsigned rhs = clusters[i].second.positions.first;
-			    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-			  });
-	  if(mindr != ref_te_chromo.rend())
-	    {
-	      mindist = (mindr->first < clusters[i].second.positions.second) ? 
-		clusters[i].second.positions.second-mindr->first : mindr->first - clusters[i].second.positions.second;
-	    }
-	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       [&](const pair<unsigned,unsigned> & refTE) {
-				 return clusters[i].second.positions.second >= refTE.first ||
-				 clusters[i].second.positions.second <= refTE.second;
-			       })
-			       //bind2nd(within(),clusters[i].second.positions.second)) 
-		       != ref_te_chromo.end() ||
-		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-			       [&](const pair<unsigned,unsigned> & refTE) {
-				 return clusters[i].second.positions.first >= refTE.first ||
-				 clusters[i].second.positions.first <= refTE.second;
-			       })
-			       //bind2nd(within(),clusters[i].second.positions.first))
-		       != ref_te_chromo.end() );
-	  if (mindr != ref_te_chromo.rend())
-	    {
-	      out << mindist << '\t';
-	    }
-	  else
-	    {
-	      out << "NA\t";
-	    }
-	  out << withinTE << endl;
-	}
-      out.flush();
-    }
-}
+// {
+//   vector<pair<unsigned,unsigned> >::const_iterator mind;
+//   vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
+//   unsigned mindist = numeric_limits<unsigned>::max();
+//   bool withinTE;
+//   out.flush();
+//   for(unsigned i=0;i<clusters.size();++i)
+//     {
+//       out.flush();
+//       out << chrom_label << '\t'
+// 	  << clusters[i].first.nreads << '\t'
+// 	  << clusters[i].second.nreads << '\t';
+//       if( clusters[i].first.positions.first == UMAX )
+// 	{
+// 	  out << "NA\t"
+// 	      << "NA\t"
+// 	      << "NA\t"
+// 	      << "NA\t";
+// 	}
+//       else
+// 	{
+// 	  out << clusters[i].first.positions.first << '\t'
+// 	      << clusters[i].first.positions.second << '\t';
+// 	  mind = find_if(ref_te_chromo.begin(),
+// 			 ref_te_chromo.end(),
+// 			 [&]( const pair<unsigned,unsigned> & lhs ) {
+// 			   //This is the old closest_plus function object from 0.1.0
+// 			   //Finds the closest TE in the reference 3' of this position
+// 			   const unsigned rhs = clusters[i].first.positions.second;
+// 			   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+// 			 });
+// 	  if(mind != ref_te_chromo.end())
+// 	    {
+// 	      mindist = (mind->first < clusters[i].first.positions.first) ?
+// 		clusters[i].first.positions.first-mind->first : 
+// 		mind->first - clusters[i].first.positions.first;
+// 	    }
+// 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
+// 			       [&](const pair<unsigned,unsigned> & refTE) {
+// 				 return clusters[i].first.positions.first >= refTE.first ||
+// 				 clusters[i].first.positions.first <= refTE.second;
+// 			       }) != ref_te_chromo.end() ||
+// 			       //bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
+// 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
+// 			       [&](const pair<unsigned,unsigned> & refTE) {
+// 				 return clusters[i].first.positions.second >= refTE.first || 
+// 				 clusters[i].first.positions.second <= refTE.second;
+// 			       })
+// 			       //bind2nd(within(),clusters[i].first.positions.second)) 
+// 		       != ref_te_chromo.end() );
+// 	  if (mind != ref_te_chromo.end())
+// 	    {
+// 	      out << mindist << '\t';
+// 	    }
+// 	  else
+// 	    {
+// 	      out << "NA\t";
+// 	    }
+// 	  out << withinTE << '\t';
+// 	}
+//       if( clusters[i].second.positions.first == UMAX )
+// 	{
+// 	  out << "NA\t"
+// 	      << "NA\t"
+// 	      << "NA\t"
+// 	      << "NA" << endl;
+// 	}
+//       else
+// 	{
+// 	  out << clusters[i].second.positions.first << '\t'
+// 	      << clusters[i].second.positions.second << '\t';
+// 	  mindr = find_if(ref_te_chromo.rbegin(),
+// 			  ref_te_chromo.rend(),
+// 			  //This is the old closest_minus from 0.1.0
+// 			  //Finds the closest reference TE 5' of this position
+// 			  [&](const pair<unsigned,unsigned> & lhs) {
+// 			    const unsigned rhs = clusters[i].second.positions.first;
+// 			    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
+// 			  });
+// 	  if(mindr != ref_te_chromo.rend())
+// 	    {
+// 	      mindist = (mindr->first < clusters[i].second.positions.second) ? 
+// 		clusters[i].second.positions.second-mindr->first : mindr->first - clusters[i].second.positions.second;
+// 	    }
+// 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
+// 			       [&](const pair<unsigned,unsigned> & refTE) {
+// 				 return clusters[i].second.positions.second >= refTE.first ||
+// 				 clusters[i].second.positions.second <= refTE.second;
+// 			       })
+// 			       //bind2nd(within(),clusters[i].second.positions.second)) 
+// 		       != ref_te_chromo.end() ||
+// 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
+// 			       [&](const pair<unsigned,unsigned> & refTE) {
+// 				 return clusters[i].second.positions.first >= refTE.first ||
+// 				 clusters[i].second.positions.first <= refTE.second;
+// 			       })
+// 			       //bind2nd(within(),clusters[i].second.positions.first))
+// 		       != ref_te_chromo.end() );
+// 	  if (mindr != ref_te_chromo.rend())
+// 	    {
+// 	      out << mindist << '\t';
+// 	    }
+// 	  else
+// 	    {
+// 	      out << "NA\t";
+// 	    }
+// 	  out << withinTE << endl;
+// 	}
+//       out.flush();
+//     }
+// }
 
 void reduce_ends( vector<cluster> & clusters,
 		  const unsigned & INSERTSIZE )
