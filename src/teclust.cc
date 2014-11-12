@@ -525,11 +525,6 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	  vector<cluster>::iterator j = find_if(minus.begin(),
 						minus.end(),
 						bind(close_enough_minus,placeholders::_1,plus[i],MDIST));
-						// //The old close_enough_minus function object from 0.1.0
-						// [&](const cluster & minus){
-						//   if( minus.positions.first < plus[i].positions.second ) return false;
-						//   return (minus.positions.first - plus[i].positions.second) <= MDIST;
-						// });
 	  if( j != minus.end() )
 	    {
 	      //is there a better match in plus for this minus?
@@ -537,10 +532,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      unsigned winner = i;
 	      for(unsigned k=i+1;k<plus.size();++k)
 		{
-		  //In 0.1.0, this was another call to an instantiaion of close_enough_minus
 		  if( close_enough_minus(*j,plus[k],MDIST) )
-		  // if( j->positions.first > plus[k].positions.second &&
-		  //     j->positions.first - plus[k].positions.second <= MDIST )
 		    {
 		      if( j->positions.first - plus[k].positions.second < dist )
 			{
@@ -619,9 +611,8 @@ void output_results( ostringstream & out,
 {
   vector<pair<unsigned,unsigned> >::const_iterator mind;
   vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
-  //unsigned mindist = numeric_limits<unsigned>::max();
   int32_t mindist = -1;
-  bool withinTE;
+  int withinTE = -1;
   out.flush();
 
   auto closest_plus = [](const teinfo & __t,
@@ -663,7 +654,7 @@ void output_results( ostringstream & out,
 	  // 		   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
 	  // 		 });
 	  mindist = -1;
-	  withinTE = false;
+	  withinTE = -1;
 	  if(!reftes.empty())
 	    {
 	      auto mind = find_if( refItr->second.cbegin(), refItr->second.cend(),
@@ -740,7 +731,7 @@ void output_results( ostringstream & out,
 			  });
 	  */
 	  mindist = -1;
-	  withinTE = false;
+	  withinTE = -1;
 	  if(!reftes.empty())
 	    {
 	      auto mindr = find_if(refItr->second.crbegin(),
