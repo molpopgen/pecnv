@@ -492,7 +492,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      for(unsigned k=i+1;k<plus.size();++k)
 		{
 		  //In 0.1.0, this was another call to an instantiaion of close_enough_minus
-		  if( j->positions.first < plus[k].positions.second ||
+		  if( j->positions.first > plus[k].positions.second &&
 		      j->positions.first - plus[k].positions.second <= MDIST )
 		    {
 		      if( j->positions.first - plus[k].positions.second < dist )
