@@ -35,8 +35,6 @@
 
 using namespace std;
 
-const unsigned UMAX = numeric_limits<unsigned>::max();
-
 struct linkeddata
 {
   mutable unsigned a,aS,b,bS; //positions on strands -- start1,stop1,start2,stop2
@@ -507,7 +505,7 @@ void write_clusters( gzFile gzout,
   for(unsigned i=0;i<clusters.size();++i)
     {
       //get the boundaries of each event
-      unsigned min1=UMAX,max1=0,min2=UMAX,max2=0;
+      unsigned min1=numeric_limits<unsigned>::max(),max1=0,min2=numeric_limits<unsigned>::max(),max2=0;
       string readnames;
       for(unsigned j=0;j<clusters[i].size();++j)
 	{
