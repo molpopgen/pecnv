@@ -125,7 +125,7 @@ then
 	fi
     #ALIGN THIS PAIR 
     #We go straight to sorted BAM output via process substitution
-	bwa sampe $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
+	bwa sampe -a 5000 -N 5000 -n 500 $REFERENCE <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $LEFTREADS 2> $OUTDIR/align_stderr_1.$PAIR) <(bwa aln -t $CPU $BWAEXTRAPARMS $REFERENCE $RIGHTREADS 2> $OUTDIR/align_stderr_1.$PAIR) $LEFTREADS $RIGHTREADS 2> $OUTDIR/sampe.$PAIR.stderr | samtools view -bS - 2> $OUTDIR/view.$PAIR.stderr | samtools sort -m $SORTMEM - $BAMFILEBASE 2> $OUTDIR/sort.$PAIR.stderr
 	PAIR=$(($PAIR+1))
     done
 
