@@ -150,10 +150,5 @@ fi
 process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
 bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
 
-###4. Get quantile of mapping distance
-Rscript -e "x=read.table(\"$OUTDIR/$BAMFILESTUB.mdist.gz\",header=T);z=which(x\$cprob >= 0.999);y=x\$distance[z[1]];write(y,\"$OUTDIR/$BAMFILESTUB.mquant.txt\")"
-
-MD=`head -n 1 $OUTDIR/$BAMFILESTUB.mquant.txt`
-
-###5. Cluster
-cluster_cnv $MINQUAL $MISMATCHES $GAPS $MD $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
+###4. Cluster (uses Rscript to get the 99.9th quantile of insert size distribution)
+cluster_cnv $MINQUAL $MISMATCHES $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
