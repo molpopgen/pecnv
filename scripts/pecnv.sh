@@ -57,7 +57,7 @@ if [ -z ${SAMPLES+x} ]; then >&2 echo "Error: no input file specified"; usage; e
 if [ -z ${REFERENCE+x} ]; then >&2 echo "Error: no reference file specified"; usage; else echo "Reference file name is set to '$REFERENCE'"; fi
 
 #Check for executable dependencies
-for needed in bwa samtools process_readmappings Rscript cluster_cnv
+for needed in bwa samtools process_readmappings Rscript cluster_cnv pecnv_insert_qtile
 do
     PM=`which $needed`
     if [ -z ${PM} ]
