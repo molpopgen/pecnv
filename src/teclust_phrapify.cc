@@ -29,7 +29,8 @@ istream & operator>>(istream & in, clusteredEvent & ce)
   return ce.read(in);
 }
 
-vector<clusteredEvent> parseClusters(const string & clusters,const unsigned & minreads)
+vector<clusteredEvent> parseClusters(const string & clusters,const params & pars)
+//Replaces functionality of filter_edit
 {
   vector<clusteredEvent> cEs;
   istringstream in(clusters);
@@ -39,8 +40,14 @@ vector<clusteredEvent> parseClusters(const string & clusters,const unsigned & mi
     {
       clusteredEvent e;
       in >> e >> ws;
-      if(e.nplus >= minreads && e.nminus >= minreads)
-	cEs.push_back(e);
+      if(e.nplus >= pars.MINREADS && e.nminus >= pars.MINREADS) //filter on read number
+	{
+	  if( e.pdist >= pars.CLOSEST && e.mdist >= pars.CLOSEST && 
+	      (!pars.novelOnly || (pars.novelOnly && e.pin == 0 && e.min == 0)) )
+	    {
+	      cEs.push_back(e);
+	    }
+	}
     }
   return cEs;
 }
@@ -51,6 +58,6 @@ void phrapify( const params & pars,
   if(pars.phrapdir.empty()) return;
   if(pars.bamfile.empty()) return;
 
-  vector<clusteredEvent> cEs = parseClusters(clusters,pars.MINREADS);
+  vector<clusteredEvent> cEs = parseClusters(clusters,pars);
  
 }
