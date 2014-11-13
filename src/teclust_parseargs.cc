@@ -20,6 +20,8 @@ params parseargs(const int argc, char ** argv)
     ("mdist,M",value<unsigned>(&rv.MDIST)->default_value(1000u),"Max. distance for joining up left and right ends of putative TEs (required)")
     ("phrapdir,p",value<string>(&rv.phrapdir),"Name of a directory to put input files for de novo assembly of putatitve TE insertions using phrap. If the directory does not exist, it will be created. (optional)")
     ("minreads,r",value<unsigned>(&rv.MINREADS)->default_value(3u),"Min. number of reads in a cluster for writing input files for phrap. (optional)")
+    ("closestTE,c",value<int>(&rv.CLOSEST)->default_value(-1),"For phrap output, only consider events >= c bp away from closest TE in the reference. (optional)")
+    ("allEvents,a","For phrap output: write files for all events. Default is only to write files for putative novel insertions");
     ;
 
   variables_map vm;
@@ -36,6 +38,11 @@ params parseargs(const int argc, char ** argv)
     {
       cerr << desc << '\n';
       exit(0);
+    }
+
+  if(vm.count("allEvents"))
+    {
+      rv.novelOnly=false;
     }
 
   return rv;

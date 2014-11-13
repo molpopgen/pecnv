@@ -11,7 +11,9 @@ params::params() : reference_datafile(string()),
 		   phrapdir(string()),
 		   INSERTSIZE(numeric_limits<unsigned>::max()),
 		   MDIST(numeric_limits<unsigned>::max()),
-		   MINREADS(numeric_limits<unsigned>::max())
+		   MINREADS(numeric_limits<unsigned>::max()),
+		   CLOSEST(-1),
+		   novelOnly(true)
 {
 }
 
