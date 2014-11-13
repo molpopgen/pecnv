@@ -176,7 +176,6 @@ int main( int argc, char ** argv )
 
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
-
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
@@ -184,7 +183,6 @@ int main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< pair<unsigned,unsigned> > > rawData;
   procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
-  
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
@@ -370,7 +368,7 @@ void procUMM(const refTEcont & reftes,
 	  in >> name >> mapq >> chrom >> start >> stop >> ws;
 	  
 	  //Don't re-process a read if we already know it has a mapping to a TE
-	  if( mTE.find(name) != mTE.end() )
+	  if( mTE.find(name) == mTE.end() )
 	    {
 	      auto __itr = reftes.find(chrom);
 	      if( find_if(__itr->second.cbegin(),
