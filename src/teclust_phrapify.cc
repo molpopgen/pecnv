@@ -225,82 +225,55 @@ PhrapInput seqQual( const params & pars, const ReadCollection & r )
   return rv;
 }
 
+string baseName(const string & basedir,
+		const string & chrom,
+		const int32_t & first,
+		const int32_t & last )
+{
+  string n = basedir + "/" + chrom + to_string(first) + to_string(last) + ".fasta";
+  return n;
+}
+
+void write2file(const string & filename,
+		const vector<Fasta> & vf )
+{
+  ofstream out(filename.c_str());
+  if(!out) 
+    {
+      cerr << "Error: could not open "
+	   << filename 
+	   << " for writing at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  copy(vf.cbegin(),vf.cend(),ostream_iterator<const Fasta>(out,"\n"));
+}
+
 void output( const params & pars,
 	     const vector<clusteredEvent> & cEs,
 	     const PhrapInput & pI )
 {
   auto __pi = pI.cbegin();
   for_each( cEs.cbegin(),
-	    cEs.cbegin(),
+	    cEs.cend(),
 	    [&](const clusteredEvent & __c) {
 	      if( ! __pi->first.first.empty() ) //Then we have some "LEFT" reads stored
 		{
 		  assert( __c.pfirst != -1 && __c.plast != -1 );
 		  assert( __pi->first.first.size() == __pi->first.second.size() );
-		  string seqfilename = pars.phrapdir + "/" + __c.chrom + "." + to_string(__c.pfirst) + "." + to_string(__c.plast) + ".fasta";
+		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.pfirst,__c.plast);
 		  string qualfilename = seqfilename + ".qual";
-
-		  ofstream out(seqfilename.c_str());
-		  if(!out) 
-		    {
-		      cerr << "Error: could not open "
-			   << seqfilename 
-			   << " for writing at line " << __LINE__ 
-			   << " of " << __FILE__ << '\n';
-		      exit(1);
-		    }
-		  //Write out the sequences
-		  copy( __pi->first.first.cbegin(),
-			__pi->first.first.cend(),
-			ostream_iterator<const Fasta>(out,"\n") );
-		  out.close();
-		  out.open(qualfilename.c_str());
-		  if(!out) 
-		    {
-		      cerr << "Error: could not open "
-			   << seqfilename 
-			   << " for writing at line " << __LINE__ 
-			   << " of " << __FILE__ << '\n';
-		      exit(1);
-		    }
-		  copy( __pi->first.second.cbegin(),
-			__pi->first.second.cend(),
-			ostream_iterator<const Fasta>(out,"\n") );
-		  out.close();
+		  write2file(seqfilename,__pi->first.first);
+		  write2file(qualfilename,__pi->first.second);
 		}	      
 	      if( ! __pi->second.first.empty() ) //Then we have some "LEFT" reads stored
 		{
 		  assert( __c.mfirst != -1 && __c.mlast != -1 );
 		  assert( __pi->second.first.size() == __pi->second.second.size() );
-		  string seqfilename = pars.phrapdir + "/" + __c.chrom + "." + to_string(__c.mfirst) + "." + to_string(__c.mlast) + ".fasta";
+		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.mfirst,__c.mlast);
 		  string qualfilename = seqfilename + ".qual";
-		  ofstream out(seqfilename.c_str());
-		  if(!out) 
-		    {
-		      cerr << "Error: could not open "
-			   << seqfilename 
-			   << " for writing at line " << __LINE__ 
-			   << " of " << __FILE__ << '\n';
-		      exit(1);
-		    }
-		  //Write out the sequences
-		  copy( __pi->second.first.cbegin(),
-			__pi->second.first.cend(),
-			ostream_iterator<const Fasta>(out,"\n") );
-		  out.close();
-		  out.open(qualfilename.c_str());
-		  if(!out) 
-		    {
-		      cerr << "Error: could not open "
-			   << seqfilename 
-			   << " for writing at line " << __LINE__ 
-			   << " of " << __FILE__ << '\n';
-		      exit(1);
-		    }
-		  copy( __pi->second.second.cbegin(),
-			__pi->second.second.cend(),
-			ostream_iterator<const Fasta>(out,"\n") );
-		  out.close();
+		  write2file(seqfilename,__pi->second.first);
+		  write2file(qualfilename,__pi->second.second);
 		}
 	      ++__pi;
 	    });
