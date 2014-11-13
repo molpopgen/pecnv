@@ -20,8 +20,9 @@ struct params //Command-line parameter options
   /*
     Upper limit on insert size distribution
     Maximum distance used for matching up left and right ends of putative TE calls
+    Min # of reads for phrap output, if wanted
   */
-  unsigned INSERTSIZE,MDIST;
+  unsigned INSERTSIZE,MDIST,MINREADS;
   params();
 }; 
 

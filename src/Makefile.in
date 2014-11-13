@@ -109,7 +109,8 @@ am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
 am_teclust_OBJECTS = teclust.$(OBJEXT) common.$(OBJEXT) \
-	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT)
+	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT) \
+	teclust_parseargs.$(OBJEXT)
 teclust_OBJECTS = $(am_teclust_OBJECTS)
 teclust_LDADD = $(LDADD)
 am_umm_te_finder_OBJECTS = umm_te_finder.$(OBJEXT)
@@ -288,7 +289,7 @@ top_srcdir = @top_srcdir@
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 cluster_cnv_SOURCES = cluster_cnv2.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
-teclust_SOURCES = teclust.cc common.cc teclust_objecst.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
+teclust_SOURCES = teclust.cc common.cc teclust_objecst.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 umm_te_finder_SOURCES = umm_te_finder.cc 
 filter_edit_SOURCES = filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp
@@ -408,6 +409,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_objects.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_parseargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_phrapify.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umm_te_finder.Po@am__quote@
 

@@ -10,7 +10,8 @@ params::params() : reference_datafile(string()),
 		   ummfile(string()),
 		   phrapdir(string()),
 		   INSERTSIZE(numeric_limits<unsigned>::max()),
-		   MDIST(numeric_limits<unsigned>::max())
+		   MDIST(numeric_limits<unsigned>::max()),
+		   MINREADS(numeric_limits<unsigned>::max())
 {
 }
 
