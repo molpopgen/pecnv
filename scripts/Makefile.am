@@ -1,1 +1,1 @@
-dist_bin_SCRIPTS=pecnv.sh
+dist_bin_SCRIPTS=pecnv.sh pecnv_insert_qtile

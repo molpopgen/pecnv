@@ -231,7 +231,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-dist_bin_SCRIPTS = pecnv.sh
+dist_bin_SCRIPTS = pecnv.sh pecnv_insert_qtile
 all: all-am
 
 .SUFFIXES:

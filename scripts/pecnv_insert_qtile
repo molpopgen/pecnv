@@ -1,0 +1,33 @@
+#!/usr/bin/env Rscript
+
+usage = function()
+{
+    cat("Usage: pecnv_insert_qtile infile qtile\n")
+    cat("Where: infile is the output file from bwa_mapdistance and qtile is a number >= 0 and <= 1\n")
+}
+n=commandArgs(trailing=TRUE)
+if(length(n)==0)
+    {
+        cat("Error: too few arguments\n")
+	usage()
+        q()
+    }
+infile = n[1]
+qtile = as.numeric(n[2])
+
+if(!file.exists(infile))
+    {
+        cat(paste("Error:",infile,"does not exist\n"))
+        q()
+    }
+
+if(qtile < 0 | qtile > 1)
+    {
+        cat(paste("Error, you entered ",qtile,", but the value must be 0 <= x <= 1\n"))
+        q()
+    }
+
+x=read.table(infile,header=T);
+z=which(x$cprob >= qtile);
+Q=x$distance[z[1]];
+cat(Q)
