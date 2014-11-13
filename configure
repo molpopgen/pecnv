@@ -4922,7 +4922,7 @@ ac_fn_cxx_check_header_mongrel "$LINENO" "boost/program_options.hpp" "ac_cv_head
 if test "x$ac_cv_header_boost_program_options_hpp" = xyes; then :
 
 else
-  as_fn_error $? "boost/program_options.hpp no found.  Please install boost, either via your favorite package manager or from http://www.boost.org" "$LINENO" 5
+  as_fn_error $? "boost/program_options.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org" "$LINENO" 5
 fi
 
 

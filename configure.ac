@@ -46,7 +46,7 @@ AC_CHECK_HEADER(Sequence/bamrecord.hpp,,[AC_MSG_ERROR([Sequence/bamrecord.hpp no
 AC_CHECK_HEADER(Sequence/bamreader.hpp,,[AC_MSG_ERROR([Sequence/bamreader.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
-AC_CHECK_HEADER(boost/program_options.hpp,,[AC_MSG_ERROR([boost/program_options.hpp no found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
+AC_CHECK_HEADER(boost/program_options.hpp,,[AC_MSG_ERROR([boost/program_options.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
 
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
 
