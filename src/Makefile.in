@@ -77,7 +77,6 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = cluster_cnv$(EXEEXT) teclust$(EXEEXT) \
-	umm_te_finder$(EXEEXT) filter_edit$(EXEEXT) \
 	process_readmappings$(EXEEXT) bwa_mapdistance$(EXEEXT)
 @HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
 subdir = src
@@ -101,9 +100,6 @@ bwa_mapdistance_LDADD = $(LDADD)
 am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
 cluster_cnv_LDADD = $(LDADD)
-am_filter_edit_OBJECTS = filter_edit.$(OBJEXT)
-filter_edit_OBJECTS = $(am_filter_edit_OBJECTS)
-filter_edit_LDADD = $(LDADD)
 am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
 	common.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
@@ -113,9 +109,6 @@ am_teclust_OBJECTS = teclust.$(OBJEXT) common.$(OBJEXT) \
 	teclust_parseargs.$(OBJEXT)
 teclust_OBJECTS = $(am_teclust_OBJECTS)
 teclust_LDADD = $(LDADD)
-am_umm_te_finder_OBJECTS = umm_te_finder.$(OBJEXT)
-umm_te_finder_OBJECTS = $(am_umm_te_finder_OBJECTS)
-umm_te_finder_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -158,11 +151,9 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(filter_edit_SOURCES) $(process_readmappings_SOURCES) \
-	$(teclust_SOURCES) $(umm_te_finder_SOURCES)
+	$(process_readmappings_SOURCES) $(teclust_SOURCES)
 DIST_SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(filter_edit_SOURCES) $(process_readmappings_SOURCES) \
-	$(teclust_SOURCES) $(umm_te_finder_SOURCES)
+	$(process_readmappings_SOURCES) $(teclust_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -290,8 +281,8 @@ bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 cluster_cnv_SOURCES = cluster_cnv2.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
 teclust_SOURCES = teclust.cc common.cc teclust_objecst.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
-umm_te_finder_SOURCES = umm_te_finder.cc 
-filter_edit_SOURCES = filter_edit.cc
+#umm_te_finder_SOURCES=umm_te_finder.cc 
+#filter_edit_SOURCES=filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 AM_CXXFLAGS = $(am__append_1)
@@ -380,10 +371,6 @@ cluster_cnv$(EXEEXT): $(cluster_cnv_OBJECTS) $(cluster_cnv_DEPENDENCIES) $(EXTRA
 	@rm -f cluster_cnv$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(cluster_cnv_OBJECTS) $(cluster_cnv_LDADD) $(LIBS)
 
-filter_edit$(EXEEXT): $(filter_edit_OBJECTS) $(filter_edit_DEPENDENCIES) $(EXTRA_filter_edit_DEPENDENCIES) 
-	@rm -f filter_edit$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(filter_edit_OBJECTS) $(filter_edit_LDADD) $(LIBS)
-
 process_readmappings$(EXEEXT): $(process_readmappings_OBJECTS) $(process_readmappings_DEPENDENCIES) $(EXTRA_process_readmappings_DEPENDENCIES) 
 	@rm -f process_readmappings$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(process_readmappings_OBJECTS) $(process_readmappings_LDADD) $(LIBS)
@@ -391,10 +378,6 @@ process_readmappings$(EXEEXT): $(process_readmappings_OBJECTS) $(process_readmap
 teclust$(EXEEXT): $(teclust_OBJECTS) $(teclust_DEPENDENCIES) $(EXTRA_teclust_DEPENDENCIES) 
 	@rm -f teclust$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(teclust_OBJECTS) $(teclust_LDADD) $(LIBS)
-
-umm_te_finder$(EXEEXT): $(umm_te_finder_OBJECTS) $(umm_te_finder_DEPENDENCIES) $(EXTRA_umm_te_finder_DEPENDENCIES) 
-	@rm -f umm_te_finder$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(umm_te_finder_OBJECTS) $(umm_te_finder_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -405,13 +388,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter_edit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_objects.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_parseargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_phrapify.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/umm_te_finder.Po@am__quote@
 
 .cc.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
