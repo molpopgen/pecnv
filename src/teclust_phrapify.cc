@@ -72,21 +72,6 @@ using ReadCollection = unordered_set<string>;
 using PhrapInput = vector< pair<pair< vector<Fasta>, vector<Fasta> >,
 				pair< vector<Fasta>, vector<Fasta> > > >;
 
-ReadCollection
-getRnames( const params & pars,
-	   const vector<clusteredEvent> & cEs )
-{
-
-  bamreader reader(pars.bamfile.c_str());
-
-  if(! reader )
-    {
-      cerr << "Error: could not open " << pars.bamfile
-	   << " for reading. Line " << __LINE__
-	   << " of " << __FILE__ << '\n';
-      exit(1);
-    }
-
   auto Cfinder = [](const clusteredEvent & __cE,
 		    const bool & strand,
 		    const int32_t & pos,
@@ -122,6 +107,21 @@ getRnames( const params & pars,
       return false;
     };
 
+ReadCollection
+getRnames( const params & pars,
+	   const vector<clusteredEvent> & cEs )
+{
+
+  bamreader reader(pars.bamfile.c_str());
+
+  if(! reader )
+    {
+      cerr << "Error: could not open " << pars.bamfile
+	   << " for reading. Line " << __LINE__
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+
   ReadCollection rv;//( cEs.size() );
   while(!reader.eof() && !reader.error())
     {
@@ -138,20 +138,7 @@ getRnames( const params & pars,
 				  bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
 	  if( cluster != cEs.cend() )
 	    {
-	      //auto n = editRname(b.read_name());
 	      rv.insert(editRname(b.read_name()));
-	      //auto rvitr = rv.begin() + (cluster-cEs.cbegin());
-	      // if( !side && rvitr->first.find(n) == rvitr->first.end())
-	      // 	{
-	      // 	  rvitr->first.insert(n);
-	      // 	}
-	      // else if(side==1 && rvitr->second.find(n) == rvitr->second.end())
-	      // 	{
-	      // 	  rvitr->second.insert(n);
-	      // 	}
-	      // side = -1;
-	      // cluster = find_if(cluster+1,cEs.cend(),
-	      // 			 bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
 	    }
 	}
     }
@@ -171,57 +158,6 @@ PhrapInput seqQual( const params & pars, const vector<clusteredEvent> & cEs,
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-
-  // auto FindCollection = [](const LeftRights & __lr, 
-  // 			   const string & n,
-  // 			   bool * isleft) 
-  //   {
-  //     if ( __lr.first.find(n) != __lr.first.cend() )
-  // 	{
-  // 	  return true;
-  // 	}
-  //     else if ( __lr.second.find(n) != __lr.second.cend() )
-  // 	{
-  // 	  *isleft = false;
-  // 	  return true;
-  // 	}
-  //     return false;
-  //   };
-
-  auto Cfinder = [](const clusteredEvent & __cE,
-		    const bool & strand,
-		    const int32_t & pos,
-		    const unsigned & INSERTSIZE,
-		    const string & chrom,
-		    int * side)
-    {
-      if(__cE.chrom != chrom) return false;
-      if( !strand ) //if read is on + strand
-	{
-	  //If read is 5' of this cluster's end
-	  if( pos < __cE.plast &&
-	      __cE.pfirst != -1 && __cE.plast != -1 &&
-	      ( abs(pos-__cE.pfirst) <= INSERTSIZE ||
-		abs(pos-__cE.plast) <= INSERTSIZE ) )
-	    {
-	      *side = 0; //LEFT
-	      return true;
-	    }
-	}
-      else if (strand) //read is on - strand
-	{
-	  //If read is 3' of this cluster's start
-	  if( pos > __cE.mfirst &&
-	      __cE.mfirst != -1 && __cE.mlast != -1 &&
-	      ( abs(pos-__cE.mfirst) <= INSERTSIZE ||
-		abs(pos-__cE.mlast) <= INSERTSIZE ) )
-	    {
-	      *side = 1; //RIGHT
-	      return true;
-	    }
-	}
-      return false;
-    };
 
   PhrapInput rv(cEs.size());
   while(!reader.eof() && !reader.error())
@@ -261,37 +197,6 @@ PhrapInput seqQual( const params & pars, const vector<clusteredEvent> & cEs,
 				bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
 	    }
 	}
-      // samflag bf(b.flag());
-
-      // bool isleft = true;
-      // string n = editRname(b.read_name());
-      // auto itr = find_if( r.cbegin(),
-      // 			  r.cend(),
-      // 			  bind(FindCollection,placeholders::_1,n,&isleft) );
-      // //if( itr != r.cend() )
-      // while( itr != r.cend() )
-      // 	{
-      // 	  string qstring;
-      // 	  for_each(b.qual_cbeg(),b.qual_cend(),
-      // 		   [&](const int8_t & __i) {
-      // 		     qstring += (__i+33) + ' ';
-      // 		   });
-      // 	  auto rvItr = (rv.begin() + size_t(itr-r.cbegin()));
-      // 	  if (isleft)
-      // 	    {
-      // 	      rvItr->first.first.emplace_back(Fasta(n,b.seq()));
-      // 	      rvItr->first.second.emplace_back(Fasta(n,move(qstring)));
-      // 	    }
-      // 	  else
-      // 	    {
-      // 	      rvItr->second.first.emplace_back(Fasta(n,b.seq()));
-      // 	      rvItr->second.second.emplace_back(Fasta(n,move(qstring)));
-      // 	    }
-      // 	  isleft = true;
-      // 	  itr = find_if(itr+1,
-      // 			r.cend(),
-      // 			bind(FindCollection,placeholders::_1,n,&isleft) );
-      // 	}
     }
   return rv;
 }
