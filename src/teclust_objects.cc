@@ -1,5 +1,6 @@
 #include <teclust_objects.hpp>
 #include <limits>
+#include <iostream>
 using namespace std;
 
 params::params() : reference_datafile(string()),
@@ -20,7 +21,7 @@ params::params() : reference_datafile(string()),
 unsigned teinfo::start() const { return this->first; }
 unsigned teinfo::stop() const { return this->second; }
 
-teinfo::teinfo( unsigned __s, unsigned __st ) : pair<unsigned,unsigned>(move(__s),move(__st))
+teinfo::teinfo( unsigned __s, unsigned __st ) : pair<unsigned,unsigned>(__s,__st)
 {
 }
 

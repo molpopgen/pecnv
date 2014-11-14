@@ -129,14 +129,30 @@ int main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< pair<unsigned,unsigned> > > rawData;
   procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
+
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
+  unsigned sum=0;
+  for( auto i = rawData.begin() ; i != rawData.end() ; ++i )
+    {
+      cerr << i->first << ' ' << i->second.size() << '\n';
+      sum+=i->second.size();
+    }
+  cerr << "SUM = " << sum << '\n';
   scan_bamfile(pars,refTEs,&rawData);
-
+  cerr << "//\n";
+  sum=0;
+  for( auto i = rawData.begin() ; i != rawData.end() ; ++i )
+    {
+      cerr << i->first << ' ' << i->second.size() << '\n';
+      sum+=i->second.size();
+    }    
+  cerr << "SUM = " << sum << '\n';
+  exit(0);
 
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
@@ -240,15 +256,6 @@ refTEcont read_refdata( const params & p )
 	  return __l.start() < __r.start();
 	});
     }
-  // for_each(rv.begin(),rv.end(),
-  // 	   []( const pair<string,vector<teinfo>> & data )
-  // 	   {
-  // 	     for_each(data.second.begin(),data.second.end(),[&](const teinfo & __t)
-  // 		      {
-  // 			cout << data.first << ' ' << __t.start() << ' ' << __t.stop() << '\n';
-  // 		      });
-  // 	   });
-  // exit(0);
   return rv;
 }
 
@@ -284,15 +291,18 @@ void procUMM(const refTEcont & reftes,
 	  if( mTE.find(name) == mTE.end() )
 	    {
 	      auto __itr = reftes.find(chrom);
-	      if( find_if(__itr->second.cbegin(),
-			  __itr->second.cend(),
-			  [&](const teinfo & __t) {
-			    return ( (start >= __t.start() && start <= __t.stop()) ||
-				     (stop >= __t.start() && stop <= __t.stop()) );
-			  }) != __itr->second.cend() )
+	      if( __itr != reftes.end() )
 		{
-		  //Then read hits a known TE
-		  mTE.insert(name);
+		  if( find_if(__itr->second.cbegin(),
+			      __itr->second.cend(),
+			      [&](const teinfo & __t) {
+				return ( (start >= __t.start() && start <= __t.stop()) ||
+					 (stop >= __t.start() && stop <= __t.stop()) );
+			      }) != __itr->second.cend() )
+		    {
+		      //Then read hits a known TE
+		      mTE.insert(name);
+		    }
 		}
 	    }
 	}
@@ -379,30 +389,33 @@ unordered_set<string> scan_bamfile(const params & p,
 	  //Now, does the read overlap a known TE?
 	  int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
 	  auto CHROM = refTEs.find(itr->second);
-	  bool hitsTE = find_if( CHROM->second.cbegin(),
-				 CHROM->second.cend(),
-				 [&](const teinfo & __t) {
-				   bool A = (start >= __t.start() && start <= __t.stop());
-				   bool B = (stop >= __t.start() && stop <= __t.stop());
-				   return A||B;
-				 }) != CHROM->second.cend();
-	  if( hitsTE )
+	  if( CHROM != refTEs.end() )
 	    {
-	      //We can do a check here:
-	      //If mate is mapped to same chromo & hits a TE,
-	      //we can skip storing it
-	      bool OK = true;
-	      if( b.refid() == b.next_refid())
+	      bool hitsTE = find_if( CHROM->second.cbegin(),
+				     CHROM->second.cend(),
+				     [&](const teinfo & __t) {
+				       bool A = (start >= __t.start() && start <= __t.stop());
+				       bool B = (stop >= __t.start() && stop <= __t.stop());
+				       return A||B;
+				     }) != CHROM->second.cend();
+	      if( hitsTE )
 		{
-		  int32_t mstart = b.next_pos();
-		  OK = find_if( CHROM->second.cbegin(),
-				CHROM->second.cend(),
-				[&](const teinfo & __t) {
-				  return (mstart >= __t.start() && mstart <= __t.stop());
+		  //We can do a check here:
+		  //If mate is mapped to same chromo & hits a TE,
+		  //we can skip storing it
+		  bool OK = true;
+		  if( b.refid() == b.next_refid())
+		    {
+		      int32_t mstart = b.next_pos();
+		      OK = find_if( CHROM->second.cbegin(),
+				    CHROM->second.cend(),
+				    [&](const teinfo & __t) {
+				      return (mstart >= __t.start() && mstart <= __t.stop());
 				}) == CHROM->second.cend();
+		    }
+		  if(OK)
+		    TEhitters.insert( editRname(b.read_name()) );
 		}
-	      if(OK)
-		TEhitters.insert( editRname(b.read_name()) );
 	    }
 	}
     }
@@ -438,28 +451,31 @@ unordered_set<string> scan_bamfile(const params & p,
 		{
 		  int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
 		  auto CHROM = refTEs.find(itr->second);
-		  bool hitsTE = find_if( CHROM->second.cbegin(),
-					 CHROM->second.cend(),
-					 [&](const teinfo & __t) {
-					   bool A = (start >= __t.start() && start <= __t.stop());
-					   bool B = (stop >= __t.start() && stop <= __t.stop());
-					   return A||B;
-					 }) != CHROM->second.cend();
-		  if(hitsTE) //no good
+		  if( CHROM != refTEs.end() )
 		    {
-		      TEhitters.erase(n);
-		    }
-		  else
-		    {
-		      auto DCHROM = data->find(itr->second);
-		      if(DCHROM == data->end())
+		      bool hitsTE = find_if( CHROM->second.cbegin(),
+					     CHROM->second.cend(),
+					     [&](const teinfo & __t) {
+					       bool A = (start >= __t.start() && start <= __t.stop());
+					       bool B = (stop >= __t.start() && stop <= __t.stop());
+					       return A||B;
+					     }) != CHROM->second.cend();
+		      if(hitsTE) //no good
 			{
-			  data->insert( make_pair(itr->second,
-						  vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+			  TEhitters.erase(n);
 			}
 		      else
 			{
-			  DCHROM->second.emplace_back(make_pair(start,f.qstrand));
+			  auto DCHROM = data->find(itr->second);
+			  if(DCHROM == data->end())
+			    {
+			  data->insert( make_pair(itr->second,
+						  vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+			    }
+			  else
+			    {
+			      DCHROM->second.emplace_back(make_pair(start,f.qstrand));
+			    }
 			}
 		    }
 		}
