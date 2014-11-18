@@ -1,8 +1,11 @@
+#!/usr/bin/env Rscript
+
+n=commandArgs(trailing=TRUE)
 ##Yes, this should all be redone with tidy/dplyr, etc.,
 ##But I'm trying not to introduce any new dependencies.
-output=read.table("teclust_output.gz",header=T,colClasses=c("character",rep("integer",10)))
-native=read.table("TE_position_r5.1",colClasses=c("character",rep("integer",2)))
-truth=read.table("line99_truth",colClasses=c("character",rep("integer",2)))
+output=read.table(n[1],header=T,colClasses=c("character",rep("integer",10)))
+native=read.table(n[2],colClasses=c("character",rep("integer",2)))
+truth=read.table(n[3],colClasses=c("character",rep("integer",2)))
 
 FOUNDNATIVE=array(NA,dim=nrow(output))
 FOUNDSIM=array(NA,dim=nrow(output))
