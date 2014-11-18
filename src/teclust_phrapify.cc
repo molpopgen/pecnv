@@ -272,19 +272,14 @@ void phrapify( const params & pars,
       exit(1);
     }
   //This is the new "filter_edit"
-  cerr << "Filtering...\n";
   vector<clusteredEvent> cEs = parseClusters(clusters,pars);
  
   //Collect the names of all read pairs on the proper strand for each event
-  cerr << "Collecting...\n";
   auto LR = getRnames(pars,cEs);
 
   //Get the sequences and quality scores for all sequences for both sides
-  cerr << "Retrieving sequences and quality scores...\n";
   auto sq = seqQual(pars,cEs,LR);
 
   //Output
-  cerr << "Output...\n";
   output(pars,cEs,sq);
-  cerr << "Done" << endl;
 }
