@@ -127,23 +127,7 @@ int main( int argc, char ** argv )
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  unsigned sum=0;
-  for( auto i = rawData.begin() ; i != rawData.end() ; ++i )
-    {
-      cerr << i->first << ' ' << i->second.size() << '\n';
-      sum+=i->second.size();
-    }
-  cerr << "SUM = " << sum << '\n';
   scan_bamfile(pars,refTEs,&readPairs,&rawData);
-  cerr << "//\n";
-  sum=0;
-  for( auto i = rawData.begin() ; i != rawData.end() ; ++i )
-    {
-      cerr << i->first << ' ' << i->second.size() << '\n';
-      sum+=i->second.size();
-    }    
-  cerr << "SUM = " << sum << '\n';
-
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
     {

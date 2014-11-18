@@ -171,10 +171,6 @@ void scan_bamfile(const params & p,
 	    }
 	}
     }
-  cerr << "noXO = " << notXO << '\n';
-  cerr << "mhitTE = " << mhitTE << '\n';
-  cerr << readPairs->size() << '\n';
-  //return readPairs;
 }
 
 refIDlookup
