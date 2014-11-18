@@ -10,8 +10,9 @@
 
 using refTEcont = std::map<std::string,std::vector<teinfo> >;
 
-std::unordered_set<std::string> scan_bamfile(const params & p,
-					     const refTEcont & refTEs,
-					     std::map<std::string,std::vector< std::pair<unsigned,unsigned> > > * data);
+void scan_bamfile(const params & p,
+		  const refTEcont & refTEs,
+		  std::unordered_set<std::string> * readPairs,
+		  std::map<std::string,std::vector< std::pair<unsigned,unsigned> > > * data);
 
 #endif

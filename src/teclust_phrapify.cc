@@ -178,7 +178,7 @@ PhrapInput seqQual( const params & pars, const vector<clusteredEvent> & cEs,
 	    {
 	      auto rvitr = rv.begin() + (cluster-cEs.cbegin());
 	       	  string qstring;
-		  for_each(b.qual_cbeg(),b.qual_cend(),
+		  for_each(b.qual_cbegin(),b.qual_cend(),
 			   [&](const int8_t & __i) {
 			     qstring += to_string(int(__i+33)) + ' ';
 			   });

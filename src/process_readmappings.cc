@@ -592,7 +592,7 @@ string toSAM(const bamrecord & b,
 	 << b.next_pos()+1 << '\t'
 	 << ((!um && !mum) ? b.tlen() : 0)<< '\t'
 	 << b.seq() << '\t';
-  std::for_each(b.qual_cbeg(),b.qual_cend(),[&](const char & ch) {
+  std::for_each(b.qual_cbegin(),b.qual_cend(),[&](const char & ch) {
       buffer << char(ch+33);
     });
   buffer << '\t'

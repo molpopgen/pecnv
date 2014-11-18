@@ -16,11 +16,13 @@ using refIDlookup = unordered_map<int32_t,string>;
 //DEFINITION OF FUNCTIONS
 refIDlookup make_lookup(const bamreader & reader);
 
-unordered_set<string> scan_bamfile(const params & p,
-				   const refTEcont & refTEs,
-				   map<string,vector< puu > > * data)
+void scan_bamfile(const params & p,
+		  const refTEcont & refTEs,
+		  unordered_set<string> * readPairs,
+		  map<string,vector< puu > > * data)
 {
-  if( refTEs.empty() || p.bamfile.empty() ) return unordered_set<string>();
+  //if( refTEs.empty() || p.bamfile.empty() ) return unordered_set<string>();
+  if( refTEs.empty() || p.bamfile.empty() ) return; //unordered_set<string>();
 
   bamreader reader(p.bamfile.c_str());
   if(! reader )
@@ -33,7 +35,7 @@ unordered_set<string> scan_bamfile(const params & p,
 
   auto lookup = make_lookup(reader);
 
-  unordered_set<string> TEhitters;
+  //unordered_set<string> readPairs;
   auto firstREC = reader.tell();
   while(! reader.eof() && !reader.error() )
     {
@@ -43,58 +45,70 @@ unordered_set<string> scan_bamfile(const params & p,
       if( !f.query_unmapped && !f.mate_unmapped )
 	//then both reads are mapped 
 	{
-	  auto itr = lookup.find(b.refid());
-
-	  if(itr == lookup.end())
+	  auto n = editRname(b.read_name());
+	  if( readPairs->find(n) == readPairs->end())
 	    {
-	      cerr << "Error: reference ID " << b.refid()
-		   << " not found in BAM file header. Line "
-		   << __LINE__ 
-		   << " of " << __FILE__ << '\n';
-	      exit(1);
-	    }
-	  
-	  //Now, does the read overlap a known TE?
-	  int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
-	  auto CHROM = refTEs.find(itr->second);
-	  if( CHROM != refTEs.end() )
-	    {
-	      bool hitsTE = find_if( CHROM->second.cbegin(),
-				     CHROM->second.cend(),
-				     [&](const teinfo & __t) {
-				       bool A = (start >= __t.start() && start <= __t.stop());
-				       bool B = (stop >= __t.start() && stop <= __t.stop());
-				       return A||B;
-				     }) != CHROM->second.cend();
-	      if( hitsTE )
+	      auto itr = lookup.find(b.refid());
+	      
+	      if(itr == lookup.end())
 		{
-		  //We can do a check here:
-		  //If mate is mapped to same chromo & hits a TE,
-		  //we can skip storing it
-		  bool OK = true;
-		  if( b.refid() == b.next_refid())
+		  cerr << "Error: reference ID " << b.refid()
+		       << " not found in BAM file header. Line "
+		       << __LINE__ 
+		       << " of " << __FILE__ << '\n';
+		  exit(1);
+		}
+	      
+	      //Now, does the read overlap a known TE?
+	      int32_t start = b.pos(),stop=b.pos() + alignment_length(b) - 1;
+	      //cerr << start << ' ' << stop << ' ' << (start + 2*(b.seq_cend()-b.seq_cbeg())) << ' ' << (start + b.seq().size()) << '\n';
+	      auto CHROM = refTEs.find(itr->second);
+	      if( CHROM != refTEs.end() )
+		{
+		  bool hitsTE = find_if( CHROM->second.cbegin(),
+					 CHROM->second.cend(),
+				     [&](const teinfo & __t) {
+					   bool A = (start >= __t.start() && start <= __t.stop());
+					   bool B = (stop >= __t.start() && stop <= __t.stop());
+					   return A||B;
+					 }) != CHROM->second.cend();
+		  if( hitsTE )
 		    {
-		      int32_t mstart = b.next_pos();
-		      OK = find_if( CHROM->second.cbegin(),
-				    CHROM->second.cend(),
-				    [&](const teinfo & __t) {
-				      return (mstart >= __t.start() && mstart <= __t.stop());
-				}) == CHROM->second.cend();
+		      /*We can do a check here:
+			If mate is mapped to same chromo & hits a TE,
+			we can skip storing it.
+			We don't have access to it's mates start and stop,
+			but we can check the start.
+		      */
+		      bool OK = true;
+		      if(b.refid() == b.next_refid())
+			{
+			  int32_t mstart = b.next_pos();
+			  OK = find_if( CHROM->second.cbegin(),
+					CHROM->second.cend(),
+					[&](const teinfo & __t) {
+					  return (mstart >= __t.start() && mstart <= __t.stop());
+					}) == CHROM->second.cend();
+			}
+		      if(OK)
+			{
+			  readPairs->insert( editRname(b.read_name()) );
+			}
 		    }
-		  if(OK)
-		    TEhitters.insert( editRname(b.read_name()) );
 		}
 	    }
 	}
     }
+
   //Second pass
   reader.seek( firstREC, SEEK_SET );
+  unsigned notXO = 0,mhitTE=0;
   while(! reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
       if(b.empty()) break;
       samflag f(b.flag());
-      if( !f.query_unmapped && !f.mate_unmapped )
+      if( !f.query_unmapped && !f.mate_unmapped) 
 	//then both reads are mapped 
 	{
 	  auto itr = lookup.find(b.refid());
@@ -111,13 +125,14 @@ unordered_set<string> scan_bamfile(const params & p,
 	    Note: Julie's script does not check that these reads map uniquely.
 	    Here, we do.
 	  */
-	  if( TEhitters.find(n) != TEhitters.end() )
+
+	  if( readPairs->find(n) != readPairs->end() )
 	    {
 	      //Our check for uniqueness is the existence of an XO flag with a value of 0
 	      bamaux ba = b.aux("XO");
-	      if(ba.size && ba.value[0] == '1')
+	      if(true)//ba.size && ba.value[0] == '1')
 		{
-		  int32_t start = b.pos(),stop=b.pos() + alignment_length(b);
+		  int32_t start = b.pos(),stop= b.pos() + alignment_length(b) - 1;
 		  auto CHROM = refTEs.find(itr->second);
 		  if( CHROM != refTEs.end() )
 		    {
@@ -130,15 +145,17 @@ unordered_set<string> scan_bamfile(const params & p,
 					     }) != CHROM->second.cend();
 		      if(hitsTE) //no good
 			{
-			  TEhitters.erase(n);
+			  ++mhitTE;
+			  //Don't erase!!!
+			  //readPairs->erase(n);
 			}
 		      else
 			{
 			  auto DCHROM = data->find(itr->second);
 			  if(DCHROM == data->end())
 			    {
-			  data->insert( make_pair(itr->second,
-						  vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+			      data->insert( make_pair(itr->second,
+						      vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
 			    }
 			  else
 			    {
@@ -147,10 +164,17 @@ unordered_set<string> scan_bamfile(const params & p,
 			}
 		    }
 		}
+	      else 
+		{
+		  ++notXO;
+		}
 	    }
 	}
     }
-  return TEhitters;
+  cerr << "noXO = " << notXO << '\n';
+  cerr << "mhitTE = " << mhitTE << '\n';
+  cerr << readPairs->size() << '\n';
+  //return readPairs;
 }
 
 refIDlookup

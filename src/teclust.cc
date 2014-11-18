@@ -49,10 +49,10 @@ using puu = pair<unsigned,unsigned>;
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
 //using refTEcont = std::map<string,std::vector<teinfo> >;
 refTEcont read_refdata( const params & p );
-void procUMM(const refTEcont & reftes,
-	     const string & umufilename,
-	     const string & ummfilename,
-	     map<string,vector< puu > > * data);
+unordered_set<string> procUMM(const refTEcont & reftes,
+			      const string & umufilename,
+			      const string & ummfilename,
+			      map<string,vector< puu > > * data);
 void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
@@ -112,13 +112,14 @@ int main( int argc, char ** argv )
 
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
+
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
   */
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< pair<unsigned,unsigned> > > rawData;
-  procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
+  unordered_set<string> readPairs = procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
 
   /*
     Scan the BAM file to look for reads whose
@@ -133,7 +134,7 @@ int main( int argc, char ** argv )
       sum+=i->second.size();
     }
   cerr << "SUM = " << sum << '\n';
-  scan_bamfile(pars,refTEs,&rawData);
+  scan_bamfile(pars,refTEs,&readPairs,&rawData);
   cerr << "//\n";
   sum=0;
   for( auto i = rawData.begin() ; i != rawData.end() ; ++i )
@@ -142,7 +143,6 @@ int main( int argc, char ** argv )
       sum+=i->second.size();
     }    
   cerr << "SUM = " << sum << '\n';
-  exit(0);
 
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
@@ -237,10 +237,10 @@ refTEcont read_refdata( const params & p )
 }
 
 
-void procUMM(const refTEcont & reftes,
-	     const string & umufilename,
-	     const string & ummfilename,
-	     map<string,vector<pair<unsigned,unsigned> > > * data)
+unordered_set<string> procUMM(const refTEcont & reftes,
+			     const string & umufilename,
+			     const string & ummfilename,
+			     map<string,vector<pair<unsigned,unsigned> > > * data)
 {
   gzFile gzin = gzopen(ummfilename.c_str(),"r" );
   if(gzin == NULL)
@@ -270,16 +270,18 @@ void procUMM(const refTEcont & reftes,
 	      auto __itr = reftes.find(chrom);
 	      if( __itr != reftes.end() )
 		{
-		  if( find_if(__itr->second.cbegin(),
-			      __itr->second.cend(),
-			      [&](const teinfo & __t) {
-				return ( (start >= __t.start() && start <= __t.stop()) ||
-					 (stop >= __t.start() && stop <= __t.stop()) );
-			      }) != __itr->second.cend() )
-		    {
-		      //Then read hits a known TE
-		      mTE.insert(name);
-		    }
+		  //Greedy algo of Cridlan et al.
+		  mTE.insert(name);
+		  // if( find_if(__itr->second.cbegin(),
+		  // 	      __itr->second.cend(),
+		  // 	      [&](const teinfo & __t) {
+		  // 		return ( (start >= __t.start() && start <= __t.stop()) ||
+		  // 			 (stop >= __t.start() && stop <= __t.stop()) );
+		  // 	      }) != __itr->second.cend() )
+		  //   {
+		  //     //Then read hits a known TE
+		  //     mTE.insert(name);
+		  //   }
 		}
 	    }
 	}
@@ -323,6 +325,7 @@ void procUMM(const refTEcont & reftes,
   while(!gzeof(gzin));
 
   gzclose(gzin);
+  return mTE;
 }
 
 
