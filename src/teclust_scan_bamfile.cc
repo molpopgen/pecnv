@@ -21,9 +21,7 @@ void scan_bamfile(const params & p,
 		  unordered_set<string> * readPairs,
 		  map<string,vector< puu > > * data)
 {
-  //if( refTEs.empty() || p.bamfile.empty() ) return unordered_set<string>();
-  if( refTEs.empty() || p.bamfile.empty() ) return; //unordered_set<string>();
-
+  if( refTEs.empty() || p.bamfile.empty() ) return; 
   bamreader reader(p.bamfile.c_str());
   if(! reader )
     {
@@ -35,7 +33,6 @@ void scan_bamfile(const params & p,
 
   auto lookup = make_lookup(reader);
 
-  //unordered_set<string> readPairs;
   auto firstREC = reader.tell();
   while(! reader.eof() && !reader.error() )
     {
