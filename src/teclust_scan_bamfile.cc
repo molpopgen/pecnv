@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include <common.hpp>
+#include <sys/stat.h>
+
 using namespace std;
 using namespace Sequence;
 
@@ -22,6 +24,13 @@ void scan_bamfile(const params & p,
 		  map<string,vector< puu > > * data)
 {
   if( refTEs.empty() || p.bamfile.empty() ) return; 
+  struct stat buf;
+  if (stat(p.bamfile.c_str(), &buf) == -1) 
+    {
+      cerr << "Error: "
+	   << p.bamfile
+	   << " does not exist\n";
+    }
   bamreader reader(p.bamfile.c_str());
   if(! reader )
     {
