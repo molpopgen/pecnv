@@ -27,8 +27,11 @@ struct params //Command-line parameter options
     Closest distance to known TE in reference.  For PHRAP output: only write if pdist || mdist > CLOSEST
   */
   int CLOSEST;
-  //For PHRAP output: only try to assemble novel insertions
-  bool novelOnly;
+  /*
+    For PHRAP output: only try to assemble novel insertions.
+    Use the greedy algo of Cridland et al.?
+  */
+  bool novelOnly,greedy;
   params();
 }; 
 
