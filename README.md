@@ -187,7 +187,7 @@ The program process_readmappings creates the following files:
 
 The SAM files are really pseudo-SAM because they are quick-and dirty conversion of the binary BAM records, and have not been prettied up the way that samtools does.  However, they contain the same info in the same order.
 
-For all of the below, strand = 0 or 1 for plus or minus, respectively.  All genomic positions start from 0, __not from 1__.
+    For all of the below, strand = 0 or 1 for plus or minus, respectively.  All genomic positions start from 0, __not from 1__.
 
 The format of $ODIR/$BAM.cnv_mappings.csv.gz is 17 columns:
 
@@ -237,3 +237,10 @@ The program pecnv_insert_qtile is a simple Rscript that reads the output of bwa_
 The main script, pecnv.sh expects a bamfile called PREFIX_sorted.bam, where PREFIX is the value passed to the -b/--bamfile option (see above).  If you already have an existing BAM file, but its name is not what is expected, you may make a symbolic link that has the correct name pattern, and then run the script.
 
 #Detecting tranposable element (TE) insertions
+
+The Cridland et al. method is implemented in the program teclust, with some additional features.  The program is able to make use of TE annotations from an existing reference genome, if they are available.
+
+The usage information for the program is:
+
+```
+```
