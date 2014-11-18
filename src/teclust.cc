@@ -233,10 +233,12 @@ unordered_set<string> procUMM(const params & pars,
 	      auto __itr = reftes.find(chrom);
 	      if( __itr != reftes.end() )
 		{
+		  //Default to the greedy algo of Cridland et al.
 		  if( pars.greedy )
 		    {
 		      mTE.insert(name);
 		    }
+		  //Else, require that an M read overlap a TE
 		  else if( find_if(__itr->second.cbegin(),
 				   __itr->second.cend(),
 				   [&](const teinfo & __t) {
@@ -492,8 +494,8 @@ void output_results( ostringstream & out,
 	}
       else
 	{
-	  out << clusters[i].first.positions.first << '\t'
-	      << clusters[i].first.positions.second << '\t';
+	  out << clusters[i].first.positions.first + 1 << '\t'
+	      << clusters[i].first.positions.second + 1 << '\t';
 	  // mind = find_if(ref_te_chromo.begin(),
 	  // 		 ref_te_chromo.end(),
 	  // 		 [&]( const pair<unsigned,unsigned> & lhs ) {
@@ -567,8 +569,8 @@ void output_results( ostringstream & out,
 	}
       else
 	{
-	  out << clusters[i].second.positions.first << '\t'
-	      << clusters[i].second.positions.second << '\t';
+	  out << clusters[i].second.positions.first + 1  << '\t'
+	      << clusters[i].second.positions.second + 1 << '\t';
 	  /*
 	    mindr = find_if(ref_te_chromo.rbegin(),
 	    ref_te_chromo.rend(),
