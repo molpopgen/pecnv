@@ -21,6 +21,7 @@ params parseargs(const int argc, char ** argv)
     ("phrapdir,p",value<string>(&rv.phrapdir),"Name of a directory to put input files for de novo assembly of putatitve TE insertions using phrap. If the directory does not exist, it will be created. (optional)")
     ("minreads,r",value<unsigned>(&rv.MINREADS)->default_value(3u),"Min. number of reads in a cluster for writing input files for phrap. (optional)")
     ("closestTE,c",value<int>(&rv.CLOSEST)->default_value(-1),"For phrap output, only consider events >= c bp away from closest TE in the reference. (optional)")
+    ("ummHitTe","When processing the um_u/um_m files, only consider reads where the M read hits a known TE.  This makes --tepos/-t a required option. (optional)")
     ("allEvents,a","For phrap output: write files for all events. Default is only to write files for putative novel insertions");
     ;
 
@@ -45,5 +46,15 @@ params parseargs(const int argc, char ** argv)
       rv.novelOnly=false;
     }
 
+  if(vm.count("ummHitTE"))
+    {
+      rv.greedy = false;
+      if(! vm.count("tepos"))
+	{
+	  cerr << "Error: --tepos/-t is required if --ummHitTe is specified.\n"
+	       << desc << '\n';
+	  exit(0);
+	}
+    }
   return rv;
 }
