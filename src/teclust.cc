@@ -49,43 +49,6 @@ void reduce_ends( vector<cluster> & clusters,
 // 		    const string & chrom_label, 
 // 		    const vector< pair<unsigned,unsigned> > & ref_te_chromo);
 
-// void read_raw_data(gzFile gzin,
-// 		   map<unsigned,vector<puu> > & raw_data,
-// 		   vector<pair<string,unsigned> > * chrom_labels )
-// /*
-//   input data are read from STDIN, and look like:
-//   position chrom strand
-  
-// */
-// {
-//   unsigned pos,chrom,strand,dummy=0;
-//   string chrom_label;
-//   map<unsigned,vector<puu> >::iterator itr;
-//   unsigned nread=0;
-
-//   do
-//     {
-//       auto nextline = Sequence::IOhelp::gzreadline(gzin);
-//       istringstream in(nextline.first);
-//       in >> pos >> chrom_label >> strand  >> ws;
-//       ++nread;
-//       chrom = update_lookup(chrom_labels,&dummy,chrom_label);
-//       itr = raw_data.find(chrom);
-
-//       if( itr == raw_data.end() ) //new chromosome
-// 	{
-// 	  raw_data.insert( make_pair(chrom,
-// 				     vector<puu>(1,puu(pos,strand))) );
-// 	}
-//       else //add to existing data for chromosome
-// 	{
-// 	  itr->second.push_back(puu(pos,strand));
-// 	}
-//     } while(!gzeof(gzin));
-//   cerr << nread << " lines processed\n";
-//   //sort data per chromosome by position
-// }
-
 int main( int argc, char ** argv )
 {
   const params pars = parseargs(argc,argv);
@@ -642,131 +605,12 @@ void output_results( ostringstream & out,
     }
 }
 
-//OLD
-// void output_results( ostringstream & out,
-// 		     const vector<pair<cluster,cluster> > & clusters, 
-// 		     const string & chrom_label , 
-// 		     const vector< pair<unsigned,unsigned> > & ref_te_chromo )
-		     
-// {
-//   vector<pair<unsigned,unsigned> >::const_iterator mind;
-//   vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
-//   unsigned mindist = numeric_limits<unsigned>::max();
-//   bool withinTE;
-//   out.flush();
-//   for(unsigned i=0;i<clusters.size();++i)
-//     {
-//       out.flush();
-//       out << chrom_label << '\t'
-// 	  << clusters[i].first.nreads << '\t'
-// 	  << clusters[i].second.nreads << '\t';
-//       if( clusters[i].first.positions.first == UMAX )
-// 	{
-// 	  out << "NA\t"
-// 	      << "NA\t"
-// 	      << "NA\t"
-// 	      << "NA\t";
-// 	}
-//       else
-// 	{
-// 	  out << clusters[i].first.positions.first << '\t'
-// 	      << clusters[i].first.positions.second << '\t';
-// 	  mind = find_if(ref_te_chromo.begin(),
-// 			 ref_te_chromo.end(),
-// 			 [&]( const pair<unsigned,unsigned> & lhs ) {
-// 			   //This is the old closest_plus function object from 0.1.0
-// 			   //Finds the closest TE in the reference 3' of this position
-// 			   const unsigned rhs = clusters[i].first.positions.second;
-// 			   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-// 			 });
-// 	  if(mind != ref_te_chromo.end())
-// 	    {
-// 	      mindist = (mind->first < clusters[i].first.positions.first) ?
-// 		clusters[i].first.positions.first-mind->first : 
-// 		mind->first - clusters[i].first.positions.first;
-// 	    }
-// 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-// 			       [&](const pair<unsigned,unsigned> & refTE) {
-// 				 return clusters[i].first.positions.first >= refTE.first ||
-// 				 clusters[i].first.positions.first <= refTE.second;
-// 			       }) != ref_te_chromo.end() ||
-// 			       //bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
-// 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-// 			       [&](const pair<unsigned,unsigned> & refTE) {
-// 				 return clusters[i].first.positions.second >= refTE.first || 
-// 				 clusters[i].first.positions.second <= refTE.second;
-// 			       })
-// 			       //bind2nd(within(),clusters[i].first.positions.second)) 
-// 		       != ref_te_chromo.end() );
-// 	  if (mind != ref_te_chromo.end())
-// 	    {
-// 	      out << mindist << '\t';
-// 	    }
-// 	  else
-// 	    {
-// 	      out << "NA\t";
-// 	    }
-// 	  out << withinTE << '\t';
-// 	}
-//       if( clusters[i].second.positions.first == UMAX )
-// 	{
-// 	  out << "NA\t"
-// 	      << "NA\t"
-// 	      << "NA\t"
-// 	      << "NA" << endl;
-// 	}
-//       else
-// 	{
-// 	  out << clusters[i].second.positions.first << '\t'
-// 	      << clusters[i].second.positions.second << '\t';
-// 	  mindr = find_if(ref_te_chromo.rbegin(),
-// 			  ref_te_chromo.rend(),
-// 			  //This is the old closest_minus from 0.1.0
-// 			  //Finds the closest reference TE 5' of this position
-// 			  [&](const pair<unsigned,unsigned> & lhs) {
-// 			    const unsigned rhs = clusters[i].second.positions.first;
-// 			    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-// 			  });
-// 	  if(mindr != ref_te_chromo.rend())
-// 	    {
-// 	      mindist = (mindr->first < clusters[i].second.positions.second) ? 
-// 		clusters[i].second.positions.second-mindr->first : mindr->first - clusters[i].second.positions.second;
-// 	    }
-// 	  withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-// 			       [&](const pair<unsigned,unsigned> & refTE) {
-// 				 return clusters[i].second.positions.second >= refTE.first ||
-// 				 clusters[i].second.positions.second <= refTE.second;
-// 			       })
-// 			       //bind2nd(within(),clusters[i].second.positions.second)) 
-// 		       != ref_te_chromo.end() ||
-// 		       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-// 			       [&](const pair<unsigned,unsigned> & refTE) {
-// 				 return clusters[i].second.positions.first >= refTE.first ||
-// 				 clusters[i].second.positions.first <= refTE.second;
-// 			       })
-// 			       //bind2nd(within(),clusters[i].second.positions.first))
-// 		       != ref_te_chromo.end() );
-// 	  if (mindr != ref_te_chromo.rend())
-// 	    {
-// 	      out << mindist << '\t';
-// 	    }
-// 	  else
-// 	    {
-// 	      out << "NA\t";
-// 	    }
-// 	  out << withinTE << endl;
-// 	}
-//       out.flush();
-//     }
-// }
-
 void reduce_ends( vector<cluster> & clusters,
 		  const unsigned & INSERTSIZE )
 {
   vector<cluster>::iterator i = clusters.end()-1,
     beg = clusters.begin(),j;
 
-  //while(i>beg)
   while(i-clusters.begin() > 0)
     {
       bool merged = 0;
