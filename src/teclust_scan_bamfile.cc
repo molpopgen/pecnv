@@ -45,7 +45,9 @@ void scan_bamfile(const params & p,
       if( !f.query_unmapped && !f.mate_unmapped )
 	//then both reads are mapped 
 	{
+	  cerr << b.read_name() << '\n';
 	  auto n = editRname(b.read_name());
+	  cerr << n << '\n';
 	  if( readPairs->find(n) == readPairs->end())
 	    {
 	      auto itr = lookup.find(b.refid());
@@ -61,7 +63,6 @@ void scan_bamfile(const params & p,
 	      
 	      //Now, does the read overlap a known TE?
 	      int32_t start = b.pos(),stop=b.pos() + alignment_length(b) - 1;
-	      //cerr << start << ' ' << stop << ' ' << (start + 2*(b.seq_cend()-b.seq_cbeg())) << ' ' << (start + b.seq().size()) << '\n';
 	      auto CHROM = refTEs.find(itr->second);
 	      if( CHROM != refTEs.end() )
 		{
@@ -92,7 +93,7 @@ void scan_bamfile(const params & p,
 			}
 		      if(OK)
 			{
-			  readPairs->insert( editRname(b.read_name()) );
+			  readPairs->insert( n );
 			}
 		    }
 		}
