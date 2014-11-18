@@ -46,6 +46,8 @@ For the detection of putative transposable element insertions, the following pro
 * [GNU parallel](http://www.gnu.org/software/parallel/)
 * [NCBI blast](http://blast.ncbi.nlm.nih.gov/Blast.cgi)
 
+These run-time dependencies must all be in a user's path.  Further, the system must be set up like a "normal" *nix machine so that a script may call /usr/bin/env XXX to find the path to XXX on the [shebang](http://en.wikipedia.org/wiki/Shebang_(Unix)) line of a script.
+
 ##Compilation and installation
 
 For systems where all dependencies are "where they're supposed to be":
