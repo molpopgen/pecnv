@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 usage(){
     >&2 echo "Usage: $0 options"
