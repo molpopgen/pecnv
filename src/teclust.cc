@@ -45,9 +45,8 @@ using puu = pair<unsigned,unsigned>;
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
 //using refTEcont = std::map<string,std::vector<teinfo> >;
 refTEcont read_refdata( const params & p );
-unordered_set<string> procUMM(const refTEcont & reftes,
-			      const string & umufilename,
-			      const string & ummfilename,
+unordered_set<string> procUMM(const params & pars,
+			      const refTEcont & reftes,
 			      map<string,vector< puu > > * data);
 void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
@@ -115,7 +114,7 @@ int main( int argc, char ** argv )
   */
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< pair<unsigned,unsigned> > > rawData;
-  unordered_set<string> readPairs = procUMM(refTEs,pars.umufile,pars.ummfile,&rawData);
+  unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
 
   /*
     Scan the BAM file to look for reads whose
@@ -217,16 +216,15 @@ refTEcont read_refdata( const params & p )
 }
 
 
-unordered_set<string> procUMM(const refTEcont & reftes,
-			     const string & umufilename,
-			     const string & ummfilename,
-			     map<string,vector<pair<unsigned,unsigned> > > * data)
+unordered_set<string> procUMM(const params & pars,
+			      const refTEcont & reftes,
+			      map<string,vector<pair<unsigned,unsigned> > > * data)
 {
-  gzFile gzin = gzopen(ummfilename.c_str(),"r" );
+  gzFile gzin = gzopen(pars.ummfile.c_str(),"r" );
   if(gzin == NULL)
     {
       cerr << "Error: "
-	   << ummfilename
+	   << pars.ummfile
 	   << " could not be opened for reading.\n";
       exit(1);
     }
@@ -250,18 +248,20 @@ unordered_set<string> procUMM(const refTEcont & reftes,
 	      auto __itr = reftes.find(chrom);
 	      if( __itr != reftes.end() )
 		{
-		  //Greedy algo of Cridlan et al.
-		  mTE.insert(name);
-		  // if( find_if(__itr->second.cbegin(),
-		  // 	      __itr->second.cend(),
-		  // 	      [&](const teinfo & __t) {
-		  // 		return ( (start >= __t.start() && start <= __t.stop()) ||
-		  // 			 (stop >= __t.start() && stop <= __t.stop()) );
-		  // 	      }) != __itr->second.cend() )
-		  //   {
-		  //     //Then read hits a known TE
-		  //     mTE.insert(name);
-		  //   }
+		  if( pars.greedy )
+		    {
+		      mTE.insert(name);
+		    }
+		  else if( find_if(__itr->second.cbegin(),
+				   __itr->second.cend(),
+				   [&](const teinfo & __t) {
+				     return ( (start >= __t.start() && start <= __t.stop()) ||
+					      (stop >= __t.start() && stop <= __t.stop()) );
+				   }) != __itr->second.cend() )
+		    {
+		      //Then read hits a known TE
+		      mTE.insert(name);
+		    }
 		}
 	    }
 	}
@@ -271,11 +271,11 @@ unordered_set<string> procUMM(const refTEcont & reftes,
   gzclose(gzin);
 
   //Now, get the Unique reads corresponding to TE-hitting M reads
-  gzin = gzopen( umufilename.c_str(), "r" );
+  gzin = gzopen( pars.umufile.c_str(), "r" );
   if(gzin == NULL)
     {
       cerr << "Error: "
-	   << umufilename
+	   << pars.umufile
 	   << " could not be opened for reading.\n";
       exit(1);
     }
