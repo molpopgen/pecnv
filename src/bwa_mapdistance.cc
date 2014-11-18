@@ -125,7 +125,6 @@ int main( int argc, char ** argv )
        i != mdist.end() ; ++i )
     {
       cum += i->second;
-      string x;
       if( gzprintf(out,"%u\t%u\t%e\n",i->first,i->second,double(cum)/double(sum)) <= 0 )
 	{
 	  cerr << "Error: gzprintf error at line "

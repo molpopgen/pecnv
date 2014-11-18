@@ -478,11 +478,7 @@ void output_results( ostringstream & out,
 		     const vector<pair<cluster,cluster> > & clusters, 
 		     const string & chrom_label , 
 		     const refTEcont & reftes )
-//const vector< teinfo > & reftes )
-		     
 {
-  vector<pair<unsigned,unsigned> >::const_iterator mind;
-  vector<pair<unsigned,unsigned> >::const_reverse_iterator mindr;
   int32_t mindist = -1;
   int withinTE = -1;
   out.flush();

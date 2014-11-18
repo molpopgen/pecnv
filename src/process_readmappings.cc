@@ -400,15 +400,9 @@ vector<mapping_pos> get_mapping_pos(const bamrecord & r,
 	  
 	  string hit_chrom = string(hit.begin(),hit.begin()+commas[0]);
 	  int hit_start= atoi( string(hit.begin()+commas[0]+1,hit.begin()+commas[1]).c_str() );
-	  string cigar(hit.begin()+commas[1]+1,hit.begin()+commas[2]);
-	  //vector<pair<char,unsigned> > cdata = parse_cigar(cigar);
-	  //unsigned hit_stop = abs(hit_start) + alen(cdata) - 2;
 	  unsigned hit_stop = abs(hit_start) + alignment_length(r) -2 ;//cdata) - 2;
-	  unsigned nm = atoi(string(hit.begin()+commas[2]+1,hit.end()).c_str());
-	  
 	  mapping_pos hitmp( hit_chrom,abs(hit_start)-1,hit_stop, ((hit_start>0)?0:1),
 			     mismatches(r),ngaps(r) );
-			     //mm(nm,cdata),ngaps(r));//cdata));
 	  if(find(rv.begin(),rv.end(),hitmp)==rv.end())
 	    {
 	      rv.push_back(hitmp);

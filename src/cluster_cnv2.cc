@@ -108,7 +108,7 @@ void read_data_details(putCNVs & raw_div,
 		       const unsigned & max_mm,
 		       const unsigned & max_gap)
 {
-  string chrom,chrom2,pairname,pairname2;
+  string chrom,chrom2,pairname;
   unsigned mqual,strand,mm,gap,
     mqual2,strand2,mm2,gap2;
 
