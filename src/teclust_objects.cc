@@ -14,7 +14,8 @@ params::params() : reference_datafile(string()),
 		   MDIST(numeric_limits<unsigned>::max()),
 		   MINREADS(numeric_limits<unsigned>::max()),
 		   CLOSEST(-1),
-		   novelOnly(true)
+		   novelOnly(true),
+		   greedy(true)
 {
 }
 
