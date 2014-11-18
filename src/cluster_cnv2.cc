@@ -512,12 +512,13 @@ void write_clusters( gzFile gzout,
 	  min2 = min(min2,clusters[i][j]->b);
 	  max2 = max(max2,clusters[i][j]->bS);
 	  ostringstream t;
+	  //The +1 here convert genomic positions to a [1,L] coordinate system
 	  t << ';' 
-	    << clusters[i][j]->a << ',' 
-	    << clusters[i][j]->aS << ','
+	    << clusters[i][j]->a+1 << ',' 
+	    << clusters[i][j]->aS+1 << ','
 	    << clusters[i][j]->strand1 << ','
-	    << clusters[i][j]->b << ',' 
-	    << clusters[i][j]->bS << ','
+	    << clusters[i][j]->b+1 << ',' 
+	    << clusters[i][j]->bS+1 << ','
 	    << clusters[i][j]->strand2;
 	  if ( readnames.empty() )
 	    {
