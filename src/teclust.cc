@@ -1,22 +1,7 @@
 /*
-  Copyright 2010 Kevin Thornton, University of California, Irvine
+  Copyright 2010-2014 Kevin Thornton, University of California, Irvine
   
   This code is released under the terms of the GNU Public Licesne
-
-  Input looks like:
-  2074202 6       0
-  18633175        8       0
-  561972  13      0
-  21416313        10      1
-  4720393 13      0
-
-  Which is map_position chrom strand, corresponding to the uniquely-mapping reads in 
-  unique/multi pairs, where the multis map to known TEs in the reference
-
-  It is assumed that these have already been filtered on things like mapping quality,
-  for example by using umm_te_finder
-
-  It clusters the above into "events" suggesting TEs.
 */
 
 #include <iostream>
