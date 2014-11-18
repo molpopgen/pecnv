@@ -44,7 +44,6 @@ for( O in 1:nrow(output) )
                                 if( (A>0 & A<= 250) |
                                    (B>0 & B<= 250 ) )
                                     {
-                                        print(paste("plus",truth$V2[n],output$pfirst[O],output$plast[O]))
                                         FOUNDSIM[O]=n
                                     }
                             }
@@ -55,7 +54,6 @@ for( O in 1:nrow(output) )
                                 if( (A>0 & A<= 250) |
                                    (B>0 & B<= 250 ) )
                                     {
-                                        print(paste("minus",truth$V2[n],output$mfirst[O],output$mlast[O]))
                                         FOUNDSIM[O]=n
                                     }
                             }
