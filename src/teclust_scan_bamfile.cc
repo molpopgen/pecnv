@@ -42,9 +42,7 @@ void scan_bamfile(const params & p,
       if( !f.query_unmapped && !f.mate_unmapped )
 	//then both reads are mapped 
 	{
-	  cerr << b.read_name() << '\n';
 	  auto n = editRname(b.read_name());
-	  cerr << n << '\n';
 	  if( readPairs->find(n) == readPairs->end())
 	    {
 	      auto itr = lookup.find(b.refid());
