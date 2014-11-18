@@ -6,6 +6,7 @@ n=commandArgs(trailing=TRUE)
 output=read.table(n[1],header=T,colClasses=c("character",rep("integer",10)))
 native=read.table(n[2],colClasses=c("character",rep("integer",2)))
 truth=read.table(n[3],colClasses=c("character",rep("integer",2)))
+outfilename=n[4]
 
 FOUNDNATIVE=array(NA,dim=nrow(output))
 FOUNDSIM=array(NA,dim=nrow(output))
@@ -64,3 +65,5 @@ for( O in 1:nrow(output) )
             }
     }
 
+OO=as.data.frame(cbind(FOUNDNATIVE,FOUNDSIM,output))
+write.table(OO,file=outfilename,row.names=F,quote=F)
