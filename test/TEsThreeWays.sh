@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ ! -c run_TEtest_data.sh ]
+if [ ! -e run_TEtest_data.sh ]
 then
     echo "I want to be run from the directory containing run_TEtest_data.sh.  I'm not finding that script here, so I'm exiting"
     exit
