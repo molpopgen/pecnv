@@ -63,7 +63,6 @@ int main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< pair<unsigned,unsigned> > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
-
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
