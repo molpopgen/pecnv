@@ -25,7 +25,6 @@
 using namespace std;
 using namespace Sequence;
 
-//using puu = pair<unsigned,unsigned>;
 using puu = pair<int32_t,int8_t>;
 
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
@@ -49,12 +48,6 @@ int main( int argc, char ** argv )
 
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
-
-  for( auto i = refTEs.begin() ; i != refTEs.end() ; ++i )
-    {
-      cerr << '|' << i->first << "|\n";
-    }
-  //exit(1);
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
@@ -199,14 +192,6 @@ unordered_set<string> procUMM(const params & pars,
 	      exit(1);
 	    }
 	  alnInfo alndata(gzin);
-	  //cerr << name.first << ' ' << chrom.first << ' ' << alndata.start << ' ' << alndata.stop << ' ' << int(alndata.mapq) << '\n';
-	  // auto line = IOhelp::gzreadline(gzin);
-	  // if(!line.second) break;
-	  // istringstream in(line.first);
-	  // string name,chrom;
-	  // unsigned mapq,start,stop;
-	  // //Only parse what we need to
-	  // in >> name >> mapq >> chrom >> start >> stop >> ws;
 	  //Don't re-process a read if we already know it has a mapping to a TE
 	  if( mTE.find(name.first) == mTE.end() )
 	    {
@@ -231,8 +216,6 @@ unordered_set<string> procUMM(const params & pars,
 		      mTE.insert(name.first);
 		    }
 		}
-	      //else
-	      //cerr <<'|'<< chrom.first <<'|'<< " not found\n";
 	    }
 	}
       while(!gzeof(gzin));
@@ -261,7 +244,6 @@ unordered_set<string> procUMM(const params & pars,
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
-      //      cerr << name.first<<'\n';
       auto chrom = gzreadCstr( gzin );
       if( chrom.second <= 0 ) 
 	{
@@ -271,15 +253,6 @@ unordered_set<string> procUMM(const params & pars,
 	  exit(1);
 	}
       alnInfo alndata(gzin);
-      //cerr << name.first << '|' << chrom.first<<'|'<< alndata.start << '|' << alndata.stop << '|'
-      //<< int(alndata.mapq) << '\n';
-      //auto line = IOhelp::gzreadline(gzin);
-      //if(!line.second) break;
-      //istringstream in(line.first);
-      //string name,chrom;
-      //unsigned mapq,start,stop,strand;
-      //Only parse what we need to
-      //in >> name >> mapq >> chrom >> start >> stop >> strand >> ws;
       if( reftes.empty() || (!reftes.empty() && mTE.find(name.first) != mTE.end()) )
 	{
 	  auto itr = data->find(chrom.first);
