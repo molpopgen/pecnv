@@ -29,3 +29,8 @@ fi
 ##Method 2: using just the UMU/UMM output.  No TE annotation file, no bam file scanning
 teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99` -o method2.out.gz
 
+##Method 3: using the UMU/UMM files, the TE annotation file, and require that Ms in UMM overlap known TEs.  No bam file scanning
+teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -t TEtestData/TE_position_r5.1 --ummHitTE -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99` -o method3.out.gz
+
+##Method 4: using the UMU/UMM files, the TE annotation file, and require that Ms in UMM overlap known TEs.  Include bam file scanning
+teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -t TEtestData/TE_position_r5.1 --ummHitTE -b TEtestData/pecnv_output/pecnv_bamfile_sorted.bam -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99` -o method4.out.gz
