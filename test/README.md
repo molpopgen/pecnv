@@ -34,6 +34,7 @@ TEtestData/TE_frequencies_r5.1
 TEtestData/line99_truth
 TEtestData/line99_1.fastq.gz
 TEtestData/line99_2.fastq.gz
+TEtestData/transposon_all.fasta
 ```
 
 In order, these files are:
@@ -45,7 +46,7 @@ In order, these files are:
 5. The insert site positions of 100 TEs that Julie Cridland randomly inserted into the reference genome
 6. Lane 1 of data simulated from the reference genome
 7. Lane 2 of data simulated from the reference genome
-
+8. Sequences of Dmel TEs in fasta format.
 To run the script:
 
 ```
