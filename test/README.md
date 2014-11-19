@@ -4,6 +4,8 @@ This project contains two executable bash scripts.  One of these tests the CNV c
 
 Please make sure that pecnv is installed on your system before running these tests.
 
+The output of each script is several gigabytes of data!
+
 ##run_test_data.sh
 
 This script performs CNV calling on two lanes of paired-end Illumina data from an inbred isofemale strain of _Drosophila yakuba_.  The script is very simple, and does the following:
