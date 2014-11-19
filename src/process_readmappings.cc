@@ -524,7 +524,6 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	<< maptype << '\t';
       REF = reader.ref_cbegin()+b.refid();
       //Second read data
-      //o << editRname(b.read_name()) << '\t'
       o << b.mapq() << '\t'
 	<< REF->first << '\t'
 	<< b.pos() << '\t'
