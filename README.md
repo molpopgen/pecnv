@@ -15,10 +15,11 @@ This software also a C++ implementation of the transposable element (TE) detecti
 2.  Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
 3.  Release 0.1.2 = No more need to rename references or read names.  This shaves a load of time off of the workflow.
 4.  Release 0.1.3 = re-implementation of process_readmappings to read directly from BAM files.  No more need to make a BAM file sorted by read name.  This shaves hours off of the pipeline.
+5.  Release 0.1.4 = integration of the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  Intermediate files are now written in a binary format for more efficient downstream-processing.  This version depends on the boost libraries for parsing command-line arguments
 
 ##Tentative plan for future releases
 
-1.  0.1.4 will integrate the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  This version is likely to add a dependency on the [boost](http://www.boost.org) program_options library, in order to make simplify the interface to the TE calling programs.
+
 
 #Installation
 
