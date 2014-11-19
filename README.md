@@ -191,38 +191,37 @@ The SAM files are really pseudo-SAM because they are quick-and dirty conversion 
 
     For all of the below, strand = 0 or 1 for plus or minus, respectively.  All genomic positions start from 0, __not from 1__.
 
-The format of $ODIR/$BAM.cnv_mappings.csv.gz is 17 columns:
+The format of $ODIR/$BAM.cnv_mappings.csv.gz a gzipped file binary-format records describing unusual read mappings.  Note that this file is not human-readable.  The format of a single record is:
 
-1. Read name pair prefix (string). The hash symbol and remaining characters have been stripped, for reading in R.
-2. Mapping quality of the read1. (int)
-3. Chromosome for read1. (string)
-4. Alignment start for read 1. (int)
-5. Alignment stop for read 1. (int)
-6. Strand for read 1. (int) 
-7. Mismatches for read 1. (int)
-8. Gaps in alignment of read 1 to ref. (int)
-9. Read pair orientation (string).  UL = unlinked, DIV = divergent, PAR = parallel
-10. Mappint quality of read 2. (int)
-11. Chromosome for read 2. (string)
-12. Alignment start for read 2. (int)
-13. Alignment stop for read 2. (int)
-14. Strand for read 2. (int) 
-15. Mismatches for read 2. (int)
-16. Gaps in alignment of read 2 to ref. (int)
-17. Read pair orientation (string).  UL = unlinked, DIV = divergent, PAR = parallel
+1. Read name pair prefix (\0-terminated C string). The hash symbol and remaining characters have been stripped.
+2. Chromosome name for read1 (\0-terminated C string).
+3. Chromosome name for read2 (\0-terminated C string).
+4. Read pair orientation (char[3]). UNL = unlinked, DIV = divergent, PAR = parallel
+5. Alignment start position for read 1 (int32_t).
+6. Alignment stop position for read 1 (int32_t).
+7. Mapping quality for read 1 (int8_t)
+8. Strand for read 1 (int8_t).
+9. Mismatches for read 1 (int16_t)
+10. Alignment gaps for read 1 (int16_t)
+11. Alignment start position for read 2 (int32_t).
+12. Alignment stop position for read 2 (int32_t).
+13. Mapping quality for read 2 (int8_t)
+14. Strand for read 2 (int8_t).
+15. Mismatches for read 2 (int16_t)
+16. Alignment gaps for read 2 (int16_t)
 
-Yes, columns 9 and 17 are redundant, and are used to make sure that the output routines are working OK.
+The values in parentheses correspond to the data types using in C/C++.  intX_t refers to a signed integer guaranteed to be exactly X bits in size.  Your system defines these types in <stdint.h> (C) and <cstdint> (C++11).  This project manages the IO for these files using the routines defined in the file __intermediateIO.hpp__. A \0-terminated C string is a "char *" including the C-language string termination character \0. These data fields are read by repeated calls to gzgetc until the \0 is found.
 
-The format of $ODIR/$BAM.um_u.csv.gz and $ODIR/$BAM.um_m.csv.gz consist of 8 columns:
+The format of $ODIR/$BAM.um_u.csv.gz and $ODIR/$BAM.um_m.csv.gz are again binary-encoded records in the following format:
 
-1. Read name pair prefix. (string)
-2. Mapping quality of the read. (int)
-3. Chromosome for read. (string)
-4. Alignment start for read. (int)
-5. Alignment stop for read. (int)
-6. Strand for read. (int) 
-7. Mismatches for read. (int)
-8. Gaps in alignment of read to ref. (int)
+1. Read name pair prefix (\0-terminated C string). The hash symbol and remaining characters have been stripped.
+2. Chromosome for read. (\0-terminated C string)
+3. Alignment start for read. (int32_t)
+4. Alignment stop for read. (int32_t)
+5. Mapping quality of the read. (int8_t)
+6. Strand for read. (int8_t) 
+7. Mismatches for read. (int16_t)
+8. Gaps in alignment of read to ref. (int16_t)
 
 The difference between the two is that the former contains 1 record per read name pair prefix, while the latter contains > 1.
 
