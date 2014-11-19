@@ -25,6 +25,7 @@
 #include <zlib.h>
 
 #include <common.hpp>
+#include <intermediateIO.hpp>
 
 using namespace std;
 using namespace Sequence;
@@ -186,7 +187,7 @@ int main(int argc, char ** argv)
 		      if( b.refid() != b.next_refid() ) //both map to different scaffolds
 			{
 			  unusual = true;
-			  updateBucket(UL,b,of.structural,of.structural_sam,"UL\0",reader);
+			  updateBucket(UL,b,of.structural,of.structural_sam,"UNL\0",reader);
 			}
 		      else if ( b.pos() != b.next_pos()) //Don't map to same position
 			{
@@ -422,27 +423,46 @@ void outputU( gzFile gzout,
   string name = editRname(r.read_name());
   ostringstream obuffer;
   auto REF = reader.ref_cbegin()+r.refid();
-  obuffer << name << '\t'
-	  << r.mapq() << '\t'
-	  << REF->first << '\t'
-	  << r.pos() << '\t'
-	  << r.pos() + alignment_length(r) - 1 << '\t'
-	  << r.flag().qstrand << '\t'
-	  << mismatches(r) << '\t'
-	  << ngaps(r) << '\n'; 
-
-  if(!gzwrite(gzout,obuffer.str().c_str(),obuffer.str().size()))
+  if ( gzwriteCstr( gzout,name ) <= 0 )
     {
       cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
+  if ( gzwriteCstr( gzout,REF->first ) <= 0 )
+    {
+      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  alnInfo ai(r);
+  if ( ai.write(gzout) <= 0 ) 
+    {
+      cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+  // obuffer << name << '\t'
+  // 	  << r.mapq() << '\t'
+  // 	  << REF->first << '\t'
+  // 	  << r.pos() << '\t'
+  // 	  << r.pos() + alignment_length(r) - 1 << '\t'
+  // 	  << r.flag().qstrand << '\t'
+  // 	  << mismatches(r) << '\t'
+  // 	  << ngaps(r) << '\n'; 
+
+  // if(!gzwrite(gzout,obuffer.str().c_str(),obuffer.str().size()))
+  //   {
+  //     cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+  // 	   << " of " << __FILE__ << '\n';
+  //     exit(1);
+  //   }
 
   string s = toSAM(r,reader);
   if(!gzwrite(gzoutSAM,s.c_str(),s.size()))
     {
       cerr << "Error: gzwrite error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
+  	   << " of " << __FILE__ << '\n';
       exit(1);
     }
 }
@@ -458,22 +478,44 @@ void outputM( gzFile gzout,
   vector<mapping_pos> mpos = get_mapping_pos(r,reader);
   for( unsigned i=0;i<mpos.size();++i)
     {
-      ostringstream out;
-      out << name << '\t' 
-	  << r.mapq() << '\t'
-	  << mpos[i].chrom << '\t'
-	  << mpos[i].start << '\t'
-	  << mpos[i].stop << '\t'
-	  << mpos[i].strand << '\t'
-	  << mpos[i].mm << '\t'
-	  << mpos[i].gap << '\n';
-
-      if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
+      if ( gzwriteCstr( gzout,name ) <= 0 )
 	{
 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
+      if ( gzwriteCstr( gzout,mpos[i].chrom ) <= 0 )
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      alnInfo ai(mpos[i].start,mpos[i].stop,
+		 r.mapq(),
+		 mpos[i].strand,
+		 mpos[i].mm,mpos[i].gap);
+      if ( ai.write(gzout) <= 0 ) 
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      // ostringstream out;
+      // out << name << '\t' 
+      // 	  << r.mapq() << '\t'
+      // 	  << mpos[i].chrom << '\t'
+      // 	  << mpos[i].start << '\t'
+      // 	  << mpos[i].stop << '\t'
+      // 	  << mpos[i].strand << '\t'
+      // 	  << mpos[i].mm << '\t'
+      // 	  << mpos[i].gap << '\n';
+
+      // if(!gzwrite(gzout,out.str().c_str(),out.str().size()))
+      // 	{
+      // 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+      // 	       << " of " << __FILE__ << '\n';
+      // 	  exit(1);
+      // 	}
     }
   string s = toSAM(r,reader);
   if(!gzwrite(gzoutSAM,s.c_str(),s.size()))
@@ -497,7 +539,7 @@ void updateBucket( readbucket & rb, bamrecord & b,
     }
   else //We've got our pair, so write it out
     {
-      ostringstream o;
+      //ostringstream o;
       if(i->second.refid() > reader.ref_cend()-reader.ref_cbegin())
 	{
 	  cerr << "Error: reference ID number : "<< i->second.refid()
@@ -513,32 +555,70 @@ void updateBucket( readbucket & rb, bamrecord & b,
 	  exit(1);
 	}
       auto REF = reader.ref_cbegin()+i->second.refid();
-      o << editRname(i->second.read_name()) << '\t'
-	<< i->second.mapq() << '\t'
-	<< REF->first << '\t'
-	<< i->second.pos() << '\t'
-	<< i->second.pos() + alignment_length(i->second) - 1 << '\t'
-	<< i->second.flag().qstrand << '\t'
-	<< mismatches(i->second) << '\t'
-	<< ngaps(i->second) << '\t'
-	<< maptype << '\t';
-      REF = reader.ref_cbegin()+b.refid();
-      //Second read data
-      o << b.mapq() << '\t'
-	<< REF->first << '\t'
-	<< b.pos() << '\t'
-	<< b.pos() + alignment_length(b) - 1 << '\t'
-	<< b.flag().qstrand << '\t'
-	<< mismatches(b) << '\t'
-	<< ngaps(b) << '\t'
-	<< maptype << '\n';
-      if(! gzwrite( csvfile,o.str().c_str(),o.str().size() ) )
+      if ( gzwriteCstr( csvfile,editRname(i->second.read_name() ) ) <= 0 )
 	{
-	  cerr << "Error: gzwrite error at line "
-	       << __LINE__ << " of file "
-	       << __FILE__ << '\n';
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
+      if ( gzwriteCstr( csvfile,REF->first ) <= 0 )
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      REF = reader.ref_cbegin()+b.refid();
+      if ( gzwriteCstr( csvfile,REF->first ) <= 0 )
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      if( gzputs( csvfile, maptype ) <= 0 )
+	{
+	  cerr << "Error: gzputs error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      alnInfo a1(i->second),a2(b);
+      if( a1.write(csvfile) <= 0 )
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      if( a2.write(csvfile) <= 0 )
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      // o << editRname(i->second.read_name()) << '\t'
+      // 	<< i->second.mapq() << '\t'
+      // 	<< REF->first << '\t'
+      // 	<< i->second.pos() << '\t'
+      // 	<< i->second.pos() + alignment_length(i->second) - 1 << '\t'
+      // 	<< i->second.flag().qstrand << '\t'
+      // 	<< mismatches(i->second) << '\t'
+      // 	<< ngaps(i->second) << '\t'
+      // 	<< maptype << '\t';
+      // REF = reader.ref_cbegin()+b.refid();
+      // //Second read data
+      // o << b.mapq() << '\t'
+      // 	<< REF->first << '\t'
+      // 	<< b.pos() << '\t'
+      // 	<< b.pos() + alignment_length(b) - 1 << '\t'
+      // 	<< b.flag().qstrand << '\t'
+      // 	<< mismatches(b) << '\t'
+      // 	<< ngaps(b) << '\t'
+      // 	<< maptype << '\n';
+      // if(! gzwrite( csvfile,o.str().c_str(),o.str().size() ) )
+      // 	{
+      // 	  cerr << "Error: gzwrite error at line "
+      // 	       << __LINE__ << " of file "
+      // 	       << __FILE__ << '\n';
+      // 	  exit(1);
+      // 	}
       string SAM = toSAM(b,reader);
       if(!gzwrite(samfile,SAM.c_str(),SAM.size()))
 	{

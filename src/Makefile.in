@@ -97,16 +97,18 @@ am_bwa_mapdistance_OBJECTS = bwa_mapdistance.$(OBJEXT) \
 	common.$(OBJEXT)
 bwa_mapdistance_OBJECTS = $(am_bwa_mapdistance_OBJECTS)
 bwa_mapdistance_LDADD = $(LDADD)
-am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT)
+am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
+	intermediateIO.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
 cluster_cnv_LDADD = $(LDADD)
 am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
-	common.$(OBJEXT)
+	common.$(OBJEXT) intermediateIO.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
 am_teclust_OBJECTS = teclust.$(OBJEXT) common.$(OBJEXT) \
 	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT) \
-	teclust_parseargs.$(OBJEXT) teclust_scan_bamfile.$(OBJEXT)
+	teclust_parseargs.$(OBJEXT) teclust_scan_bamfile.$(OBJEXT) \
+	intermediateIO.$(OBJEXT)
 teclust_OBJECTS = $(am_teclust_OBJECTS)
 teclust_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -279,11 +281,11 @@ top_srcdir = @top_srcdir@
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
-cluster_cnv_SOURCES = cluster_cnv2.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
-teclust_SOURCES = teclust.cc common.cc teclust_objecst.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
+cluster_cnv_SOURCES = cluster_cnv2.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
+teclust_SOURCES = teclust.cc common.cc teclust_objecst.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 #umm_te_finder_SOURCES=umm_te_finder.cc 
 #filter_edit_SOURCES=filter_edit.cc
-process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp
+process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp intermediateIO.cc intermediateIO.hpp
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 AM_CXXFLAGS = $(am__append_1)
 all: all-am
@@ -388,6 +390,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intermediateIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_objects.Po@am__quote@

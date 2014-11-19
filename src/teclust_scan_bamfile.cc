@@ -11,7 +11,7 @@
 using namespace std;
 using namespace Sequence;
 
-using puu = pair<unsigned,unsigned>;
+using puu = pair<int32_t,int8_t>;
 
 using refIDlookup = unordered_map<int32_t,string>;
 
@@ -150,7 +150,7 @@ void scan_bamfile(const params & p,
 		      if(DCHROM == data->end())
 			{
 			  data->insert( make_pair(itr->second,
-						  vector<pair<unsigned,unsigned> >(1,make_pair(start,f.qstrand) ) ) );
+						  vector<pair<int32_t,int8_t> >(1,make_pair(start,f.qstrand) ) ) );
 			}
 		      else
 			{

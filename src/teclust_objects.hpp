@@ -1,6 +1,7 @@
 #ifndef __TECLUST_OBJECTS_HPP__
 #define __TECLUST_OBJECTS_HPP__
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -47,7 +48,7 @@ struct cluster
   A cluster is a group of unique reads that suggest the presence of a TE
 */
 {
-  std::pair<unsigned,unsigned> positions;
+  std::pair<std::int32_t,std::int32_t> positions;
   unsigned nreads;
   cluster();
   cluster(const unsigned & pos1,

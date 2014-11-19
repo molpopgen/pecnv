@@ -20,11 +20,13 @@
 #include <teclust_parseargs.hpp>
 #include <teclust_scan_bamfile.hpp>
 #include <teclust_phrapify.hpp>
+#include <intermediateIO.hpp>
 
 using namespace std;
 using namespace Sequence;
 
-using puu = pair<unsigned,unsigned>;
+//using puu = pair<unsigned,unsigned>;
+using puu = pair<int32_t,int8_t>;
 
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
 refTEcont read_refdata( const params & p );
@@ -48,12 +50,17 @@ int main( int argc, char ** argv )
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
 
+  for( auto i = refTEs.begin() ; i != refTEs.end() ; ++i )
+    {
+      cerr << '|' << i->first << "|\n";
+    }
+  //exit(1);
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
   */
   //rawData = map {chromo x vector {start,strand}}
-  map<string,vector< pair<unsigned,unsigned> > > rawData;
+  map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
   /*
     Scan the BAM file to look for reads whose
@@ -157,7 +164,7 @@ refTEcont read_refdata( const params & p )
 
 unordered_set<string> procUMM(const params & pars,
 			      const refTEcont & reftes,
-			      map<string,vector<pair<unsigned,unsigned> > > * data)
+			      map<string,vector< puu > > * data)
 {
   gzFile gzin = gzopen(pars.ummfile.c_str(),"r" );
   if(gzin == NULL)
@@ -170,45 +177,77 @@ unordered_set<string> procUMM(const params & pars,
 
   unordered_set<string> mTE; //"M" reads that map to a known TE in the refernce.  
 
+  unsigned UMMread = 0;
+  int32_t lstart=0,lstop=0,lmapq=0,lstrand=0;
+  string lchrom;
   if (!reftes.empty() )
     {
       do
 	{
-	  auto line = IOhelp::gzreadline(gzin);
-	  if(!line.second) break;
-	  istringstream in(line.first);
-	  string name,chrom;
-	  unsigned mapq,start,stop;
-	  //Only parse what we need to
-	  in >> name >> mapq >> chrom >> start >> stop >> ws;
-	  //Don't re-process a read if we already know it has a mapping to a TE
-	  if( mTE.find(name) == mTE.end() )
+	  auto name = gzreadCstr( gzin );
+	  if(gzeof(gzin)) break;
+	  if( name.second <= 0 ) 
 	    {
-	      auto __itr = reftes.find(chrom);
+	      cerr << "Error: gzread error at line "
+		   << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  auto chrom = gzreadCstr( gzin );
+	  if( chrom.second <= 0 ) 
+	    {
+	      cerr << "Error: gzread error at line "
+		   << __LINE__ 
+		   << " of " << __FILE__ << '\n';
+	      exit(1);
+	    }
+	  alnInfo alndata(gzin);
+	  lstart=alndata.start;
+	  lstop=alndata.stop;
+	  lchrom = chrom.first;
+	  lstrand = int32_t(alndata.strand);
+	  lmapq = int32_t(alndata.mapq);
+	  ++UMMread;
+	  //cerr << name.first << ' ' << chrom.first << ' ' << alndata.start << ' ' << alndata.stop << ' ' << int(alndata.mapq) << '\n';
+	  // auto line = IOhelp::gzreadline(gzin);
+	  // if(!line.second) break;
+	  // istringstream in(line.first);
+	  // string name,chrom;
+	  // unsigned mapq,start,stop;
+	  // //Only parse what we need to
+	  // in >> name >> mapq >> chrom >> start >> stop >> ws;
+	  //Don't re-process a read if we already know it has a mapping to a TE
+	  if( mTE.find(name.first) == mTE.end() )
+	    {
+	      //auto __itr = reftes.find(chrom);
+	      auto __itr = reftes.find(chrom.first);
 	      if( __itr != reftes.end() )
 		{
 		  //Default to the greedy algo of Cridland et al.
 		  if( pars.greedy )
 		    {
-		      mTE.insert(name);
+		      mTE.insert(name.first);
 		    }
 		  //Else, require that an M read overlap a TE
 		  else if( find_if(__itr->second.cbegin(),
 				   __itr->second.cend(),
 				   [&](const teinfo & __t) {
-				     return ( (start >= __t.start() && start <= __t.stop()) ||
-					      (stop >= __t.start() && stop <= __t.stop()) );
+				     return ( (alndata.start >= __t.start() && alndata.start <= __t.stop()) ||
+					      (alndata.stop >= __t.start() && alndata.stop <= __t.stop()) );
 				   }) != __itr->second.cend() )
 		    {
 		      //Then read hits a known TE
-		      mTE.insert(name);
+		      mTE.insert(name.first);
 		    }
 		}
+	      //else
+	      //cerr <<'|'<< chrom.first <<'|'<< " not found\n";
 	    }
 	}
       while(!gzeof(gzin));
     }
-
+  cerr << "UMMread = " << UMMread << ' ' << lmapq << ' ' << lchrom << ' '
+       << lstart << ' ' << lstop << ' ' << lstrand << '\n';
   gzclose(gzin);
 
   //Now, get the Unique reads corresponding to TE-hitting M reads
@@ -221,30 +260,60 @@ unordered_set<string> procUMM(const params & pars,
       exit(1);
     }
 
+  UMMread = 0;
   do
     {
-      auto line = IOhelp::gzreadline(gzin);
-      if(!line.second) break;
-      istringstream in(line.first);
-      string name,chrom;
-      unsigned mapq,start,stop,strand;
-      //Only parse what we need to
-      in >> name >> mapq >> chrom >> start >> stop >> strand >> ws;
-      if( reftes.empty() || (!reftes.empty() && mTE.find(name) != mTE.end()) )
+      auto name = gzreadCstr( gzin );
+      if(gzeof(gzin))break;
+      if( name.second <= 0 ) 
 	{
-	  auto itr = data->find(chrom);
+	  cerr << name.first << '\n';
+	  cerr << "Error: gzread error at line "
+	       << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      //      cerr << name.first<<'\n';
+      auto chrom = gzreadCstr( gzin );
+      if( chrom.second <= 0 ) 
+	{
+	  cerr << "Error: gzread error at line "
+	       << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      alnInfo alndata(gzin);
+      lstart = alndata.start;
+      lstop = alndata.stop;
+	  lchrom = chrom.first;
+	  lstrand = int32_t(alndata.strand);
+	  lmapq = int32_t(alndata.mapq);
+      ++UMMread;
+      //cerr << name.first << '|' << chrom.first<<'|'<< alndata.start << '|' << alndata.stop << '|'
+      //<< int(alndata.mapq) << '\n';
+      //auto line = IOhelp::gzreadline(gzin);
+      //if(!line.second) break;
+      //istringstream in(line.first);
+      //string name,chrom;
+      //unsigned mapq,start,stop,strand;
+      //Only parse what we need to
+      //in >> name >> mapq >> chrom >> start >> stop >> strand >> ws;
+      if( reftes.empty() || (!reftes.empty() && mTE.find(name.first) != mTE.end()) )
+	{
+	  auto itr = data->find(chrom.first);
 	  if( itr == data->end() )
 	    {
-	      data->insert(make_pair(chrom,vector<pair<unsigned,unsigned> >(1,make_pair(start,strand))));
+	      data->insert(make_pair(chrom.first,vector<puu>(1,make_pair(alndata.start,alndata.strand))));
 	    }
 	  else
 	    {
-	      itr->second.push_back(make_pair(start,strand));
+	      itr->second.push_back(make_pair(alndata.start,alndata.strand));
 	    }
 	}
     }
   while(!gzeof(gzin));
-
+  cerr << "UMUread = " << UMMread << ' ' << ' ' << lmapq << ' ' << lchrom << ' '
+       << lstart << ' ' << lstop << ' ' << lstrand << '\n';
   gzclose(gzin);
   return mTE;
 }

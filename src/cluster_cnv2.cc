@@ -28,9 +28,9 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <Sequence/IOhelp.hpp>
+//#include <Sequence/IOhelp.hpp>
 #include <zlib.h>
-
+#include <intermediateIO.hpp>
 using namespace std;
 
 struct linkeddata
@@ -108,75 +108,95 @@ void read_data_details(putCNVs & raw_div,
 		       const unsigned & max_mm,
 		       const unsigned & max_gap)
 {
-  string chrom,chrom2,pairname;
-  unsigned mqual,strand,mm,gap,
-    mqual2,strand2,mm2,gap2;
+  // string chrom,chrom2,pairname;
+  // unsigned mqual,strand,mm,gap,
+  //   mqual2,strand2,mm2,gap2;
 
-  int start,stop,start2,stop2;
-  std::string type,type2;
-
+  // int start,stop,start2,stop2;
+  // std::string type,type2;
+  char type[4];
+  type[3]='\0';
   do
     {
       //Very lazy input method...
-      auto data = Sequence::IOhelp::gzreadline(lin);
-      if(!data.second) break;
-      istringstream pdata(data.first);
-      pdata >> pairname
-	    >> mqual >> chrom >> start >> stop >> strand >> mm >> gap >> type
-	    >> mqual2 >> chrom2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
-
-      if( mqual >= min_mqual && mqual2 >= min_mqual &&
-	  mm <= max_mm && gap <= max_gap &&
-	  mm2 <= max_mm && gap2 <= max_gap )
+      // auto data = Sequence::IOhelp::gzreadline(lin);
+      // if(!data.second) break;
+      // istringstream pdata(data.first);
+      // pdata >> pairname
+      // 	    >> mqual >> chrom >> start >> stop >> strand >> mm >> gap >> type
+      // 	    >> mqual2 >> chrom2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
+      auto name = gzreadCstr(lin);
+      if(gzeof(lin))break;
+      auto chrom = gzreadCstr(lin);
+      if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
 	{
-	  if(type == "DIV")
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      auto chrom2 = gzreadCstr(lin);
+      if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      alnInfo read1(lin),read2(lin);
+      if( read1.mapq >= min_mqual && read1.mapq >= min_mqual &&
+	  read1.mm <= max_mm && read1.ngap <= max_gap &&
+	  read2.mm <= max_mm && read2.ngap <= max_gap )
+	{
+	  if(string(type) == "DIV")
 	    {
-	      if ( unique_positions(raw_div[chrom],
-				    (strand==0) ? start2 : start,
-				    (strand==0) ? start : start2) )
+	      if ( unique_positions(raw_div[chrom.first],
+				    (read1.strand==0) ? read2.start : read1.start,
+				    (read1.strand==0) ? read1.start : read2.start) )
 		{
-		  assert( (strand==0) ? (strand2 == 1) : (strand == 1) );
-		  raw_div[chrom].push_back( linkeddata( (strand==0) ? start2 : start,
-							(strand==0) ? stop2 : stop,
-							(strand==0) ? start : start2,
-							(strand==0) ? stop : stop2,
-							pairname,1,0 ) );
+		  assert( (read1.strand==0) ? (read2.strand == 1) : (read1.strand == 1) );
+		  raw_div[chrom.first].push_back( linkeddata( (read1.strand==0) ? read2.start : read1.start,
+							      (read1.strand==0) ? read2.stop : read1.stop,
+							      (read1.strand==0) ? read1.start : read2.start,
+							      (read1.strand==0) ? read1.stop : read2.stop,
+							      name.first,1,0 ) );
 		}
 	    }
-	  else if (type == "PAR")
+	  else if (string(type) == "PAR")
 	    {
-	      if ( unique_positions(raw_par[chrom],
-				    (start<start2) ? start : start2,
-				    (start<start2) ? start2 : start) )
+	      if ( unique_positions(raw_par[chrom.first],
+				    (read1.start<read2.start) ? read1.start : read2.start,
+				    (read1.start<read2.start) ? read2.start : read1.start) )
 		{
-		  raw_par[chrom].push_back( linkeddata( (start<start2) ? start : start2,
-							(start<start2) ? stop : stop2,
-							(start<start2) ? start2 : start,
-							(start<start2) ? stop2 : stop,
-							pairname,
-							(start<start2) ? strand : strand2,
-							(start<start2) ? strand2 : strand ));
+		  raw_par[chrom.first].push_back( linkeddata( (read1.start<read2.start) ? read1.start : read2.start,
+							      (read1.start<read2.start) ? read1.stop : read2.stop,
+							      (read1.start<read2.start) ? read2.start : read1.start,
+							      (read1.start<read2.start) ? read2.stop : read1.stop,
+							      name.first,
+							      (read1.start<read2.start) ? read1.strand : read2.strand,
+							      (read1.start<read2.start) ? read2.strand : read1.strand ));
 		}
 	    }
-	  else if (type == "UL")
+	  else if (string(type) == "UNL")
 	    {
-	      if(chrom==chrom2)
-		{
-		  cerr << chrom << ' ' <<chrom2 << '\n';
-		  cerr << data.first << '\n';
-		}
-	      assert(chrom != chrom2);
+	      // if(chrom.first==chrom2.first)
+	      // 	{
+	      // 	  cerr << chrom << ' ' <<chrom2 << '\n';
+	      // 	  cerr << data.first << '\n';
+	      // 	}
+	      assert(chrom.first != chrom2.first);
 	      if( chrom > chrom2 )
 		{
 		  swap(chrom,chrom2);
-		  swap(start,start2);
-		  swap(stop,stop2);
-		  swap(strand,strand2);
+		  swap(read1,read2);
+		  // swap(start,read2.start);
+		  // swap(stop,read2.stop);
+		  // swap(strand,strand2);
 		}
-	      if ( unique_positions(raw_ul[chrom][chrom2],start,start2) )
+	      if ( unique_positions(raw_ul[chrom.first][chrom2.first],read1.start,read2.start) )
 		{
-		  raw_ul[chrom][chrom2].push_back( linkeddata(start,stop,start2,stop2,
-							      pairname,strand,strand2) );
+		  raw_ul[chrom.first][chrom2.first].push_back( linkeddata(read1.start,read1.stop,
+									  read2.start,read2.stop,
+									  name.first,
+									  read1.strand,read2.strand) );
 		}
 	    }
 #ifndef NDEBUG
