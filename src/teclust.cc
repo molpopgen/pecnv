@@ -177,9 +177,6 @@ unordered_set<string> procUMM(const params & pars,
 
   unordered_set<string> mTE; //"M" reads that map to a known TE in the refernce.  
 
-  unsigned UMMread = 0;
-  int32_t lstart=0,lstop=0,lmapq=0,lstrand=0;
-  string lchrom;
   if (!reftes.empty() )
     {
       do
@@ -202,12 +199,6 @@ unordered_set<string> procUMM(const params & pars,
 	      exit(1);
 	    }
 	  alnInfo alndata(gzin);
-	  lstart=alndata.start;
-	  lstop=alndata.stop;
-	  lchrom = chrom.first;
-	  lstrand = int32_t(alndata.strand);
-	  lmapq = int32_t(alndata.mapq);
-	  ++UMMread;
 	  //cerr << name.first << ' ' << chrom.first << ' ' << alndata.start << ' ' << alndata.stop << ' ' << int(alndata.mapq) << '\n';
 	  // auto line = IOhelp::gzreadline(gzin);
 	  // if(!line.second) break;
@@ -246,8 +237,6 @@ unordered_set<string> procUMM(const params & pars,
 	}
       while(!gzeof(gzin));
     }
-  cerr << "UMMread = " << UMMread << ' ' << lmapq << ' ' << lchrom << ' '
-       << lstart << ' ' << lstop << ' ' << lstrand << '\n';
   gzclose(gzin);
 
   //Now, get the Unique reads corresponding to TE-hitting M reads
@@ -260,7 +249,6 @@ unordered_set<string> procUMM(const params & pars,
       exit(1);
     }
 
-  UMMread = 0;
   do
     {
       auto name = gzreadCstr( gzin );
@@ -283,12 +271,6 @@ unordered_set<string> procUMM(const params & pars,
 	  exit(1);
 	}
       alnInfo alndata(gzin);
-      lstart = alndata.start;
-      lstop = alndata.stop;
-	  lchrom = chrom.first;
-	  lstrand = int32_t(alndata.strand);
-	  lmapq = int32_t(alndata.mapq);
-      ++UMMread;
       //cerr << name.first << '|' << chrom.first<<'|'<< alndata.start << '|' << alndata.stop << '|'
       //<< int(alndata.mapq) << '\n';
       //auto line = IOhelp::gzreadline(gzin);
@@ -312,8 +294,6 @@ unordered_set<string> procUMM(const params & pars,
 	}
     }
   while(!gzeof(gzin));
-  cerr << "UMUread = " << UMMread << ' ' << ' ' << lmapq << ' ' << lchrom << ' '
-       << lstart << ' ' << lstop << ' ' << lstrand << '\n';
   gzclose(gzin);
   return mTE;
 }
