@@ -151,11 +151,11 @@ The primary output from _pecnv.sh_ is the following:
 
 * $ODIR/$BAM.div.gz
 * $ODIR/$BAM.par.gz
-* $ODIR/$BAM.ul.gz
+* $ODIR/$BAM.unl.gz
 
 Where $ODIR is the value passed to the -o option and $BAM is the bam file name.
 
-The first three files in the above list correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes, respectively.  See Figure 2 of [Cridland _et al._ 2010](http://gbe.oxfordjournals.org/content/2/83.full) for a figure representing these three mapping types.
+The first three files in the above list correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes ("unlinked"), respectively.  See Figure 2 of [Cridland _et al._ 2010](http://gbe.oxfordjournals.org/content/2/83.full) for a figure representing these three mapping types.
 
 The format of the output files is as follows:
 
@@ -173,6 +173,10 @@ The format of the output files is as follows:
 FOr the above, all references to positions are with respect to a 1-offset coordinate system.  (In other words, 1 is the first position on a contig.)
 
 For all referencs to "strand" in the above, 0 = plus, 1 = minus.
+
+###What does the output mean?
+
+If you are working in a system with an incomplete genome, then reads mapping to differnt contigs should treated with some caution, as you cannot assume that you know the true mapping relationship of those reads.
 
 ###Secondary output files
 
