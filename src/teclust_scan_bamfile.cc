@@ -43,6 +43,7 @@ void scan_bamfile(const params & p,
   auto lookup = make_lookup(reader);
 
   auto firstREC = reader.tell();
+  unordered_set<string> RPlocal;
   while(! reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
@@ -97,7 +98,8 @@ void scan_bamfile(const params & p,
 			}
 		      if(OK)
 			{
-			  readPairs->insert( n );
+			  //readPairs->insert( n );
+			  RPlocal.insert(n);
 			}
 		    }
 		}
@@ -128,7 +130,8 @@ void scan_bamfile(const params & p,
 	  /*
 	    Note: Julie's script does not check that these reads map uniquely.
 	  */
-	  if( readPairs->find(n) != readPairs->end() )
+	  //if( readPairs->find(n) != readPairs->end() )
+	  if( RPlocal.find(n) != RPlocal.end() && readPairs->find(n) == readPairs->end() )
 	    {
 	      int32_t start = b.pos(),stop= b.pos() + alignment_length(b) - 1;
 	      auto CHROM = refTEs.find(itr->second);
