@@ -24,11 +24,9 @@
 using namespace std;
 using namespace Sequence;
 
-// DEFINITIONS OF DATA TYPES
 using puu = pair<unsigned,unsigned>;
 
 const unsigned UMAX = std::numeric_limits<unsigned>::max();
-//using refTEcont = std::map<string,std::vector<teinfo> >;
 refTEcont read_refdata( const params & p );
 unordered_set<string> procUMM(const params & pars,
 			      const refTEcont & reftes,
@@ -37,17 +35,11 @@ void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
 		    const refTEcont & reftes);
-//OLD
-
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
 		   const unsigned & INSERTSIZE, const unsigned & MDIST );
 void reduce_ends( vector<cluster> & clusters,
 		  const unsigned & INSERTSIZE );
-// void output_results(ostringstream & out,
-// 		    const vector<pair<cluster,cluster> > & clusters, 
-// 		    const string & chrom_label, 
-// 		    const vector< pair<unsigned,unsigned> > & ref_te_chromo);
 
 int main( int argc, char ** argv )
 {
@@ -424,8 +416,6 @@ void output_results( ostringstream & out,
 		     const string & chrom_label , 
 		     const refTEcont & reftes )
 {
-  int32_t mindist = -1;
-  int withinTE = -1;
   out.flush();
 
   auto closest_plus = [](const teinfo & __t,
@@ -440,9 +430,18 @@ void output_results( ostringstream & out,
       return (__t.start() <= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
     };
 
+  auto within = [](const teinfo & __t, const unsigned & start, const unsigned & stop)
+    {
+      bool A = start >= __t.start() && start <= __t.stop();
+      bool B = stop>= __t.start() && stop <= __t.stop();
+      return A||B;
+    };
+
   auto refItr = reftes.find(chrom_label);
   for(unsigned i=0;i<clusters.size();++i)
     {
+      int32_t mindist = -1;
+      int withinTE = -1;
       out.flush();
       out << chrom_label << '\t'
 	  << clusters[i].first.nreads << '\t'
@@ -458,69 +457,22 @@ void output_results( ostringstream & out,
 	{
 	  out << clusters[i].first.positions.first + 1 << '\t'
 	      << clusters[i].first.positions.second + 1 << '\t';
-	  // mind = find_if(ref_te_chromo.begin(),
-	  // 		 ref_te_chromo.end(),
-	  // 		 [&]( const pair<unsigned,unsigned> & lhs ) {
-	  // 		   //This is the old closest_plus function object from 0.1.0
-	  // 		   //Finds the closest TE in the reference 3' of this position
-	  // 		   const unsigned rhs = clusters[i].first.positions.second;
-	  // 		   return ( lhs.first >= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-	  // 		 });
-	  mindist = -1;
 	  withinTE = -1;
 	  if(!reftes.empty())
 	    {
 	      auto mind = find_if( refItr->second.cbegin(), refItr->second.cend(),
 				   bind(closest_plus,placeholders::_1,clusters[i].first.positions.second) );
-	      // [&](const teinfo & __t) {
-	      // 	 const unsigned rhs = clusters[i].first.positions.second;
-	      // 	 return (chrom_label == __t.chrom && ( __t.start >= rhs || ( rhs >= __t.start && rhs <= __t.stop ) ));
-	      // });
-	      if(mind != refItr->second.end())//ref_te_chromo.end())
+	      if(mind != refItr->second.end())
 		{
 		  mindist = (mind->start() < clusters[i].first.positions.first) ?
 		    clusters[i].first.positions.first-mind->start() : 
 		    mind->start() - clusters[i].first.positions.first;
 		}
-	    
-	      // withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-	      // 		       [&](const pair<unsigned,unsigned> & refTE) {
-	      // 			 return clusters[i].first.positions.first >= refTE.first ||
-	      // 			 clusters[i].first.positions.first <= refTE.second;
-	      // 		       }) != ref_te_chromo.end() ||
-	      // 		       //bind2nd(within(),clusters[i].first.positions.first)) != ref_te_chromo.end() ||
-	      // 	       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-	      // 		       [&](const pair<unsigned,unsigned> & refTE) {
-	      // 			 return clusters[i].first.positions.second >= refTE.first || 
-	      // 			 clusters[i].first.positions.second <= refTE.second;
-	      // 		       })
-	      // 		       //bind2nd(within(),clusters[i].first.positions.second)) 
-	      // 	       != ref_te_chromo.end() );
 	      withinTE = reftes.empty() ? false : ( find_if(refItr->second.cbegin(),refItr->second.cend(),
-							    [&](const teinfo & __t) {
-							      bool B = (clusters[i].first.positions.first >= __t.start() && clusters[i].first.positions.first <= __t.stop());
-							      bool C = (clusters[i].first.positions.second >= __t.start() && clusters[i].first.positions.second <= __t.stop());
-							      return (B||C);
-							      /*
-								return __t.chrom == chrom_label &&
-								((clusters[i].first.positions.first >= __t.start ||
-								clusters[i].first.positions.first <= __t.stop) ||
-								(clusters[i].first.positions.second >= __t.start ||
-								clusters[i].first.positions.second <= __t.stop));
-							      */
-							    }) != refItr->second.cend() );
+							    bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
+						    != refItr->second.cend() );
 	    }
 	  out << mindist << '\t' << withinTE << '\t';	  
-	  // if (mind != refItr->second.end())//ref_te_chromo.end())
-	  //   {
-	  //     out << mindist << '\t';
-	  //   }
-	  // else
-	  //   {
-	  //     out << "-1\t";
-	  //   }
-	  //out << withinTE << '\t';
-	  //out << ((!reftes.empty())?int(withinTE):-1) << '\t';
 	}
       if( clusters[i].second.positions.first == UMAX )
 	{
@@ -533,16 +485,6 @@ void output_results( ostringstream & out,
 	{
 	  out << clusters[i].second.positions.first + 1  << '\t'
 	      << clusters[i].second.positions.second + 1 << '\t';
-	  /*
-	    mindr = find_if(ref_te_chromo.rbegin(),
-	    ref_te_chromo.rend(),
-	    //This is the old closest_minus from 0.1.0
-	    //Finds the closest reference TE 5' of this position
-	    [&](const pair<unsigned,unsigned> & lhs) {
-	    const unsigned rhs = clusters[i].second.positions.first;
-	    return ( lhs.second <= rhs || ( rhs >= lhs.first && rhs <= lhs.second ) );
-	    });
-	  */
 	  mindist = -1;
 	  withinTE = -1;
 	  if(!reftes.empty())
@@ -550,55 +492,16 @@ void output_results( ostringstream & out,
 	      auto mindr = find_if(refItr->second.crbegin(),
 				   refItr->second.crend(),
 				   bind(closest_minus,placeholders::_1,clusters[i].second.positions.first));
-	      /*
-		[&](const teinfo __t){
-		const unsigned rhs = clusters[i].second.positions.first;
-		return chrom_label == __t.chrom &&
-		(__t.stop <= rhs || ( rhs >= __t.start && rhs <= __t.stop ));
-		});
-	      */
-	      if(mindr != refItr->second.crend())//ref_te_chromo.rend())
+	      if(mindr != refItr->second.crend())
 		{
 		  mindist = (mindr->start() < clusters[i].second.positions.second) ? 
 		    clusters[i].second.positions.second-mindr->start() : mindr->start() - clusters[i].second.positions.second;
 		}
-	      // withinTE = ( find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-	      // 		       [&](const pair<unsigned,unsigned> & refTE) {
-	      // 			 return clusters[i].second.positions.second >= refTE.first ||
-	      // 			 clusters[i].second.positions.second <= refTE.second;
-	      // 		       })
-	      // 		       //bind2nd(within(),clusters[i].second.positions.second)) 
-	      // 	       != ref_te_chromo.end() ||
-	      // 	       find_if(ref_te_chromo.begin(),ref_te_chromo.end(),
-	      // 		       [&](const pair<unsigned,unsigned> & refTE) {
-	      // 			 return clusters[i].second.positions.first >= refTE.first ||
-	      // 			 clusters[i].second.positions.first <= refTE.second;
-	      // 		       })
-	      // 		       //bind2nd(within(),clusters[i].second.positions.first))
-	      // 	       != ref_te_chromo.end() );
 	      withinTE = (find_if(refItr->second.cbegin(),refItr->second.cend(),
-				  [&](const teinfo & __t) {
-				    //bool A = chrom_label == __t.chrom;
-				    bool B = (clusters[i].first.positions.first >= __t.start() && clusters[i].first.positions.first <= __t.stop());
-				    bool C = (clusters[i].first.positions.second >= __t.start() && clusters[i].first.positions.second <= __t.stop());
-				    return (B||C);
-				    // return chrom_label == __t.chrom &&
-				    // ((clusters[i].first.positions.first >= __t.start ||
-				    //   clusters[i].first.positions.first <= __t.stop) ||
-				    //  (clusters[i].first.positions.second >= __t.start ||
-				    //   clusters[i].first.positions.second <= __t.stop));
-				  }) != refItr->second.cend());
+				  bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
+			  != refItr->second.cend());
 	    }
 	  out << mindist << '\t' << withinTE << endl;
-	  // if (mindr != refItr->second.crend()) // ref_te_chromo.rend())
-	  //   {
-	  //     out << mindist << '\t';
-	  //   }
-	  // else
-	  //   {
-	  //     out << "-1\t";
-	  //   }
-	  // out << ((!reftes.empty())?int(withinTE):-1) << endl;
 	}
       out.flush();
     }
