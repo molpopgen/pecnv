@@ -46,7 +46,7 @@ In order, these files are:
 5. The insert site positions of 100 TEs that Julie Cridland randomly inserted into the reference genome
 6. Lane 1 of data simulated from the reference genome
 7. Lane 2 of data simulated from the reference genome
-8. Sequences of Dmel TEs in fasta format.
+8. Sequences of Drosophila TEs in fasta format.  This is the FlyBase file + sequences for P and FP mined from Genbank. (The Dmel reference is P-free, so these sequences are included to aid annotation.)
 To run the script:
 
 ```
