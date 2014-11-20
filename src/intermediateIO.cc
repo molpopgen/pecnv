@@ -1,7 +1,7 @@
 #include <intermediateIO.hpp>
 #include <Sequence/samfunctions.hpp>
 #include <cstring>
-//#include <iostream>
+
 using namespace std;
 using namespace Sequence;
 
@@ -15,7 +15,6 @@ int gzwriteCstr(gzFile of, const string & s)
   return rv1+rv2;
 }
 
-//pair<string,int> gzreadCstr( gzFile in )
 std::pair<std::string,int> gzreadCstr( gzFile in)
 {
   string s;
