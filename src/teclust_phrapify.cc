@@ -72,40 +72,40 @@ using ReadCollection = unordered_set<string>;
 using PhrapInput = vector< pair<pair< vector<Fasta>, vector<Fasta> >,
 				pair< vector<Fasta>, vector<Fasta> > > >;
 
-  auto Cfinder = [](const clusteredEvent & __cE,
-		    const bool & strand,
-		    const int32_t & pos,
-		    const unsigned & INSERTSIZE,
-		    const string & chrom,
-		    int * side)
+auto Cfinder = [](const clusteredEvent & __cE,
+		  const bool & strand,
+		  const int32_t & pos,
+		  const unsigned & INSERTSIZE,
+		  const string & chrom,
+		  int * side)
+{
+  if(__cE.chrom != chrom) return false;
+  if( !strand ) //if read is on + strand
     {
-      if(__cE.chrom != chrom) return false;
-      if( !strand ) //if read is on + strand
+      //If read is 5' of this cluster's end
+      if( pos < __cE.plast &&
+	  __cE.pfirst != -1 && __cE.plast != -1 &&
+	  ( abs(pos-__cE.pfirst) <= INSERTSIZE ||
+	    abs(pos-__cE.plast) <= INSERTSIZE ) )
 	{
-	  //If read is 5' of this cluster's end
-	  if( pos < __cE.plast &&
-	      __cE.pfirst != -1 && __cE.plast != -1 &&
-	      ( abs(pos-__cE.pfirst) <= INSERTSIZE ||
-		abs(pos-__cE.plast) <= INSERTSIZE ) )
-	    {
-	      *side = 0; //LEFT
-	      return true;
-	    }
+	  *side = 0; //LEFT
+	  return true;
 	}
-      else if (strand) //read is on - strand
+    }
+  else if (strand) //read is on - strand
+    {
+      //If read is 3' of this cluster's start
+      if( pos > __cE.mfirst &&
+	  __cE.mfirst != -1 && __cE.mlast != -1 &&
+	  ( abs(pos-__cE.mfirst) <= INSERTSIZE ||
+	    abs(pos-__cE.mlast) <= INSERTSIZE ) )
 	{
-	  //If read is 3' of this cluster's start
-	  if( pos > __cE.mfirst &&
-	      __cE.mfirst != -1 && __cE.mlast != -1 &&
-	      ( abs(pos-__cE.mfirst) <= INSERTSIZE ||
-		abs(pos-__cE.mlast) <= INSERTSIZE ) )
-	    {
-	      *side = 1; //RIGHT
-	      return true;
-	    }
+	  *side = 1; //RIGHT
+	  return true;
 	}
-      return false;
-    };
+    }
+  return false;
+};
 
 ReadCollection
 getRnames( const params & pars,
