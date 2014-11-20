@@ -27,7 +27,7 @@ exit
 fi
 
 ##Let's redo what run_TE_test_data.sh does, but with a different TE positions file
-teclust -b pecnv_output/pecnv_bamfile_sorted.bam -t TEtestData/TE_position_r5.1_KRT -o method1b.out.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99`
+teclust -b TEtestData/pecnv_output/pecnv_bamfile_sorted.bam -t TEtestData/TE_position_r5.1_KRT -o method1b.out.gz -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99`
 
 ##Method 2: using just the UMU/UMM output.  No TE annotation file, no bam file scanning
 teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99` -o method2.out.gz
