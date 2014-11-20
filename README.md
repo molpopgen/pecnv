@@ -19,7 +19,7 @@ This software also a C++ implementation of the transposable element (TE) detecti
 
 ##Tentative plan for future releases
 
-
+Bugfixes, etc.
 
 #Installation
 
