@@ -28,9 +28,9 @@
 #include <functional>
 #include <iostream>
 #include <limits>
-//#include <Sequence/IOhelp.hpp>
 #include <zlib.h>
 #include <intermediateIO.hpp>
+
 using namespace std;
 
 struct linkeddata
@@ -118,22 +118,9 @@ void read_data_details(putCNVs & raw_div,
   type[3]='\0';
   do
     {
-      //Very lazy input method...
-      // auto data = Sequence::IOhelp::gzreadline(lin);
-      // if(!data.second) break;
-      // istringstream pdata(data.first);
-      // pdata >> pairname
-      // 	    >> mqual >> chrom >> start >> stop >> strand >> mm >> gap >> type
-      // 	    >> mqual2 >> chrom2 >> start2 >> stop2 >> strand2 >> mm2 >> gap2 >> type2 >> ws;
       auto name = gzreadCstr(lin);
       if(gzeof(lin))break;
       auto chrom = gzreadCstr(lin);
-      if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
-	{
-	  cerr << "Error: gzread error on line " << __LINE__
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
       auto chrom2 = gzreadCstr(lin);
       if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
 	{
@@ -360,6 +347,9 @@ int main(int argc, char ** argv)
 			  clusters,&eventid );
 	}
     }
+  gzclose(parstream);
+  gzclose(ulstream);
+  gzclose(divstream);
 }
 
 bool unique_positions(const lvector & data,
