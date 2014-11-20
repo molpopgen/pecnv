@@ -318,3 +318,42 @@ The format of "tefile" is 3 columns:
 Start and stop have ranges (1,chromlen).  Start must always be less than stop, and the prorgram __does not__ check this!  Further, the program must end with a newline character, else the last line will not be read in.
 
 The "tefile" may be either plain text or gzipped text.
+
+For the record, the following commands are equivalent:
+
+```
+#Pass teclust a list of TE positions, but don't require that the contents of the umm file overlap those positions
+teclust -u umuFile -m ummFile -o outfile.gz -i `pecnv_insert_qtile mdistfile 0.99` -t tefile
+#Run the program as you would for an unannotated genome
+teclust -u umuFile -m ummFile -o outfile.gz -i `pecnv_insert_qtile mdistfile 0.99` 
+```
+
+The reason is that you're not asking the program to use the info in "tefile".
+
+###The Cridland _et al.__ 2013 approach
+
+To implement the procedure from this paper:
+
+```
+teclust -u umuFile -m ummFile -o outfile.gz -i `pecnv_insert_qtile mdistfile 0.99` -t tefile -b bamfile
+```
+
+The program will scan through the bamfile and look at all reads mapping to a known TE (unique or not), and use that info to augment the info in the umm/umu files.  This aids the detection of TE loci shared betweeen the sample and the reference because there are likely to be reads mapping uniquely to that specific element.
+
+You may add the --ummHitTE option to change the protocol to require that umm data hit annotated TEs.  However, that is not what we did in the papers.
+
+###Extracting reads for _de novo_ assembly
+
+If you specify a directory name with the --prhapdir option, teclust will make fasta and fasta.qual files that you may run through phrap.
+
+```
+teclust -u umuFile -m ummFile -o outfile.gz -i `pecnv_insert_qtile mdistfile 0.99` -t tefile -b bamfile --phrapdir phrapdir
+```
+
+If phrapdir does not exist, the program will create it for you.  Please be careful here: if phrapdir does exist (say from an earlier run of teclust), its contents will not be affected unless the program tries to write a new file with the same name as an existing file.  In that case, the existing file will be over-written.
+
+The file names in phrapdir have the format chrom.start.stop.[left|right].fasta and chrom.start.stop.[left|right].fasta.qual.  The left or right corresponds to the left or right cluster of a putative event.
+
+####Automating the _de novo_ assembly.
+
+If you want to assemble the events using phrap, you need a version of phrap >= 1.090518, which is what we used in the various papers.
