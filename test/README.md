@@ -35,6 +35,7 @@ TEtestData/line99_truth
 TEtestData/line99_1.fastq.gz
 TEtestData/line99_2.fastq.gz
 TEtestData/transposon_all.fasta
+TEtestData/TE_frequencies_r5.1_KRT
 ```
 
 In order, these files are:
@@ -47,6 +48,7 @@ In order, these files are:
 6. Lane 1 of data simulated from the reference genome
 7. Lane 2 of data simulated from the reference genome
 8. Sequences of Drosophila TEs in fasta format.  This is the FlyBase file + sequences for P and FP mined from Genbank. (The Dmel reference is P-free, so these sequences are included to aid annotation.)
+9. The output of the one-liner shown below.  Same formate as TE_position_r5.1
 
 The TE_position_r5.1 file is a list of regions in the reference genome identified via blast searches to be similar to >= 75% of a sequence in transposon_all.fasta.  This is the file used in the Cridland _et al.__ work.
 
