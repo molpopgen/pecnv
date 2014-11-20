@@ -121,7 +121,19 @@ void read_data_details(putCNVs & raw_div,
       auto name = gzreadCstr(lin);
       if(gzeof(lin))break;
       auto chrom = gzreadCstr(lin);
+      if( chrom.second <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
       auto chrom2 = gzreadCstr(lin);
+      if( chrom2.second <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
       if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
 	{
 	  cerr << "Error: gzread error on line " << __LINE__
