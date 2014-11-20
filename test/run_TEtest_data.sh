@@ -60,7 +60,7 @@ u99=`pecnv_insert_qtile pecnv_output/pecnv_bamfile.mdist.gz 0.99`
 ##Run teclust
 teclust -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1 -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir
 
-##If we have the right stuff on the system, assemble in parallel using phra
+##If we have the right stuff on the system, assemble in parallel using phrap
 CANASSEMBLE=1
 for needed in parallel phrap
 do
