@@ -80,3 +80,5 @@ What the script does:
 3. Run pecnv.sh
 4. Run teclust on the output of the pecnv.sh pipeline using the Cridland et al. method
 5. If phrap and GNU parallel are available on your system, it'll perform _de novo_ assembly of lots of events
+
+Once you have run this script, you may be interested in running TEvariationsOnTheme.sh, which illustrates different ways to run teclust.
