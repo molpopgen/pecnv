@@ -99,135 +99,13 @@ void write_clusters( gzFile o,
 		     const cluster_container & clusters,
 		     unsigned * eventid );
 
-
-void read_data_details(putCNVs & raw_div,
-		       putCNVs & raw_par,
-		       map<string,putCNVs > & raw_ul,
-		       gzFile lin,
-		       const unsigned & min_mqual,
-		       const unsigned & max_mm,
-		       const unsigned & max_gap)
-{
-  // string chrom,chrom2,pairname;
-  // unsigned mqual,strand,mm,gap,
-  //   mqual2,strand2,mm2,gap2;
-
-  // int start,stop,start2,stop2;
-  // std::string type,type2;
-  char type[4];
-  type[3]='\0';
-  do
-    {
-      auto name = gzreadCstr(lin);
-      if(gzeof(lin))break;
-      auto chrom = gzreadCstr(lin);
-      if( chrom.second <= 0 )
-	{
-	  cerr << "Error: gzread error on line " << __LINE__
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-      auto chrom2 = gzreadCstr(lin);
-      if( chrom2.second <= 0 )
-	{
-	  cerr << "Error: gzread error on line " << __LINE__
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-      if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
-	{
-	  cerr << "Error: gzread error on line " << __LINE__
-	       << " of " << __FILE__ << '\n';
-	  exit(1);
-	}
-      alnInfo read1(lin),read2(lin);
-      if( read1.mapq >= min_mqual && read1.mapq >= min_mqual &&
-	  read1.mm <= max_mm && read1.ngap <= max_gap &&
-	  read2.mm <= max_mm && read2.ngap <= max_gap )
-	{
-	  if(string(type) == "DIV")
-	    {
-	      if ( unique_positions(raw_div[chrom.first],
-				    (read1.strand==0) ? read2.start : read1.start,
-				    (read1.strand==0) ? read1.start : read2.start) )
-		{
-		  assert( (read1.strand==0) ? (read2.strand == 1) : (read1.strand == 1) );
-		  raw_div[chrom.first].push_back( linkeddata( (read1.strand==0) ? read2.start : read1.start,
-							      (read1.strand==0) ? read2.stop : read1.stop,
-							      (read1.strand==0) ? read1.start : read2.start,
-							      (read1.strand==0) ? read1.stop : read2.stop,
-							      name.first,1,0 ) );
-		}
-	    }
-	  else if (string(type) == "PAR")
-	    {
-	      if ( unique_positions(raw_par[chrom.first],
-				    (read1.start<read2.start) ? read1.start : read2.start,
-				    (read1.start<read2.start) ? read2.start : read1.start) )
-		{
-		  raw_par[chrom.first].push_back( linkeddata( (read1.start<read2.start) ? read1.start : read2.start,
-							      (read1.start<read2.start) ? read1.stop : read2.stop,
-							      (read1.start<read2.start) ? read2.start : read1.start,
-							      (read1.start<read2.start) ? read2.stop : read1.stop,
-							      name.first,
-							      (read1.start<read2.start) ? read1.strand : read2.strand,
-							      (read1.start<read2.start) ? read2.strand : read1.strand ));
-		}
-	    }
-	  else if (string(type) == "UNL")
-	    {
-	      // if(chrom.first==chrom2.first)
-	      // 	{
-	      // 	  cerr << chrom << ' ' <<chrom2 << '\n';
-	      // 	  cerr << data.first << '\n';
-	      // 	}
-	      assert(chrom.first != chrom2.first);
-	      if( chrom > chrom2 )
-		{
-		  swap(chrom,chrom2);
-		  swap(read1,read2);
-		  // swap(start,read2.start);
-		  // swap(stop,read2.stop);
-		  // swap(strand,strand2);
-		}
-	      if ( unique_positions(raw_ul[chrom.first][chrom2.first],read1.start,read2.start) )
-		{
-		  raw_ul[chrom.first][chrom2.first].push_back( linkeddata(read1.start,read1.stop,
-									  read2.start,read2.stop,
-									  name.first,
-									  read1.strand,read2.strand) );
-		}
-	    }
-#ifndef NDEBUG
-	  else
-	    {
-	      abort();
-	    }
-#endif
-	}
-    } while(!gzeof(lin));
-}
-
-void read_data( putCNVs & raw_div,
-		putCNVs & raw_par,
-		map<string,putCNVs > & raw_ul,
-		const char * left,
-		const unsigned & min_mqual,
-		const unsigned & max_mm,
-		const unsigned & max_gap)
-{
-  gzFile input = gzopen(left,"r");
-  if(input == NULL) {
-    cerr << "Error: could not open "
-	 << left
-	 << " for reading\n";
-    exit(1);
-  }
-  read_data_details( raw_div,raw_par,raw_ul , input, min_mqual,max_mm,max_gap );
-  gzclose(input);
-}
-		
-
+void read_data(putCNVs & raw_div,
+	       putCNVs & raw_par,
+	       map<string,putCNVs > & raw_ul,
+	       const char * filename,
+	       const unsigned & min_mqual,
+	       const unsigned & max_mm,
+	       const unsigned & max_gap);
 
 int main(int argc, char ** argv)
 {
@@ -364,6 +242,111 @@ int main(int argc, char ** argv)
   gzclose(divstream);
 }
 
+void read_data(putCNVs & raw_div,
+	       putCNVs & raw_par,
+	       map<string,putCNVs > & raw_ul,
+	       const char * filename,
+	       const unsigned & min_mqual,
+	       const unsigned & max_mm,
+	       const unsigned & max_gap)
+{
+  gzFile lin = gzopen(filename,"r");
+  if(lin == NULL)
+    {
+      cerr << "Error: could not open "
+	   << filename
+	   << " for reading on line "
+	   << __LINE__ << " of "
+	   << __FILE__ << '\n';
+      exit(1);
+    }
+  char type[4];
+  type[3]='\0';
+  do
+    {
+      auto name = gzreadCstr(lin);
+      if(gzeof(lin))break;
+      auto chrom = gzreadCstr(lin);
+      if( chrom.second <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      auto chrom2 = gzreadCstr(lin);
+      if( chrom2.second <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      if( gzread(lin,&type[0],3*sizeof(char)) <= 0 )
+	{
+	  cerr << "Error: gzread error on line " << __LINE__
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      alnInfo read1(lin),read2(lin);
+      if( read1.mapq >= min_mqual && read1.mapq >= min_mqual &&
+	  read1.mm <= max_mm && read1.ngap <= max_gap &&
+	  read2.mm <= max_mm && read2.ngap <= max_gap )
+	{
+	  if(string(type) == "DIV")
+	    {
+	      if ( unique_positions(raw_div[chrom.first],
+				    (read1.strand==0) ? read2.start : read1.start,
+				    (read1.strand==0) ? read1.start : read2.start) )
+		{
+		  assert( (read1.strand==0) ? (read2.strand == 1) : (read1.strand == 1) );
+		  raw_div[chrom.first].push_back( linkeddata( (read1.strand==0) ? read2.start : read1.start,
+							      (read1.strand==0) ? read2.stop : read1.stop,
+							      (read1.strand==0) ? read1.start : read2.start,
+							      (read1.strand==0) ? read1.stop : read2.stop,
+							      name.first,1,0 ) );
+		}
+	    }
+	  else if (string(type) == "PAR")
+	    {
+	      if ( unique_positions(raw_par[chrom.first],
+				    (read1.start<read2.start) ? read1.start : read2.start,
+				    (read1.start<read2.start) ? read2.start : read1.start) )
+		{
+		  raw_par[chrom.first].push_back( linkeddata( (read1.start<read2.start) ? read1.start : read2.start,
+							      (read1.start<read2.start) ? read1.stop : read2.stop,
+							      (read1.start<read2.start) ? read2.start : read1.start,
+							      (read1.start<read2.start) ? read2.stop : read1.stop,
+							      name.first,
+							      (read1.start<read2.start) ? read1.strand : read2.strand,
+							      (read1.start<read2.start) ? read2.strand : read1.strand ));
+		}
+	    }
+	  else if (string(type) == "UNL")
+	    {
+	      assert(chrom.first != chrom2.first);
+	      if( chrom > chrom2 )
+		{
+		  swap(chrom,chrom2);
+		  swap(read1,read2);
+		}
+	      if ( unique_positions(raw_ul[chrom.first][chrom2.first],read1.start,read2.start) )
+		{
+		  raw_ul[chrom.first][chrom2.first].push_back( linkeddata(read1.start,read1.stop,
+									  read2.start,read2.stop,
+									  name.first,
+									  read1.strand,read2.strand) );
+		}
+	    }
+#ifndef NDEBUG
+	  else
+	    {
+	      abort();
+	    }
+#endif
+	}
+    } while(!gzeof(lin));
+  gzclose(lin);
+}
+
 bool unique_positions(const lvector & data,
 		      const unsigned & start,
 		      const unsigned & start2)
@@ -378,39 +361,6 @@ bool unique_positions(const lvector & data,
     }
   return true;
 }
-
-/*
-  OLD VERSION, USED IN DGRP
-bool pair_should_cluster( lvector::const_iterator & pair,
-			  vector<lvector::const_iterator> & cluster,
-			  const unsigned & mdist)
-{
-  for( unsigned i = 0 ; i < cluster.size() ; ++i )
-    {
-      if( pair->strand1 == cluster[i]->strand1
-	  && pair->strand2 == cluster[i]->strand2 )
-	{
-	  if ( (max(pair->a,cluster[i]->a)-min(pair->a,cluster[i]->a) <= mdist || //a1 vs a2
-		max(pair->a,cluster[i]->aS)-min(pair->a,cluster[i]->aS) <= mdist ||// a1 vs aS2
-		max(pair->aS,cluster[i]->a)-min(pair->aS,cluster[i]->a) <= mdist ||// aS1 vs a2
-		max(pair->aS,cluster[i]->aS)-min(pair->aS,cluster[i]->aS) <= mdist )//as1 vs aS2
-	       &&
-	       (max(pair->b,cluster[i]->b)-min(pair->b,cluster[i]->b) <= mdist ||//b1 vs b2
-		max(pair->b,cluster[i]->bS)-min(pair->b,cluster[i]->bS) <= mdist ||//b1 vs bS2
-		max(pair->bS,cluster[i]->b)-min(pair->bS,cluster[i]->b) <= mdist ||//bS vs b2
-		max(pair->bS,cluster[i]->bS)-min(pair->bS,cluster[i]->bS) <= mdist ) )//bS vs bS2
-	    {
-	      return true;
-	    }
-	}
-      else
-	{
-	  return false;
-	}
-    }
-  return false;
-}
-*/
 
 unsigned mindist(const unsigned & st1,
 		 const unsigned & stp1,
@@ -562,7 +512,6 @@ void write_clusters( gzFile gzout,
 	<< min1 << '\t' << max1 << '\t'
 	<< chrom2 << '\t'
 	<< clusters[i][0]->strand2 << '\t'
-	//<< min2 << '\t' << max2 << '\t';
 	<< min2 << '\t' << max2 << '\t'
 	<< readnames << '\n';
       if(!gzwrite(gzout,o.str().c_str(),o.str().size()))
