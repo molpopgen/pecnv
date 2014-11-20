@@ -356,4 +356,20 @@ The file names in phrapdir have the format chrom.start.stop.[left|right].fasta a
 
 ####Automating the _de novo_ assembly.
 
-If you want to assemble the events using phrap, you need a version of phrap >= 1.090518, which is what we used in the various papers.
+If you want to assemble the events using [phrap](http://www.phrap.org), you need a version of phrap >= 1.090518, which is what we used in the various papers.  When we were doing the work for those papers, this version of phrap had to be specially requested from the authors and the "regular" distributed version would crash when run on short-read data.  Please be aware of what version you end up with, and be sure to get the right one.
+
+For many users, the easiest way to automate running phrap will be via [GNU Parallel](http://www.gnu.org/software/parallel/), which is a command-line tool for automating batch jobs.  I'd suggest that you look at the [tutorial](http://www.gnu.org/software/parallel/parallel_tutorial.html) for parallel in detail, as it is quite helpful.
+
+Here's one way to do it:
+
+```
+find phrapdir -name "*.fasta" | parallel phrap --jobs 8 --timeout 300 "phrap {} -vector_bound 0 -forcelevel 10 -minscore 10 -minmatch 10 -new_ace 2> {}.stderr > {}.stdout"
+```
+
+The command shown above does the following:
+
+1. Use [GNU find](http://linuxcommand.org/man_pages/find1.html) to get a list of all the fasta files make by teclust
+2. Use parallel to run up to 8 assemblies at a time (adjust this number for your own system's resources) and kill any job taking more than 300 seconds.
+3. Run phrap with the parameters -vector_bound 0 -forcelevel 10 -minscore 10 -minmatch 10 -new_ace on each of the fasta files
+
+The {} evaluate to each fasta file found in phrapdir.  Thus, the stderr and stdout streams from phrap are stored separately for each file.
