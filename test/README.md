@@ -47,6 +47,13 @@ In order, these files are:
 6. Lane 1 of data simulated from the reference genome
 7. Lane 2 of data simulated from the reference genome
 8. Sequences of Drosophila TEs in fasta format.  This is the FlyBase file + sequences for P and FP mined from Genbank. (The Dmel reference is P-free, so these sequences are included to aid annotation.)
+
+The TE_position_r5.1 file is a list of regions in the reference genome identified via blast searches to be similar to >= 75% of a sequence in transposon_all.fasta.  There are, however, lots of ways to make this file, such as RepeatMasker, etc.  One could also imagine other blastn-based criteria to take advantage of a known set of TE sequences.  For example, the following command will identify all regions in the reference genome hitting a sequence in transposon_all.fasta with an e-value of <= 1e-100 and then use BioConductor's [GenomicRanges](http://www.bioconductor.org/packages/release/bioc/html/GenomicRanges.html) and [data.table](http://cran.r-project.org/web/packages/data.table/index.html)'s "fread" to greedily reduce the overlaps in the blast output and create a new file:
+
+```
+blastn -db dmel-all-chromosome-r5.1_simplenames.fasta -query transposon_all.fasta -outfmt 6 -num_threads 8 -evalue 1e-100  | cut -f 1,2,9,10 | awk '{if ($3 > $4) printf ("%s\t%s\t%s\t%s\n",$1,$2,$4,$3); else print $0}' | sort -k2,2 -k3,3n | Rscript -e 'library(GenomicRanges);library(data.table);x=fread("cat /dev/stdin");gr=GRanges(seqnames=x$V2,ranges=IRanges(start=x$V3,end=x$V4));grr=as.data.frame(reduce(gr));write.table(cbind(as.character(grr$seqnames),grr$start,grr$end),file="TE_position_r5.1_KRT",row.names=F,col.names=F,quote=F)'
+```
+
 To run the script:
 
 ```
