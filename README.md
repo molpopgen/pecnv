@@ -194,7 +194,7 @@ The program process_readmappings creates the following files:
 
 The SAM files are really pseudo-SAM because they are quick-and dirty conversion of the binary BAM records, and have not been prettied up the way that samtools does.  However, they contain the same info in the same order.
 
-    For all of the below, strand = 0 or 1 for plus or minus, respectively.  All genomic positions start from 0, __not from 1__.
+For all of the below, strand = 0 or 1 for plus or minus, respectively.  All genomic positions start from 0, __not from 1__.
 
 The format of $ODIR/$BAM.cnv_mappings.csv.gz a gzipped file binary-format records describing unusual read mappings.  Note that this file is not human-readable.  The format of a single record is:
 
