@@ -373,3 +373,43 @@ The command shown above does the following:
 3. Run phrap with the parameters -vector_bound 0 -forcelevel 10 -minscore 10 -minmatch 10 -new_ace on each of the fasta files
 
 The {} evaluate to each fasta file found in phrapdir.  Thus, the stderr and stdout streams from phrap are stored separately for each file.
+
+You can then blast the contigs against a database of known TE sequences and use Julie Cridland's [TE annotation pipeline](https://github.com/ThorntonLab/Cridland2013AnnotPipeline) to process the output.  (The annotation methods may get merged into this project in the future.)
+
+##The output file
+
+This section documents the contents of the file created by the --outfile/-o option to teclust.
+
+###Background
+
+Fundamentally, teclust groups together reads on the same strand that fall into the following categories:
+
+* uniquely-mapping and their partners map to multiple genomic locations in the reference
+* uniquely-mapping and their partners map to multiple genomic locations in the reference, at least one of which hits an annotated TE
+* map near, but not in, an annotated TE, and their partners map within an annotated TE
+
+Thus, a cluster of these mapped reads on the plus strand are assumed to be 5' of a putative TE insertion that we would guess is close by.  Likewise, a cluster of reads on the minus strand are assumed to be 3' of a putative insertion.  Further, if we obtain a large number of reads in plus- and minus- strand clusters, we infer that we're flanking the insertion site, and the distance between the ends of these clusters is an estimate of the insertion site.
+
+Keeping this picture in mind will hopefully make the next section easier to understand.
+
+###The file contents
+
+The output file is gzipped text and contains a header line for easy processing using tools like R.  The columns are:
+
+1. chromo (string) = the chromosome
+2. nplus (int) = the number of read pairs on the left-hand side/plus strand of the event.
+3. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, columns 2 and 3 are the "coverage" in support of this event
+4. pfirst (int) = the first position of the left-hand cluster
+5. plast (int) = the last position of the left-hand cluster
+6. pdist (int) = the distance from the left-hand cluster to the first annotated TE 3' of the cluster
+7. pin (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
+8. mfirst (int) = the first position of the right-hand cluster
+9. mlast (int) = the last position of the right-hand cluster
+10. mdist (int) = the distance from the right-hand cluster to the first annotated TE 5' of the cluster
+11. min (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
+
+The following comments apply to this file:
+
+* positions start from 1
+* A value of -1 is used to represent "not applicable".  Old versions of this code used to output NA, which was fine when the file was read using R, but problematic when read using C/C++, etc.
+* Values of -1 may occur if: nplus and/or nminus equal 0.  The --tefile/-t option is not used, therfore pdist,pin,mdist, and min cannot be known.
