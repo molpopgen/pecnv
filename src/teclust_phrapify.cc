@@ -204,9 +204,11 @@ PhrapInput seqQual( const params & pars, const vector<clusteredEvent> & cEs,
 string baseName(const string & basedir,
 		const string & chrom,
 		const int32_t & first,
-		const int32_t & last )
+		const int32_t & last,
+		const short & side )
 {
-  string n = basedir + "/" + chrom + "." + to_string(first) + "." + to_string(last) + ".fasta";
+  string SIDE = (!side) ? ".left" : ".right";
+  string n = basedir + "/" + chrom + "." + to_string(first) + "." + to_string(last) + SIDE + ".fasta";
   return n;
 }
 
@@ -237,7 +239,7 @@ void output( const params & pars,
 		{
 		  assert( __c.pfirst != -1 && __c.plast != -1 );
 		  assert( __pi->first.first.size() == __pi->first.second.size() );
-		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.pfirst,__c.plast);
+		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.pfirst,__c.plast,0);
 		  string qualfilename = seqfilename + ".qual";
 		  write2file(seqfilename,__pi->first.first);
 		  write2file(qualfilename,__pi->first.second);
@@ -246,7 +248,7 @@ void output( const params & pars,
 		{
 		  assert( __c.mfirst != -1 && __c.mlast != -1 );
 		  assert( __pi->second.first.size() == __pi->second.second.size() );
-		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.mfirst,__c.mlast);
+		  string seqfilename = baseName(pars.phrapdir,__c.chrom,__c.mfirst,__c.mlast,1);
 		  string qualfilename = seqfilename + ".qual";
 		  write2file(seqfilename,__pi->second.first);
 		  write2file(qualfilename,__pi->second.second);
