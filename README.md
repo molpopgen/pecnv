@@ -100,7 +100,7 @@ The easiest way to use the programs will be to run the master script, _pecnv.sh_
 2. [samtools](http://samtools.sourceforge.net/)
 3. Rscript 
 
-If you are impatient, run the script run_test_data.sh.  It will download a reference genome, two lanes of Illumina data, and then go to town.  __Ironically, this script cannot be run on a compute node of the UCI HPC.  This is because the compute nodes are networked in such a way that they cannot link back to the main node using hostname resolution, and thus the wget commands fail.__
+If you are impatient, run the script run_test_data.sh, found in the test subdirectory of the source code repository.  It will download a reference genome, two lanes of Illumina data, and then go to town.  __Ironically, this script cannot be run on a compute node of the UCI HPC.  This is because the compute nodes are networked in such a way that they cannot link back to the main node using hostname resolution, and thus the wget commands fail.__
 
 ##Running the master script:
 
@@ -247,6 +247,8 @@ The main script, pecnv.sh expects a bamfile called PREFIX_sorted.bam, where PREF
 The Cridland et al. method is implemented in the program teclust, with some additional features.  The program is able to make use of TE annotations from an existing reference genome, if they are available.
 
 The minimal input for this program is the output of the pecnv.sh pipeline, which needs to be run first.  Specifically, the "um_u" and "um_m" files described above are needed.
+
+There is a test script in the test subdirectory of the source code repository.  See the README.md in that directory for more details.
 
 The usage information for the program is:
 
