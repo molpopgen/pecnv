@@ -374,7 +374,11 @@ The command shown above does the following:
 
 The {} evaluate to each fasta file found in phrapdir.  Thus, the stderr and stdout streams from phrap are stored separately for each file.
 
+Why the timeout?  For real data, the fasta files can get massive and the assemblies can take a very long time.  In the future, we will likely add an option to limit the number of reads in a file.  But for now, we have learned through experience that if an assembly doesn't go rather quickly, it takes a very long time.  You may have to tune the timeout duration for your system/data/etc.
+
 You can then blast the contigs against a database of known TE sequences and use Julie Cridland's [TE annotation pipeline](https://github.com/ThorntonLab/Cridland2013AnnotPipeline) to process the output.  (The annotation methods may get merged into this project in the future.)
+
+"Power userss" may prefer array jobs on a cluster to automate the assemblies, blasting, etc.
 
 ##The output file
 
