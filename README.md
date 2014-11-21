@@ -423,6 +423,7 @@ The output file is gzipped text and contains a header line for easy processing u
 The following comments apply to this file:
 
 * positions start from 1
+* The pfirst/plast and mfirst/mlast intervals are based on the alignment start positions of reads.  In other words, they correpond to the run of positions given by what would be in the fourth column of a SAM record.
 * A value of -1 is used to represent "not applicable".  Old versions of this code used to output NA, which was fine when the file was read using R, but problematic when read using C/C++, etc.
 * Values of -1 may occur if: nplus and/or nminus equal 0.  The --tefile/-t option is not used, therfore pdist,pin,mdist, and min cannot be known.
 
