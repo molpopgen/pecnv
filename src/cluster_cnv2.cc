@@ -103,9 +103,9 @@ void read_data(putCNVs & raw_div,
 	       putCNVs & raw_par,
 	       map<string,putCNVs > & raw_ul,
 	       const char * filename,
-	       const unsigned & min_mqual,
-	       const unsigned & max_mm,
-	       const unsigned & max_gap);
+	       const int8_t & min_mqual,
+	       const int16_t & max_mm,
+	       const int16_t & max_gap);
 
 int main(int argc, char ** argv)
 {
@@ -118,10 +118,10 @@ int main(int argc, char ** argv)
 	   << "structural_file1a structural_file1b ... structural_fileNa structural_fileNb\n";
       exit(0);
     }
-  const unsigned min_mqual = atoi(argv[argn++]);
-  const unsigned max_mm = atoi(argv[argn++]);
-  const unsigned max_gap = atoi(argv[argn++]);
-  const unsigned mdist = atoi(argv[argn++]);
+  const int8_t min_mqual = stoi(argv[argn++]);
+  const int16_t max_mm = stoi(argv[argn++]);
+  const int16_t max_gap = stoi(argv[argn++]);
+  const unsigned mdist = stoi(argv[argn++]);
   const char * divfile = argv[argn++];
   const char * parfile = argv[argn++];
   const char * ulfile = argv[argn++];
@@ -246,9 +246,9 @@ void read_data(putCNVs & raw_div,
 	       putCNVs & raw_par,
 	       map<string,putCNVs > & raw_ul,
 	       const char * filename,
-	       const unsigned & min_mqual,
-	       const unsigned & max_mm,
-	       const unsigned & max_gap)
+	       const int8_t & min_mqual,
+	       const int16_t & max_mm,
+	       const int16_t & max_gap)
 {
   gzFile lin = gzopen(filename,"r");
   if(lin == NULL)
