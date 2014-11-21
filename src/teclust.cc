@@ -529,6 +529,106 @@ void output_results( ostringstream & out,
     }
 }
 
+void output_results_bedpe( ostringstream & out,
+			   const vector<pair<cluster,cluster> > & clusters, 
+			   const string & chrom_label , 
+			   const refTEcont & reftes )
+{
+  out.flush();
+
+  auto closest_plus = [](const teinfo & __t,
+			 const int32_t & rhs)
+    {
+      return  (__t.start() >= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
+    };
+
+  auto closest_minus = [](const teinfo & __t,
+			  const int32_t & rhs)
+    {
+      return (__t.start() <= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
+    };
+
+  auto within = [](const teinfo & __t, const int32_t & start, const int32_t & stop)
+    {
+      bool A = start >= __t.start() && start <= __t.stop();
+      bool B = stop>= __t.start() && stop <= __t.stop();
+      return A||B;
+    };
+
+  auto refItr = reftes.find(chrom_label);
+  for(unsigned i=0;i<clusters.size();++i)
+    {
+      ostringstream xtra; //for the optional column
+      // out.flush();
+      // out << chrom_label << '\t'
+      // 	  << clusters[i].first.nreads << '\t'
+      // 	  << clusters[i].second.nreads << '\t';
+      if( clusters[i].first.positions.first == IMAX )
+	{
+	  //Chrom, start, stop, unknown.
+	  out << ".\t"
+	      << "-1\t"
+	      << "-1\t";
+	}
+      else
+	{
+	  out << chrom_label << '\t'
+	      << clusters[i].first.positions.first << '\t'
+	      << clusters[i].first.positions.second + 1 << '\t';
+	  int mindist = -1;
+	  int withinTE = -1;
+	  if(!reftes.empty())
+	    {
+	      auto mind = find_if( refItr->second.cbegin(), refItr->second.cend(),
+				   bind(closest_plus,placeholders::_1,clusters[i].first.positions.second) );
+	      if(mind != refItr->second.end())
+		{
+		  mindist = (mind->start() < clusters[i].first.positions.first) ?
+		    clusters[i].first.positions.first-mind->start() : 
+		    mind->start() - clusters[i].first.positions.first;
+		}
+	      auto __win = find_if(refItr->second.cbegin(),refItr->second.cend(),
+				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second));
+	      withinTE = ( __win != refItr->second.cend() );
+	    }
+	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';
+	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';	  
+	}
+      if( clusters[i].second.positions.first == IMAX )
+	{
+	  out << ".\t"
+	      << "-1\t"
+	      << "-1\t";
+	}
+      else
+	{
+	  out << chrom_label << '\t'
+	      << clusters[i].second.positions.first << '\t'
+	      << clusters[i].second.positions.second + 1 << '\t';
+	  int mindist = -1;
+	  int withinTE = -1;
+	  if(!reftes.empty())
+	    {
+	      auto mindr = find_if(refItr->second.crbegin(),
+				   refItr->second.crend(),
+				   bind(closest_minus,placeholders::_1,clusters[i].second.positions.first));
+	      if(mindr != refItr->second.crend())
+		{
+		  mindist = (mindr->start() < clusters[i].second.positions.second) ? 
+		    clusters[i].second.positions.second-mindr->start() : mindr->start() - clusters[i].second.positions.second;
+		}
+	      auto __win = find_if(refItr->second.cbegin(),refItr->second.cend(),
+				   bind(within,placeholders::_1,clusters[i].second.positions.first,clusters[i].second.positions.second));
+	      withinTE = (__win != refItr->second.cend());
+	    }
+	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
+	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
+	}
+      out << "event" << i << '\t';
+      out.flush();
+    }
+}
+
 void reduce_ends( vector<cluster> & clusters,
 		  const int32_t & INSERTSIZE )
 {
