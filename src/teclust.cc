@@ -490,9 +490,9 @@ void output_results( ostringstream & out,
 		    clusters[i].first.positions.first-mind->start() : 
 		    mind->start() - clusters[i].first.positions.first;
 		}
-	      withinTE = reftes.empty() ? false : ( find_if(refItr->second.cbegin(),refItr->second.cend(),
-							    bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
-						    != refItr->second.cend() );
+	      withinTE = ( find_if(refItr->second.cbegin(),refItr->second.cend(),
+				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
+			   != refItr->second.cend() );
 	    }
 	  out << mindist << '\t' << withinTE << '\t';	  
 	}
@@ -520,7 +520,7 @@ void output_results( ostringstream & out,
 		    clusters[i].second.positions.second-mindr->start() : mindr->start() - clusters[i].second.positions.second;
 		}
 	      withinTE = (find_if(refItr->second.cbegin(),refItr->second.cend(),
-				  bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
+				  bind(within,placeholders::_1,clusters[i].second.positions.first,clusters[i].second.positions.second))
 			  != refItr->second.cend());
 	    }
 	  out << mindist << '\t' << withinTE << endl;
