@@ -22,6 +22,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <cmath>
 #include <vector>
 #include <cassert>
 #include <algorithm>
@@ -98,6 +99,12 @@ void write_clusters( gzFile o,
 		     const string & chrom2,
 		     const cluster_container & clusters,
 		     unsigned * eventid );
+
+void write_clusters_bedpe( gzFile o,
+			   const string & chrom1,
+			   const string & chrom2,
+			   const cluster_container & clusters,
+			   unsigned * eventid );
 
 void read_data(putCNVs & raw_div,
 	       putCNVs & raw_par,
@@ -465,12 +472,11 @@ void reduce_clusters( cluster_container & clusters,
     }
 }
 
-//void write_clusters( filtering_ostream & o,
 void write_clusters( gzFile gzout,
-		     const string & chrom1,
-		     const string & chrom2,
-		     const cluster_container & clusters,
-		     unsigned * eventid )
+			   const string & chrom1,
+			   const string & chrom2,
+			   const cluster_container & clusters,
+			   unsigned * eventid )
 {
   for(unsigned i=0;i<clusters.size();++i)
     {
@@ -514,6 +520,67 @@ void write_clusters( gzFile gzout,
 	<< clusters[i][0]->strand2 << '\t'
 	<< min2 << '\t' << max2 << '\t'
 	<< readnames << '\n';
+      if(!gzwrite(gzout,o.str().c_str(),o.str().size()))
+	{
+	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
+	       << " of " << __FILE__ << '\n';
+	  exit(1);
+	}
+      ++(*eventid);
+    } 
+}
+
+void write_clusters_bedpe( gzFile gzout,
+			   const string & chrom1,
+			   const string & chrom2,
+			   const cluster_container & clusters,
+			   unsigned * eventid )
+{
+  for(unsigned i=0;i<clusters.size();++i)
+    {
+      //get the boundaries of each event
+      unsigned min1=numeric_limits<unsigned>::max(),max1=0,min2=numeric_limits<unsigned>::max(),max2=0;
+      string readnames;
+      for(unsigned j=0;j<clusters[i].size();++j)
+	{
+	  //The +1 here convert genomic positions to a [1,L] coordinate system
+	  min1 = min(min1,clusters[i][j]->a+1);
+	  max1 = max(max1,clusters[i][j]->aS+1);
+	  min2 = min(min2,clusters[i][j]->b+1);
+	  max2 = max(max2,clusters[i][j]->bS+1);
+	  ostringstream t;
+	  //The +1 here convert genomic positions to a [1,L] coordinate system
+	  t << ';' 
+	    << clusters[i][j]->a+1 << ',' 
+	    << clusters[i][j]->aS+1 << ','
+	    << clusters[i][j]->strand1 << ','
+	    << clusters[i][j]->b+1 << ',' 
+	    << clusters[i][j]->bS+1 << ','
+	    << clusters[i][j]->strand2;
+	  if ( readnames.empty() )
+	    {
+	      readnames += clusters[i][j]->readname;
+	    }
+	  else
+	    {
+	      readnames += "|";
+	      readnames += clusters[i][j]->readname;
+	    }
+	  readnames += t.str();
+	}
+      ostringstream o;
+      o << chrom1 << '\t'
+	<< (min1-1) << '\t'                                          //b/c start1 is zero-based
+	<< max1 << '\t'                                              //b/c start2 is one-based
+	<< chrom2 << '\t' 
+	<< (min2-1) << '\t'
+	<< max2 << '\t'
+	//The above are the minimal fields
+	<< "event" << *eventid << '\t'                               // "name"
+	<< log(clusters[i].size()) << '\t'                           // The score = ln(coverage)
+	<< ( (clusters[i][0]->strand1 == 0 ) ? '+' : '-' ) << '\t'   //strand1
+	<< ( (clusters[i][0]->strand2 == 0 ) ? '+' : '-' ) << '\t'   //strand2
+	<< readnames <<'\n';                                         //The reads are the optional column
       if(!gzwrite(gzout,o.str().c_str(),o.str().size()))
 	{
 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
