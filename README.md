@@ -332,6 +332,12 @@ teclust -u umuFile -m ummFile -o outfile.gz -i `pecnv_insert_qtile mdistfile 0.9
 
 The reason is that you're not asking the program to use the info in "tefile".
 
+####Comments on the TE input file
+
+For our published work, the TE input file was based on identifying regions of the genome with significant homology matches to at least 75% of the canonincal sequence for a known TE, based on the file transposon_sequence_set.embl.txt.gz from FlyBase.  That approach worked rather well.
+
+In the test data, I show how to quickly make a TE input file using a quick combo of blast and bedtools.  I'm able to find 99 out of the 100 simulated insertions in the test data using this file (see TEvariationVariationsOnTheme.sh in the test directory of this repo for command lines using my new input file with test data), compared to 85 out of 100 using the published pipeline.
+
 ###The Cridland _et al.__ 2013 approach
 
 To implement the procedure from this paper:
