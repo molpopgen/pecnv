@@ -421,7 +421,6 @@ void outputU( gzFile gzout,
   assert( ! r.flag().query_unmapped );
   assert( ! r.flag().mate_unmapped );
   string name = editRname(r.read_name());
-  ostringstream obuffer;
   auto REF = reader.ref_cbegin()+r.refid();
   if ( gzwriteCstr( gzout,name ) <= 0 )
     {
