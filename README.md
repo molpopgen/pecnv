@@ -19,7 +19,8 @@ This package also contains a C++ implementation of the transposable element (TE)
 
 ##Tentative plan for future releases
 
-Bugfixes, better documentation, etc.
+1. Bugfixes, better documentation, etc.
+2. Support for additional output files in BED format, for compatibility with other tools.
 
 #Installation
 
