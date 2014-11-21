@@ -44,7 +44,7 @@ In order to run the pecnv.sh script, you need the following tools on your system
 
 For the detection of putative transposable element insertions, the following programs are optional:
 
-* [phrap](http://www.phrap.org), version >= 1.09 (it must be compatible with short-read data)
+* [phrap](http://www.phrap.org), version >= 1.09 (it must be a version compatible with short-read data--see below for more about this)
 * [GNU parallel](http://www.gnu.org/software/parallel/)
 * [NCBI blast](http://blast.ncbi.nlm.nih.gov/Blast.cgi)
 
