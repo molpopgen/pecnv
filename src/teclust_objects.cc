@@ -26,7 +26,7 @@ teinfo::teinfo( int32_t __s, int32_t __st ) : pair<int32_t,int32_t>(__s,__st)
 {
 }
 
-cluster::cluster() : positions(make_pair(numeric_limits<unsigned>::max(),numeric_limits<unsigned>::max())),nreads(0)
+cluster::cluster() : positions(make_pair(numeric_limits<int32_t>::max(),numeric_limits<int32_t>::max())),nreads(0)
   {
   }
 
