@@ -356,6 +356,12 @@ If phrapdir does not exist, the program will create it for you.  Please be caref
 
 The file names in phrapdir have the format chrom.start.stop.[left|right].fasta and chrom.start.stop.[left|right].fasta.qual.  The left or right corresponds to the left or right cluster of a putative event.
 
+The behavior of collecting reads for _de novo_ assembly are affected by the following teclust options
+
+*-m/--minreads Only collect reads for events with at least 'm' reads for both the left AND the right cluster (this is based on the "pin" and "min" values -- see below in the section documenting the output file format)
+*-c/--closestTE Only collect reads for evetns at least 'c' base pairs away from an annotated TE.  The default value of -1 means all events will pass this test.  Using -c 1000 will require than an event be at least 1kb away from an annotated TE.  This is enforced by a comparison to the mdist and pdist fields in the output file (see below).  If there is no annotated TE information, using -c 0 or greater will result in no events being selected for assembly, because the mdist and pdist values will be set to -1 in this case (again, see below)
+*-a/--allEvents Pull reads for all events (_e.g._, novel events and TE insertions shared with the reference).  The default is putative novel insertions.  This is based on checking the "pin" and "min" fields for non-zero values in the output file.
+
 ####Automating the _de novo_ assembly.
 
 If you want to assemble the events using [phrap](http://www.phrap.org), you need a version of phrap >= 1.090518, which is what we used in the various papers.  When we were doing the work for those papers, this version of phrap had to be specially requested from the authors and the "regular" distributed version would crash when run on short-read data.  Please be aware of what version you end up with, and be sure to get the right one.
