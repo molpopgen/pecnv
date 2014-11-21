@@ -75,7 +75,7 @@ using PhrapInput = vector< pair<pair< vector<Fasta>, vector<Fasta> >,
 auto Cfinder = [](const clusteredEvent & __cE,
 		  const bool & strand,
 		  const int32_t & pos,
-		  const unsigned & INSERTSIZE,
+		  const int32_t & INSERTSIZE,
 		  const string & chrom,
 		  int * side)
 {
