@@ -101,15 +101,6 @@ struct output_files
   }
 };
 
-// vector< pair<char,unsigned> > parse_cigar(const string & cigar);
-
-// //No. mismatches
-// unsigned mm(const unsigned & nm,
-// 	    const vector< pair<char,unsigned> > & cigar_data);
-// //No. gaps
-// unsigned ngaps(const vector< pair<char,unsigned> > & cigar_data);
-// //Alignment length
-// unsigned alen(const vector< pair<char,unsigned> > & cigar_data);
 //Write U reads in U/P pair to files
 void outputU( gzFile gzout,
 	      gzFile gzoutSAM,
