@@ -287,7 +287,7 @@ void read_data(putCNVs & raw_div,
 	  exit(1);
 	}
       alnInfo read1(lin),read2(lin);
-      if( read1.mapq >= min_mqual && read1.mapq >= min_mqual &&
+      if( read1.mapq >= min_mqual && read2.mapq >= min_mqual &&
 	  read1.mm <= max_mm && read1.ngap <= max_gap &&
 	  read2.mm <= max_mm && read2.ngap <= max_gap )
 	{
