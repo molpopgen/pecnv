@@ -576,8 +576,8 @@ void write_clusters_bedpe( gzFile gzout,
 	<< (min2-1) << '\t'
 	<< max2 << '\t'
 	//The above are the minimal fields
-	<< "event" << *eventid << '\t'                               // "name"
-	<< log(clusters[i].size()) << '\t'                           // The score = ln(coverage)
+	<< "event" << *eventid << '\t'                               //"name"
+	<< log(clusters[i].size()) << '\t'                           //The score = ln(coverage)
 	<< ( (clusters[i][0]->strand1 == 0 ) ? '+' : '-' ) << '\t'   //strand1
 	<< ( (clusters[i][0]->strand2 == 0 ) ? '+' : '-' ) << '\t'   //strand2
 	<< readnames <<'\n';                                         //The reads are the optional column
