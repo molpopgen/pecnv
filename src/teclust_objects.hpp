@@ -23,7 +23,7 @@ struct params //Command-line parameter options
     Maximum distance used for matching up left and right ends of putative TE calls
     Min # of reads for phrap output, if wanted
   */
-  unsigned INSERTSIZE,MDIST,MINREADS;
+  std::int32_t INSERTSIZE,MDIST,MINREADS;
   /*
     Closest distance to known TE in reference.  For PHRAP output: only write if pdist || mdist > CLOSEST
   */
@@ -36,11 +36,11 @@ struct params //Command-line parameter options
   params();
 }; 
 
-struct teinfo : public std::pair<unsigned,unsigned>
+struct teinfo : public std::pair<std::int32_t,std::int32_t>
 {
-  unsigned start() const;
-  unsigned stop() const;
-  teinfo( unsigned __s, unsigned __st );
+  std::int32_t start() const;
+  std::int32_t stop() const;
+  teinfo( std::int32_t __s, std::int32_t __st );
 };
 
 struct cluster
@@ -51,8 +51,8 @@ struct cluster
   std::pair<std::int32_t,std::int32_t> positions;
   unsigned nreads;
   cluster();
-  cluster(const unsigned & pos1,
-	  const unsigned & pos2,
+  cluster(const int32_t & pos1,
+	  const int32_t & pos2,
 	  const unsigned & nr);
 };
 #endif

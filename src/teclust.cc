@@ -27,7 +27,9 @@ using namespace Sequence;
 
 using puu = pair<int32_t,int8_t>;
 
-const unsigned UMAX = std::numeric_limits<unsigned>::max();
+//const unsigned UMAX = std::numeric_limits<unsigned>::max();
+const unsigned IMAX = std::numeric_limits<int32_t>::max();
+
 refTEcont read_refdata( const params & p );
 unordered_set<string> procUMM(const params & pars,
 			      const refTEcont & reftes,
@@ -38,9 +40,9 @@ void output_results(ostringstream & out,
 		    const refTEcont & reftes);
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
-		   const unsigned & INSERTSIZE, const unsigned & MDIST );
+		   const int32_t & INSERTSIZE, const int32_t & MDIST );
 void reduce_ends( vector<cluster> & clusters,
-		  const unsigned & INSERTSIZE );
+		  const int32_t & INSERTSIZE );
 
 int main( int argc, char ** argv )
 {
@@ -102,7 +104,7 @@ int main( int argc, char ** argv )
 	   << " could not be opened for writing.\n";
       exit(1);
     }
-  if(! gzwrite(gzout,out.str().c_str(),out.str().size()) )
+  if(! gzwrite(gzout,out.str().c_str(),unsigned(out.str().size())) )
     {
       cerr << "Error: gzwrite error at line " << __LINE__
 	   << " of " << __FILE__ << '\n';
@@ -274,7 +276,7 @@ unordered_set<string> procUMM(const params & pars,
 
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
-		   const unsigned & INSERTSIZE, const unsigned & MDIST )
+		   const int32_t & INSERTSIZE, const int32_t & MDIST )
 {
   vector<cluster> plus,minus;
   for( unsigned i=0;i<raw_data.size();++i )
@@ -290,8 +292,8 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      bool clustered=false;
 	      for(unsigned j=0;!clustered&&j<plus.size();++j)
 		{
-		  if( max(raw_data[i].first,plus[j].positions.second)-
-		      min(raw_data[i].first,plus[j].positions.second)<= INSERTSIZE )
+		  if( (max(raw_data[i].first,plus[j].positions.second)-
+		       min(raw_data[i].first,plus[j].positions.second)) <= INSERTSIZE )
 		    {
 		      assert( raw_data[i].first >= plus[j].positions.second );
 		      plus[j].positions.second = raw_data[i].first;
@@ -317,8 +319,8 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	      bool clustered=false;
 	      for(unsigned j=0;!clustered&&j<minus.size();++j)
 		{
-		  if( max(raw_data[i].first,minus[j].positions.second)-
-		      min(raw_data[i].first,minus[j].positions.second) <= INSERTSIZE )
+		  if( (max(raw_data[i].first,minus[j].positions.second)-
+		       min(raw_data[i].first,minus[j].positions.second)) <= INSERTSIZE )
 		    {
 		      assert( raw_data[i].first >= minus[j].positions.second );
 		      minus[j].positions.second = raw_data[i].first;
@@ -340,7 +342,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 
   auto close_enough_minus = [](const cluster & __minus,
 			       const cluster & __plus,
-			       const unsigned & __MDIST)
+			       const int32_t & __MDIST)
     {
       if( __minus.positions.first < __plus.positions.second ) return false;
       if( __minus.positions.first - __plus.positions.second <= __MDIST) return true;
@@ -359,7 +361,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	  if( j != minus.end() )
 	    {
 	      //is there a better match in plus for this minus?
-	      unsigned dist = j->positions.first-plus[i].positions.second;
+	      auto dist = j->positions.first-plus[i].positions.second;
 	      unsigned winner = i;
 	      for(unsigned k=i+1;k<plus.size();++k)
 		{
@@ -394,9 +396,9 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
   for( unsigned i = 0 ; i < minus.size() ; ++i  )
     {
       bool pushed = false;
-      for(unsigned j = 0 ; j < clusters.size() ; ++j )
+      for(long unsigned j = 0 ; j < clusters.size() ; ++j )
 	{
-	  if( clusters[j].first.positions.first != UMAX )
+	  if( clusters[j].first.positions.first != IMAX )
 	    {
 	      if( minus[i].positions.first < clusters[j].first.positions.first )
 		{
@@ -405,7 +407,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		  clusters.insert(clusters.begin()+j,make_pair(cluster(),minus[i]));
 		  j=clusters.size();
 		}
-	      else if ( clusters[j].second.positions.first != UMAX )
+	      else if ( clusters[j].second.positions.first != IMAX )
 		{
 		  if( minus[i].positions.first <  clusters[j].second.positions.first )
 		    {
@@ -415,9 +417,9 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		    }
 		}
 	    }
-	  else if( clusters[j].second.positions.first != UMAX )
+	  else if( clusters[j].second.positions.first != IMAX )
 	    {
-	      assert( clusters[j].second.positions.first != UMAX );
+	      assert( clusters[j].second.positions.first != IMAX );
 	      if( minus[i].positions.first < clusters[j].second.positions.first )
 		{
 		  pushed=true;
@@ -441,18 +443,18 @@ void output_results( ostringstream & out,
   out.flush();
 
   auto closest_plus = [](const teinfo & __t,
-			 const unsigned & rhs)
+			 const int32_t & rhs)
     {
       return  (__t.start() >= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
     };
 
   auto closest_minus = [](const teinfo & __t,
-			  const unsigned & rhs)
+			  const int32_t & rhs)
     {
       return (__t.start() <= rhs || ( rhs >= __t.start() && rhs <= __t.stop() ) );
     };
 
-  auto within = [](const teinfo & __t, const unsigned & start, const unsigned & stop)
+  auto within = [](const teinfo & __t, const int32_t & start, const int32_t & stop)
     {
       bool A = start >= __t.start() && start <= __t.stop();
       bool B = stop>= __t.start() && stop <= __t.stop();
@@ -462,13 +464,11 @@ void output_results( ostringstream & out,
   auto refItr = reftes.find(chrom_label);
   for(unsigned i=0;i<clusters.size();++i)
     {
-      int32_t mindist = -1;
-      int withinTE = -1;
       out.flush();
       out << chrom_label << '\t'
 	  << clusters[i].first.nreads << '\t'
 	  << clusters[i].second.nreads << '\t';
-      if( clusters[i].first.positions.first == UMAX )
+      if( clusters[i].first.positions.first == IMAX )
 	{
 	  out << "-1\t"
 	      << "-1\t"
@@ -479,7 +479,8 @@ void output_results( ostringstream & out,
 	{
 	  out << clusters[i].first.positions.first + 1 << '\t'
 	      << clusters[i].first.positions.second + 1 << '\t';
-	  withinTE = -1;
+	  int mindist = -1;
+	  int withinTE = -1;
 	  if(!reftes.empty())
 	    {
 	      auto mind = find_if( refItr->second.cbegin(), refItr->second.cend(),
@@ -490,13 +491,13 @@ void output_results( ostringstream & out,
 		    clusters[i].first.positions.first-mind->start() : 
 		    mind->start() - clusters[i].first.positions.first;
 		}
-	      withinTE = ( find_if(refItr->second.cbegin(),refItr->second.cend(),
-				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second))
-			   != refItr->second.cend() );
+	      auto __win = find_if(refItr->second.cbegin(),refItr->second.cend(),
+				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second));
+	      withinTE = ( __win != refItr->second.cend() );
 	    }
-	  out << mindist << '\t' << withinTE << '\t';	  
+	  out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';	  
 	}
-      if( clusters[i].second.positions.first == UMAX )
+      if( clusters[i].second.positions.first == IMAX )
 	{
 	  out << "-1\t"
 	      << "-1\t"
@@ -507,8 +508,8 @@ void output_results( ostringstream & out,
 	{
 	  out << clusters[i].second.positions.first + 1  << '\t'
 	      << clusters[i].second.positions.second + 1 << '\t';
-	  mindist = -1;
-	  withinTE = -1;
+	  int mindist = -1;
+	  int withinTE = -1;
 	  if(!reftes.empty())
 	    {
 	      auto mindr = find_if(refItr->second.crbegin(),
@@ -519,18 +520,18 @@ void output_results( ostringstream & out,
 		  mindist = (mindr->start() < clusters[i].second.positions.second) ? 
 		    clusters[i].second.positions.second-mindr->start() : mindr->start() - clusters[i].second.positions.second;
 		}
-	      withinTE = (find_if(refItr->second.cbegin(),refItr->second.cend(),
-				  bind(within,placeholders::_1,clusters[i].second.positions.first,clusters[i].second.positions.second))
-			  != refItr->second.cend());
+	      auto __win = find_if(refItr->second.cbegin(),refItr->second.cend(),
+				   bind(within,placeholders::_1,clusters[i].second.positions.first,clusters[i].second.positions.second));
+	      withinTE = (__win != refItr->second.cend());
 	    }
-	  out << mindist << '\t' << withinTE << endl;
+	  out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	}
       out.flush();
     }
 }
 
 void reduce_ends( vector<cluster> & clusters,
-		  const unsigned & INSERTSIZE )
+		  const int32_t & INSERTSIZE )
 {
   vector<cluster>::iterator i = clusters.end()-1,
     beg = clusters.begin(),j;
@@ -545,7 +546,7 @@ void reduce_ends( vector<cluster> & clusters,
 	  assert(j>=beg);
 	  assert(beg==clusters.begin());
 	  assert( i-beg > 0);
-	  if( i->positions.first != UMAX && j->positions.first != UMAX )
+	  if( i->positions.first != IMAX && j->positions.first != IMAX )
 	    {
 	      assert(j-beg>=0);
 	      if( (( max(i->positions.first,j->positions.first) -
