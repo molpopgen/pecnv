@@ -197,7 +197,6 @@ unordered_set<string> procUMM(const params & pars,
 	  //Don't re-process a read if we already know it has a mapping to a TE
 	  if( mTE.find(name.first) == mTE.end() )
 	    {
-	      //auto __itr = reftes.find(chrom);
 	      auto __itr = reftes.find(chrom.first);
 	      if( __itr != reftes.end() )
 		{
