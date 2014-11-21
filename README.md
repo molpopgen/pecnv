@@ -19,7 +19,7 @@ This package also contains a C++ implementation of the transposable element (TE)
 
 ##Tentative plan for future releases
 
-Bugfixes, etc.
+Bugfixes, better documentation, etc.
 
 #Installation
 
@@ -380,7 +380,7 @@ Why the timeout?  For real data, the fasta files can get massive and the assembl
 
 You can then blast the contigs against a database of known TE sequences and use Julie Cridland's [TE annotation pipeline](https://github.com/ThorntonLab/Cridland2013AnnotPipeline) to process the output.  (The annotation methods may get merged into this project in the future.)
 
-"Power userss" may prefer array jobs on a cluster to automate the assemblies, blasting, etc.
+"Power users" may prefer array jobs on a cluster to automate the assemblies, blasting, etc.
 
 ##The output file
 
@@ -419,3 +419,4 @@ The following comments apply to this file:
 * positions start from 1
 * A value of -1 is used to represent "not applicable".  Old versions of this code used to output NA, which was fine when the file was read using R, but problematic when read using C/C++, etc.
 * Values of -1 may occur if: nplus and/or nminus equal 0.  The --tefile/-t option is not used, therfore pdist,pin,mdist, and min cannot be known.
+
