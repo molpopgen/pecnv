@@ -78,8 +78,8 @@ int main( int argc, char ** argv )
     }
 
   //Cluster the raw data and buffer results
-  /*
   ostringstream out;
+  /*
   out << "chromo\t"
       << "nplus\t"
       << "nminus\t"
