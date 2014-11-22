@@ -27,15 +27,17 @@ then
     exit 10;
 fi
 
-if [ ! -e TEtestData.tar ]
+TARFILE=TEtestData.0.1.5.tar
+
+if [ ! -e $TARFILE ]
 then
     if [ $WGET -eq 1 ]
     then
-	wget http://devlaeminck.bio.uci.edu/Data/TEtestData.tar
+	wget http://devlaeminck.bio.uci.edu/Data/$TARFILE
     else
 	if [ $CURL -eq 1 ]
 	then
-	    curl http://devlaeminck.bio.uci.edu/Data/TEtestData.tar -o TEtestData.tar
+	    curl http://devlaeminck.bio.uci.edu/Data/$TARFILE -o $TARFILE
 	fi
     fi
 fi
@@ -43,10 +45,10 @@ fi
 ##UNPACK THE ARCHIVE
 if [ ! -d TEtestData ]
 then
-    tar xf TEtestData.tar
+    tar xf $TARFILE
 fi
 
-cd TEtestData
+cd TEtestData.0.1.5
 
 ##MAKE THE INPUT FILE
 paste <(ls *_1.fastq.gz) <(ls *_2.fastq.gz) > INFILE
@@ -58,7 +60,7 @@ pecnv.sh -i INFILE -r dmel-all-chromosome-r5.1_simplenames.fasta -c $CPU
 u99=`pecnv_insert_qtile pecnv_output/pecnv_bamfile.mdist.gz 0.99`
 
 ##Run teclust
-teclust -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1 -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir
+teclust -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1.bed -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir
 
 ##If we have the right stuff on the system, assemble in parallel using phrap
 CANASSEMBLE=1
