@@ -567,6 +567,10 @@ void output_results_bedpe( ostringstream & out,
   for(unsigned i=0;i<clusters.size();++i)
     {
       ostringstream xtra; //for the optional column
+      xtra << clusters[i].first.nreads
+	   << ':'
+	   << clusters[i].second.nreads 
+	   << ':';
       // out.flush();
       // out << chrom_label << '\t'
       // 	  << clusters[i].first.nreads << '\t'
@@ -577,6 +581,7 @@ void output_results_bedpe( ostringstream & out,
 	  out << ".\t"
 	      << "-1\t"
 	      << "-1\t";
+	  xtra << "-1:-1:";
 	}
       else
 	{
@@ -599,7 +604,7 @@ void output_results_bedpe( ostringstream & out,
 				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second));
 	      withinTE = ( __win != refItr->second.cend() );
 	    }
-	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';
+	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE << ':';
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';	  
 	}
       if( clusters[i].second.positions.first == IMAX )
@@ -607,6 +612,7 @@ void output_results_bedpe( ostringstream & out,
 	  out << ".\t"
 	      << "-1\t"
 	      << "-1\t";
+	  xtra << "-1:-1";
 	}
       else
 	{
@@ -630,7 +636,7 @@ void output_results_bedpe( ostringstream & out,
 	      withinTE = (__win != refItr->second.cend());
 	    }
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
-	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE;// << endl;
+	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE;// << endl;
 	}
       out << "chr" << chrom_label << "_event_" << i << '\t'
 	  <<  (clusters[i].first.nreads+clusters[i].second.nreads) << '\t'
