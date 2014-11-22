@@ -67,7 +67,6 @@ vector<clusteredEvent> parseClusters(const string & clusters,const params & pars
 
 using LeftRights = pair<unordered_set<string>,
 			unordered_set<string> >;
-//using ReadCollection = vector< LeftRights >;
 using ReadCollection = unordered_set<string>;
 using PhrapInput = vector< pair<pair< vector<Fasta>, vector<Fasta> >,
 				pair< vector<Fasta>, vector<Fasta> > > >;
