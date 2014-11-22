@@ -624,7 +624,10 @@ void output_results_bedpe( ostringstream & out,
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	}
-      out << "event" << i << '\t';
+      out << "chr" << chrom_label << "_event_" << i << '\t'
+	  <<  (clusters[i].first.nreads+ clusters[i].second.nreads) << '\t'
+	  << "+\t-\t"
+	  << xtra.str() << '\n';v
       out.flush();
     }
 }
