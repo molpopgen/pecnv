@@ -200,9 +200,9 @@ int main(int argc, char ** argv)
       cluster_container clusters = cluster_linked(itr->second,mdist);
       cluster_container clusters2(clusters);
       sort(clusters.begin(),clusters.end(),order_clusters);
-      write_clusters( divstream, 
-		      itr->first,itr->first,
-		      clusters,&eventid );
+      write_clusters_bedpe( divstream, 
+			    itr->first,itr->first,
+			    clusters,&eventid );
     }
 
   cerr << "clustering par\n";
