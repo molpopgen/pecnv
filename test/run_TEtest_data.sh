@@ -48,7 +48,7 @@ then
     tar xf $TARFILE
 fi
 
-cd TEtestData.0.1.5
+cd TEtestData
 
 ##MAKE THE INPUT FILE
 paste <(ls *_1.fastq.gz) <(ls *_2.fastq.gz) > INFILE
