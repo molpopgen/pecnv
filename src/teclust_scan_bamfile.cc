@@ -18,7 +18,7 @@ using refIDlookup = unordered_map<int32_t,string>;
 //DEFINITION OF FUNCTIONS
 refIDlookup make_lookup(const bamreader & reader);
 
-void scan_bamfile(const params & p,
+void scan_bamfile(const teclust_params & p,
 		  const refTEcont & refTEs,
 		  unordered_set<string> * readPairs,
 		  map<string,vector< puu > > * data)

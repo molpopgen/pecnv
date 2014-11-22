@@ -3,6 +3,6 @@
 
 #include <teclust_objects.hpp>
 
-params parseargs(const int argc, char ** argv);
+teclust_params teclust_parseargs(const int argc, char ** argv);
 
 #endif

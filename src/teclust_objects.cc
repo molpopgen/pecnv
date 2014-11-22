@@ -3,19 +3,19 @@
 #include <iostream>
 using namespace std;
 
-params::params() : reference_datafile(string()),
-		   outfile(string()),
-		   bamfile(string()),
-		   readfile(string()),
-		   umufile(string()),
-		   ummfile(string()),
-		   phrapdir(string()),
-		   INSERTSIZE(numeric_limits<int32_t>::max()),
-		   MDIST(numeric_limits<int32_t>::max()),
-		   MINREADS(numeric_limits<int32_t>::max()),
-		   CLOSEST(-1),
-		   novelOnly(true),
-		   greedy(true)
+teclust_params::teclust_params() : reference_datafile(string()),
+				   outfile(string()),
+				   bamfile(string()),
+				   readfile(string()),
+				   umufile(string()),
+				   ummfile(string()),
+				   phrapdir(string()),
+				   INSERTSIZE(numeric_limits<int32_t>::max()),
+				   MDIST(numeric_limits<int32_t>::max()),
+				   MINREADS(numeric_limits<int32_t>::max()),
+				   CLOSEST(-1),
+				   novelOnly(true),
+				   greedy(true)
 {
 }
 

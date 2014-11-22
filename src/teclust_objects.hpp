@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-struct params //Command-line parameter options
+struct teclust_params //Command-line parameter options
 {
   /*
     The reference TE positions, 
@@ -33,7 +33,7 @@ struct params //Command-line parameter options
     Use the greedy algo of Cridland et al.?
   */
   bool novelOnly,greedy;
-  params();
+  teclust_params();
 }; 
 
 struct teinfo : public std::pair<std::int32_t,std::int32_t>

@@ -4,10 +4,10 @@
 using namespace std;
 using namespace boost::program_options;
 
-params parseargs(const int argc, char ** argv)
+teclust_params teclust_parseargs(const int argc, char ** argv)
 {
-  params rv;
-  options_description desc("Cluster reads into putative transposable element calls.\nUsage: tclust -h to see help");
+  teclust_params rv;
+  options_description desc("Cluster reads into putative transposable element calls.\nUsage: teclust -h to see help");
   desc.add_options()
     ("help,h", "Produce help message")
     ("bamfile,b",value<string>(&rv.bamfile),"BAM file name (optional)")

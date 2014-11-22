@@ -4,7 +4,7 @@
 #include <string>
 #include <teclust_objects.hpp>
 
-void phrapify( const params & pars,
+void phrapify( const teclust_params & pars,
 	       const std::string & clusters );
 
 #endif

@@ -30,8 +30,8 @@ using puu = pair<int32_t,int8_t>;
 //const unsigned UMAX = std::numeric_limits<unsigned>::max();
 const unsigned IMAX = std::numeric_limits<int32_t>::max();
 
-refTEcont read_refdata( const params & p );
-unordered_set<string> procUMM(const params & pars,
+refTEcont read_refdata( const teclust_params & p );
+unordered_set<string> procUMM(const teclust_params & pars,
 			      const refTEcont & reftes,
 			      map<string,vector< puu > > * data);
 void output_results(ostringstream & out,
@@ -50,7 +50,7 @@ void reduce_ends( vector<cluster> & clusters,
 
 int main( int argc, char ** argv )
 {
-  const params pars = parseargs(argc,argv);
+  const teclust_params pars = teclust_parseargs(argc,argv);
 
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
@@ -120,7 +120,7 @@ int main( int argc, char ** argv )
   phrapify( pars, out.str() );
 }
 
-refTEcont read_refdata( const params & p )
+refTEcont read_refdata( const teclust_params & p )
 {
   refTEcont rv;
   
@@ -163,7 +163,7 @@ refTEcont read_refdata( const params & p )
 }
 
 
-unordered_set<string> procUMM(const params & pars,
+unordered_set<string> procUMM(const teclust_params & pars,
 			      const refTEcont & reftes,
 			      map<string,vector< puu > > * data)
 {

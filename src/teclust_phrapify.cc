@@ -42,7 +42,7 @@ istream & operator>>(istream & in, clusteredEvent & ce)
   return ce.read(in);
 }
 
-vector<clusteredEvent> parseClusters(const string & clusters,const params & pars)
+vector<clusteredEvent> parseClusters(const string & clusters,const teclust_params & pars)
 //Replaces functionality of filter_edit, but w/more flexibility
 {
   vector<clusteredEvent> cEs;
@@ -107,7 +107,7 @@ auto Cfinder = [](const clusteredEvent & __cE,
 };
 
 ReadCollection
-getRnames( const params & pars,
+getRnames( const teclust_params & pars,
 	   const vector<clusteredEvent> & cEs )
 {
 
@@ -145,7 +145,7 @@ getRnames( const params & pars,
   return rv;
 }
 
-PhrapInput seqQual( const params & pars, const vector<clusteredEvent> & cEs,
+PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & cEs,
 		    const ReadCollection & r )
 {
   bamreader reader(pars.bamfile.c_str());
@@ -226,7 +226,7 @@ void write2file(const string & filename,
   copy(vf.cbegin(),vf.cend(),ostream_iterator<const Fasta>(out,"\n"));
 }
 
-void output( const params & pars,
+void output( const teclust_params & pars,
 	     const vector<clusteredEvent> & cEs,
 	     const PhrapInput & pI )
 {
@@ -256,7 +256,7 @@ void output( const params & pars,
 	    });
 }
 
-void phrapify( const params & pars,
+void phrapify( const teclust_params & pars,
 	       const string & clusters )
 {
   if(pars.phrapdir.empty()) return;
