@@ -220,10 +220,10 @@ int main(int argc, char ** argv)
 	   });
       cluster_container clusters = cluster_linked(itr->second,mdist);
       sort(clusters.begin(),clusters.end(),order_clusters);
-      write_clusters( parstream, 
-		      itr->first,
-		      itr->first,
-		      clusters,&eventid );
+      write_clusters_bedpe( parstream, 
+			    itr->first,
+			    itr->first,
+			    clusters,&eventid );
     }
 
   cerr << "clustering ul\n";
@@ -241,10 +241,10 @@ int main(int argc, char ** argv)
 	       });
 	  cluster_container clusters = cluster_linked(itr2->second,mdist);
 	  sort(clusters.begin(),clusters.end(),order_clusters);
-	  write_clusters( ulstream, 
-			  itr->first,
-			  itr2->first,
-			  clusters,&eventid );
+	  write_clusters_bedpe( ulstream, 
+				itr->first,
+				itr2->first,
+				clusters,&eventid );
 	}
     }
   gzclose(parstream);
