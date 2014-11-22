@@ -78,6 +78,7 @@ int main( int argc, char ** argv )
     }
 
   //Cluster the raw data and buffer results
+  /*
   ostringstream out;
   out << "chromo\t"
       << "nplus\t"
@@ -90,6 +91,7 @@ int main( int argc, char ** argv )
       << "mlast\t"
       << "mdist\t"
       << "min\n";
+  */
   for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
     {
       vector<pair<cluster,cluster> > clusters;
