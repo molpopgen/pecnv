@@ -134,7 +134,7 @@ int main(int argc, char ** argv)
   const char * ulfile = argv[argn++];
 
   //make sure output files are writable
-  const string header = "id\tchrom1\tcoverage\tstrand1\tstart1\tstop1\tchrom2\tstrand2\tstart2\tstop2\treads";
+  //const string header = "id\tchrom1\tcoverage\tstrand1\tstart1\tstop1\tchrom2\tstrand2\tstart2\tstop2\treads";
 
   gzFile divstream = gzopen(divfile,"wb");
   if(divstream==NULL) {
@@ -142,26 +142,28 @@ int main(int argc, char ** argv)
 	 << divfile
 	 << " for writing\n";
   }
+  /*
  if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-
+  */
   gzFile parstream = gzopen(parfile,"wb");
   if(parstream == NULL) {
     cerr << "Error: could not open "
 	 << parfile << " for writing\n";
     exit(1);
   }
+  /*
   if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-
+  */
   gzFile ulstream = gzopen(ulfile,"wb");
   if(ulstream == NULL)
     {
@@ -170,13 +172,14 @@ int main(int argc, char ** argv)
 	   << " for writing\n";
       exit(1);
     }
+  /*
   if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
     {
       cerr << "Error: gzprintf error encountered at line " << __LINE__ 
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
-
+  */
   map<string, lvector > raw_div;
   map<string, lvector > raw_par;
   map<string, putCNVs > raw_ul;
