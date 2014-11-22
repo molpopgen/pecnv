@@ -139,8 +139,10 @@ refTEcont read_refdata( const params & p )
       string chrom;
       unsigned start,stop;
       instream >> chrom >> start >> stop >> ws;
-      //We subtract 1 to convert to a 0-offest system
-      rv[chrom].emplace_back( teinfo(start-1,stop-1) );
+      //The input file is BED, so start is 0 offset,
+      //and stop is 1 offset.  Thus, we 
+      //subtract 1 from stop to make both 0 offset
+      rv[chrom].emplace_back( teinfo(start-1,stop) );
     }
   while(!gzeof(in));
 
