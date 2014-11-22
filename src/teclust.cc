@@ -38,6 +38,10 @@ void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
 		    const refTEcont & reftes);
+void output_results_bedpe(ostringstream & out,
+			  const vector<pair<cluster,cluster> > & clusters, 
+			  const string & chrom_label, 
+			  const refTEcont & reftes);
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
 		   const int32_t & INSERTSIZE, const int32_t & MDIST );
@@ -90,9 +94,9 @@ int main( int argc, char ** argv )
     {
       vector<pair<cluster,cluster> > clusters;
       cluster_data(clusters,itr->second,pars.INSERTSIZE,pars.MDIST);
-      output_results(out,clusters,
-		     itr->first,
-		     refTEs);
+      output_results_bedpe(out,clusters,
+			   itr->first,
+			   refTEs);
     }
 
   //write output
