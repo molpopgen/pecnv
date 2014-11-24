@@ -21,6 +21,11 @@ int main( int argc, char ** argv )
   //What module will re run?
   if ( strcmp(argv[1],"help") == 0 )
     {
+      cout << "pecnv version " << PECNV_VERSION << '\n';
+      usage(0);
+    }
+  if ( strcmp(argv[1],"version") == 0 )
+    {
       usage(0);
     }
   else if ( strcmp(argv[1],"process") == 0 )
@@ -42,6 +47,7 @@ int main( int argc, char ** argv )
 
 void usage(int status)
 {
+  cerr << "pecnv version " << PECNV_VERSION << '\n';
   exit(status);
 }
 
