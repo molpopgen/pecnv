@@ -1,14 +1,14 @@
 #bin_PROGRAMS=fastq_to_table bwa_bam_to_mapfiles bwa_mapdistance rename_reference cluster_cnv teclust umm_te_finder filter_edit process_readmappings 
-bin_PROGRAMS=pecnv bwa_mapdistance
+bin_PROGRAMS=pecnv 
 
-pecnv_SOURCES=pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc
+pecnv_SOURCES=pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc mdist.hpp bwa_mapdistance.cc
 
 #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 #get_pair_ids_bwa
 
 #fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
-bwa_mapdistance_SOURCES=bwa_mapdistance.cc common.cc common.hpp
+#bwa_mapdistance_SOURCES=bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 #cluster_cnv_SOURCES=cluster_cnv2.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
 #umm_te_finder_SOURCES=umm_te_finder.cc 

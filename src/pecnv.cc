@@ -2,6 +2,7 @@
 #include <teclust.hpp>
 #include <process_readmappings.hpp>
 #include <cluster_cnv.hpp>
+#include <mdist.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -37,6 +38,11 @@ int main( int argc, char ** argv )
     {
       auto x = strip_argv(argc,argv,argv[1]);
       cluster_cnv_main(x - argv, argv);
+    }
+  else if( strcmp(argv[1],"mdist") == 0 )
+    {
+      auto x = strip_argv(argc,argv,argv[1]);
+      bwa_mapdistance_main(x - argv, argv);
     }
   else if( strcmp(argv[1],"teclust") == 0 )
     {

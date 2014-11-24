@@ -15,7 +15,7 @@
 using namespace std;
 using namespace Sequence;
 
-int main( int argc, char ** argv )
+int bwa_mapdistance_main( int argc, char ** argv )
 {
   int argn = 1;
   if ( argc < 3 )
