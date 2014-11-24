@@ -78,6 +78,12 @@ int main( int argc, char ** argv )
 	   });
     }
 
+
+  if( rawData.empty() )
+    {
+      cerr << "No data found. Exiting.\n";
+      exit(0);
+    }
   //Cluster the raw data and buffer results
   ostringstream out;
   /*
@@ -571,9 +577,9 @@ void output_results_bedpe( ostringstream & out,
     {
       ostringstream xtra; //for the optional column
       xtra << clusters[i].first.nreads
-	   << ':'
+	   << '\t'
 	   << clusters[i].second.nreads 
-	   << ':';
+	   << '\t';
       // out.flush();
       // out << chrom_label << '\t'
       // 	  << clusters[i].first.nreads << '\t'
@@ -584,7 +590,7 @@ void output_results_bedpe( ostringstream & out,
 	  out << ".\t"
 	      << "-1\t"
 	      << "-1\t";
-	  xtra << "-1:-1:";
+	  xtra << "-1\t-1t";
 	}
       else
 	{
@@ -607,7 +613,7 @@ void output_results_bedpe( ostringstream & out,
 				   bind(within,placeholders::_1,clusters[i].first.positions.first,clusters[i].first.positions.second));
 	      withinTE = ( __win != refItr->second.cend() );
 	    }
-	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE << ':';
+	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';	  
 	}
       if( clusters[i].second.positions.first == IMAX )
@@ -615,7 +621,7 @@ void output_results_bedpe( ostringstream & out,
 	  out << ".\t"
 	      << "-1\t"
 	      << "-1\t";
-	  xtra << "-1:-1";
+	  xtra << "-1\t-1";
 	}
       else
 	{
@@ -639,7 +645,7 @@ void output_results_bedpe( ostringstream & out,
 	      withinTE = (__win != refItr->second.cend());
 	    }
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
-	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE;// << endl;
+	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE;// << endl;
 	}
       out << samplename << "_" << chrom_label << "_event" << i << '\t'         //This is the "name" column in the bedpe
 	  <<  log10(clusters[i].first.nreads+clusters[i].second.nreads) << '\t'
