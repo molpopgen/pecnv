@@ -49,7 +49,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 void reduce_ends( vector<cluster> & clusters,
 		  const int32_t & INSERTSIZE );
 
-int main( int argc, char ** argv )
+int teclust_main( int argc, char ** argv )
 {
   const teclust_params pars = teclust_parseargs(argc,argv);
 

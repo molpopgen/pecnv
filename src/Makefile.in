@@ -76,7 +76,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = cluster_cnv$(EXEEXT) teclust$(EXEEXT) \
+bin_PROGRAMS = pecnv$(EXEEXT) cluster_cnv$(EXEEXT) \
 	process_readmappings$(EXEEXT) bwa_mapdistance$(EXEEXT)
 @HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
 subdir = src
@@ -101,16 +101,16 @@ am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
 	intermediateIO.$(OBJEXT)
 cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
 cluster_cnv_LDADD = $(LDADD)
+am_pecnv_OBJECTS = pecnv.$(OBJEXT) teclust.$(OBJEXT) common.$(OBJEXT) \
+	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT) \
+	teclust_parseargs.$(OBJEXT) teclust_scan_bamfile.$(OBJEXT) \
+	intermediateIO.$(OBJEXT)
+pecnv_OBJECTS = $(am_pecnv_OBJECTS)
+pecnv_LDADD = $(LDADD)
 am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
 	common.$(OBJEXT) intermediateIO.$(OBJEXT)
 process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
 process_readmappings_LDADD = $(LDADD)
-am_teclust_OBJECTS = teclust.$(OBJEXT) common.$(OBJEXT) \
-	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT) \
-	teclust_parseargs.$(OBJEXT) teclust_scan_bamfile.$(OBJEXT) \
-	intermediateIO.$(OBJEXT)
-teclust_OBJECTS = $(am_teclust_OBJECTS)
-teclust_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -153,9 +153,9 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(process_readmappings_SOURCES) $(teclust_SOURCES)
+	$(pecnv_SOURCES) $(process_readmappings_SOURCES)
 DIST_SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(process_readmappings_SOURCES) $(teclust_SOURCES)
+	$(pecnv_SOURCES) $(process_readmappings_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -274,7 +274,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
+pecnv_SOURCES = pecnv.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 #get_pair_ids_bwa
 
 #fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
@@ -282,7 +282,6 @@ top_srcdir = @top_srcdir@
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
 cluster_cnv_SOURCES = cluster_cnv2.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
-teclust_SOURCES = teclust.cc common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
 #umm_te_finder_SOURCES=umm_te_finder.cc 
 #filter_edit_SOURCES=filter_edit.cc
 process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp intermediateIO.cc intermediateIO.hpp
@@ -373,13 +372,13 @@ cluster_cnv$(EXEEXT): $(cluster_cnv_OBJECTS) $(cluster_cnv_DEPENDENCIES) $(EXTRA
 	@rm -f cluster_cnv$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(cluster_cnv_OBJECTS) $(cluster_cnv_LDADD) $(LIBS)
 
+pecnv$(EXEEXT): $(pecnv_OBJECTS) $(pecnv_DEPENDENCIES) $(EXTRA_pecnv_DEPENDENCIES) 
+	@rm -f pecnv$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(pecnv_OBJECTS) $(pecnv_LDADD) $(LIBS)
+
 process_readmappings$(EXEEXT): $(process_readmappings_OBJECTS) $(process_readmappings_DEPENDENCIES) $(EXTRA_process_readmappings_DEPENDENCIES) 
 	@rm -f process_readmappings$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(process_readmappings_OBJECTS) $(process_readmappings_LDADD) $(LIBS)
-
-teclust$(EXEEXT): $(teclust_OBJECTS) $(teclust_DEPENDENCIES) $(EXTRA_teclust_DEPENDENCIES) 
-	@rm -f teclust$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(teclust_OBJECTS) $(teclust_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -391,6 +390,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intermediateIO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pecnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/teclust_objects.Po@am__quote@
