@@ -284,15 +284,6 @@ int cluster_cnv_main(int argc, char ** argv)
 cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)
 {
   cluster_cnv_params rv;
-
-  // const string sampleID(argv[argn++]);
-  // const int8_t min_mqual = stoi(argv[argn++]);
-  // const int16_t max_mm = stoi(argv[argn++]);
-  // const int16_t max_gap = stoi(argv[argn++]);
-  // const unsigned mdist = stoi(argv[argn++]);
-  // const char * divfile = argv[argn++];
-  // const char * parfile = argv[argn++];
-  // const char * ulfile = argv[argn++];
   int mqual;
   options_description desc("pecnv cnvclust: cluster divergent, parallel, and unlinked read pairs into putative CNV calls");
   desc.add_options()
