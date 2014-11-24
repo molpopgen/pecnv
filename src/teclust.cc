@@ -590,7 +590,7 @@ void output_results_bedpe( ostringstream & out,
 	  out << ".\t"
 	      << "-1\t"
 	      << "-1\t";
-	  xtra << "-1\t-1t";
+	  xtra << "-1\t-1\t";
 	}
       else
 	{
