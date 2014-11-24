@@ -7,7 +7,7 @@ using namespace boost::program_options;
 teclust_params teclust_parseargs(const int argc, char ** argv)
 {
   teclust_params rv;
-  options_description desc("Cluster reads into putative transposable element calls.\nUsage: teclust -h to see help");
+  options_description desc("pecnv teclust: cluster reads into putative transposable element calls.\nUsage: teclust -h to see help");
   desc.add_options()
     ("help,h", "Produce help message")
     ("bamfile,b",value<string>(&rv.bamfile),"BAM file name (optional)")
