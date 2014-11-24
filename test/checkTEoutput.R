@@ -3,11 +3,19 @@
 n=commandArgs(trailing=TRUE)
 ##Yes, this should all be redone with tidy/dplyr, etc.,
 ##But I'm trying not to introduce any new dependencies.
-output=read.table(n[1],header=T,colClasses=c("character",rep("integer",10)))
-native=read.table(n[2],colClasses=c("character",rep("integer",2)))
-truth=read.table(n[3],colClasses=c("character",rep("integer",2)))
+#output=read.table(n[1],header=T,colClasses=c("character",rep("integer",10)))
+output = read.table(n[1],header=T,stringsAsFactors=FALSE)
+native=read.table(n[2],stringsAsFactors=FALSE)#,colClasses=c("character",rep("integer",2)))
+truth=read.table(n[3],colClasses=c("character",rep("integer",2)),stringsAsFactors=FALSE)
 outfilename=n[4]
 
+renameOutput = function(x)
+    {
+        names(x) <- c("chromo","pfirst","plast","chrom2","mfirst","mlast","name","score","strand1","strand2","nplus","nminus","pdist","pin","mdist","min")
+        x
+    }
+
+output = renameOutput(output)
 FOUNDNATIVE=array(NA,dim=nrow(output))
 FOUNDSIM=array(NA,dim=nrow(output))
 for( O in 1:nrow(output) )
