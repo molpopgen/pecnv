@@ -1,22 +1,22 @@
 /*  
-  cluster_cnv2.cc
+    cluster_cnv2.cc
 
-  Faster version that only reads input files once.
+    Faster version that only reads input files once.
 
-  Copyright 2010 Kevin Thornton, University of California Irvine
+    Copyright 2010 Kevin Thornton, University of California Irvine
 
-  This code is released under the terms of the GNU Public License
+    This code is released under the terms of the GNU Public License
 
-  This code reads in the *_structural*.csv.gz from a single line,
-  and does the following:
+    This code reads in the *_structural*.csv.gz from a single line,
+    and does the following:
 
-  For each chromosome, read pairs are clustered into the same
-  CNV call if the following criteria are met:
+    For each chromosome, read pairs are clustered into the same
+    CNV call if the following criteria are met:
 
-  1. Two reads have the same lane and read id
-  OR
-  2. Reads from different read pairs map to the same chromosome
-  within mdist base pairs of each other on the same strand
+    1. Two reads have the same lane and read id
+    OR
+    2. Reads from different read pairs map to the same chromosome
+    within mdist base pairs of each other on the same strand
 */
 
 #include <string>
@@ -60,19 +60,19 @@ struct linkeddata
 
 auto order_clusters = []( const vector<vector<linkeddata>::const_iterator> & a,
 			  const vector<vector<linkeddata>::const_iterator> & b ) 
-  {
-    unsigned min1 = numeric_limits<unsigned>::max(),
-      min2 = numeric_limits<unsigned>::max();
-    for(unsigned i=0;i<a.size();++i)
-      {
-	min1=min(min1,a[i]->a);
-      }
-    for(unsigned i=0;i<b.size();++i)
-      {
-	min2=min(min2,b[i]->a);
-      }
-    return min1 < min2;
-  };
+{
+  unsigned min1 = numeric_limits<unsigned>::max(),
+  min2 = numeric_limits<unsigned>::max();
+  for(unsigned i=0;i<a.size();++i)
+    {
+      min1=min(min1,a[i]->a);
+    }
+  for(unsigned i=0;i<b.size();++i)
+    {
+      min2=min(min2,b[i]->a);
+    }
+  return min1 < min2;
+};
 
 using cluster_container = vector< vector<vector<linkeddata>::const_iterator> >;
 using lvector = vector<linkeddata>;
@@ -162,11 +162,11 @@ int cluster_cnv_main(int argc, char ** argv)
 	 << " for writing\n";
   }
   /*
- if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
+    if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
     {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
-      exit(1);
+    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+    << " of " << __FILE__ << '\n';
+    exit(1);
     }
   */
   gzFile parstream = gzopen(pars.parfile.c_str(),"wb");
@@ -176,11 +176,11 @@ int cluster_cnv_main(int argc, char ** argv)
     exit(1);
   }
   /*
-  if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
+    if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
     {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
-      exit(1);
+    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+    << " of " << __FILE__ << '\n';
+    exit(1);
     }
   */
   gzFile ulstream = gzopen(pars.ulfile.c_str(),"wb");
@@ -192,11 +192,11 @@ int cluster_cnv_main(int argc, char ** argv)
       exit(1);
     }
   /*
-  if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
+    if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
     {
-      cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-	   << " of " << __FILE__ << '\n';
-      exit(1);
+    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
+    << " of " << __FILE__ << '\n';
+    exit(1);
     }
   */
   map<string, lvector > raw_div;
@@ -559,10 +559,10 @@ void reduce_clusters( cluster_container & clusters,
 }
 
 void write_clusters( gzFile gzout,
-			   const string & chrom1,
-			   const string & chrom2,
-			   const cluster_container & clusters,
-			   unsigned * eventid )
+		     const string & chrom1,
+		     const string & chrom2,
+		     const cluster_container & clusters,
+		     unsigned * eventid )
 {
   for(unsigned i=0;i<clusters.size();++i)
     {
