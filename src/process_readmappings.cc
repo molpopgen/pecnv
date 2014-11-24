@@ -279,7 +279,7 @@ int process_readmappings_main(int argc, char ** argv)
 process_mapping_params parse_rmappings_args(int argc, char ** argv)
 {
   process_mapping_params rv;
-  options_description desc("pecnv precess: collect unusual paired-end mappings from a bam file");
+  options_description desc("pecnv process: collect unusual paired-end mappings from a bam file");
   desc.add_options()
     ("help,h", "Produce help message")
     ("bamfile,b",value<string>(&rv.bamfile),"BAM file name (required)")

@@ -294,7 +294,7 @@ cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)
   // const char * parfile = argv[argn++];
   // const char * ulfile = argv[argn++];
   int mqual;
-  options_description desc("pecnv cluster: cluster divergent, parallel, and unlinked read pairs into putative CNV calls");
+  options_description desc("pecnv cnvclust: cluster divergent, parallel, and unlinked read pairs into putative CNV calls");
   desc.add_options()
     ("help,h", "Produce help message")
     ("infiles,i",value<vector<string> >()->multitoken(),"Input files.  The input files are the output from the pecnv process subcommand")
