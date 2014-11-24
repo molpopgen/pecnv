@@ -22,12 +22,14 @@
 #include <algorithm>
 #include <cassert>
 #include <sstream>
-#include <zlib.h>
-
+#include <boost/program_options.hpp>
 #include <common.hpp>
 #include <intermediateIO.hpp>
+#include <zlib.h>
+#include <sys/stat.h>
 
 using namespace std;
+using namespace boost::program_options;
 using namespace Sequence;
 
 using APAIR = pair<bamrecord,bamrecord>;
@@ -129,30 +131,38 @@ void updateBucket( readbucket & rb, bamrecord & b,
 string toSAM(const bamrecord & b,
 	     const bamreader & reader);
 
-int main(int argc, char ** argv)
+struct process_mapping_params
+{
+  string bamfile,structural_base,um_base;
+};
+
+process_mapping_params parse_rmappings_args(int argc, char ** argv);
+
+int process_readmappings_main(int argc, char ** argv)
 {
   int argn = 1;
-  const char * bamfile = argv[argn++];
-  const char * structural_base = argv[argn++];
-  const char * um_base = argv[argn++];
+  process_mapping_params pars = parse_rmappings_args(argc, argv);
+  // const char * bamfile = argv[argn++];
+  // const char * structural_base = argv[argn++];
+  // const char * um_base = argv[argn++];
 
-  if( argc != 4 )
-    {
-      cerr << "Usage:\n"
-	   << argv[0]
-	   << " bamfile structural_base um_base\n"
-	   << "Where:\n"
-	   << "\tbamfile = the bam file containing alignments\n"
-	   << "\tstructural_base = prefix for file names containing PAR/DIV/UL read pairs\n"
-	   << "\tum_base = prefix for file names containing unique/multi read pairs\n";
-      exit(0);
-    }
-  struct output_files of(structural_base,um_base);
+  // if( argc != 4 )
+  //   {
+  //     cerr << "Usage:\n"
+  // 	   << argv[0]
+  // 	   << " bamfile structural_base um_base\n"
+  // 	   << "Where:\n"
+  // 	   << "\tbamfile = the bam file containing alignments\n"
+  // 	   << "\tstructural_base = prefix for file names containing PAR/DIV/UL read pairs\n"
+  // 	   << "\tum_base = prefix for file names containing unique/multi read pairs\n";
+  //     exit(0);
+  //   }
+  struct output_files of(pars.structural_base.c_str(),pars.um_base.c_str());
   
-  bamreader reader(bamfile);
+  bamreader reader(pars.bamfile.c_str());
 
   if ( ! reader ) {
-    cerr << "Error: " << bamfile 
+    cerr << "Error: " << pars.bamfile 
 	 << " could not be opened for reading\n";
     exit(1);
   }
@@ -264,6 +274,45 @@ int main(int argc, char ** argv)
 	    }
 	}
     }
+}
+
+process_mapping_params parse_rmappings_args(int argc, char ** argv)
+{
+  process_mapping_params rv;
+  options_description desc("pecnv precess: collect unusual paired-end mappings from a bam file");
+  desc.add_options()
+    ("help,h", "Produce help message")
+    ("bamfile,b",value<string>(&rv.bamfile),"BAM file name (required)")
+    ("structural,s",value<string>(&rv.structural_base),"Prefix for output files names for divergent, parallel, unlinked reads (required)")
+    ("umulti,u",value<string>(&rv.um_base),"Prefix for output file names for unique/repetitive read pairs")
+    ;
+
+  variables_map vm;
+  store(parse_command_line(argc, argv, desc), vm);
+  notify(vm);
+
+  if( argc == 1 || 
+      vm.count("help") ||
+      !vm.count("bamfile") ||
+      !vm.count("structural") ||
+      !vm.count("umulti") )
+    {
+      cerr << desc << '\n';
+      exit(0);
+    }
+
+  struct stat buf;
+  if( vm.count("bamfile") )
+    {
+      if (stat(rv.bamfile.c_str(), &buf) == -1) 
+	{
+	  cerr << "Error: "
+	       << rv.bamfile
+	       << " does not exist\n";
+	}
+    }
+
+  return rv;
 }
 
 void evalUM(const bamrecord & b1,

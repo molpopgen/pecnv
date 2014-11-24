@@ -1,4 +1,7 @@
+#include <pecnv_version.hpp>
 #include <teclust.hpp>
+#include <process_readmappings.hpp>
+#include <cluster_cnv.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -16,7 +19,21 @@ int main( int argc, char ** argv )
     }
 
   //What module will re run?
-  if( strcmp(argv[1],"teclust") == 0 )
+  if ( strcmp(argv[1],"help") == 0 )
+    {
+      usage(0);
+    }
+  else if ( strcmp(argv[1],"process") == 0 )
+    {
+      auto x = strip_argv(argc,argv,argv[1]);
+      process_readmappings_main(x - argv, argv);
+    }
+  else if( strcmp(argv[1],"cnvclust") == 0 )
+    {
+      auto x = strip_argv(argc,argv,argv[1]);
+      cluster_cnv_main(x - argv, argv);
+    }
+  else if( strcmp(argv[1],"teclust") == 0 )
     {
       auto x = strip_argv(argc,argv,argv[1]);
       teclust_main(x - argv, argv);
@@ -25,7 +42,6 @@ int main( int argc, char ** argv )
 
 void usage(int status)
 {
-
   exit(status);
 }
 

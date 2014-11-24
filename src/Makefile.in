@@ -76,8 +76,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = pecnv$(EXEEXT) cluster_cnv$(EXEEXT) \
-	process_readmappings$(EXEEXT) bwa_mapdistance$(EXEEXT)
+bin_PROGRAMS = pecnv$(EXEEXT) bwa_mapdistance$(EXEEXT)
 @HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -97,20 +96,13 @@ am_bwa_mapdistance_OBJECTS = bwa_mapdistance.$(OBJEXT) \
 	common.$(OBJEXT)
 bwa_mapdistance_OBJECTS = $(am_bwa_mapdistance_OBJECTS)
 bwa_mapdistance_LDADD = $(LDADD)
-am_cluster_cnv_OBJECTS = cluster_cnv2.$(OBJEXT) \
-	intermediateIO.$(OBJEXT)
-cluster_cnv_OBJECTS = $(am_cluster_cnv_OBJECTS)
-cluster_cnv_LDADD = $(LDADD)
-am_pecnv_OBJECTS = pecnv.$(OBJEXT) teclust.$(OBJEXT) common.$(OBJEXT) \
-	teclust_objects.$(OBJEXT) teclust_phrapify.$(OBJEXT) \
-	teclust_parseargs.$(OBJEXT) teclust_scan_bamfile.$(OBJEXT) \
-	intermediateIO.$(OBJEXT)
+am_pecnv_OBJECTS = pecnv.$(OBJEXT) process_readmappings.$(OBJEXT) \
+	teclust.$(OBJEXT) common.$(OBJEXT) teclust_objects.$(OBJEXT) \
+	teclust_phrapify.$(OBJEXT) teclust_parseargs.$(OBJEXT) \
+	teclust_scan_bamfile.$(OBJEXT) intermediateIO.$(OBJEXT) \
+	cluster_cnv2.$(OBJEXT)
 pecnv_OBJECTS = $(am_pecnv_OBJECTS)
 pecnv_LDADD = $(LDADD)
-am_process_readmappings_OBJECTS = process_readmappings.$(OBJEXT) \
-	common.$(OBJEXT) intermediateIO.$(OBJEXT)
-process_readmappings_OBJECTS = $(am_process_readmappings_OBJECTS)
-process_readmappings_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -152,10 +144,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(pecnv_SOURCES) $(process_readmappings_SOURCES)
-DIST_SOURCES = $(bwa_mapdistance_SOURCES) $(cluster_cnv_SOURCES) \
-	$(pecnv_SOURCES) $(process_readmappings_SOURCES)
+SOURCES = $(bwa_mapdistance_SOURCES) $(pecnv_SOURCES)
+DIST_SOURCES = $(bwa_mapdistance_SOURCES) $(pecnv_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -274,17 +264,19 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pecnv_SOURCES = pecnv.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc string_unsigned_lookup.hpp
+pecnv_SOURCES = pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc
+
+#string_unsigned_lookup.cc string_unsigned_lookup.hpp
 #get_pair_ids_bwa
 
 #fastq_to_table_SOURCES=fastq_to_table.cc isbinary.cc
 #bwa_bam_to_mapfiles_SOURCES=bwa_bam_to_mapfiles2.cc bwa_util.cc
 bwa_mapdistance_SOURCES = bwa_mapdistance.cc common.cc common.hpp
 #rename_reference_SOURCES=rename_reference.cc isbinary.cc
-cluster_cnv_SOURCES = cluster_cnv2.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
+#cluster_cnv_SOURCES=cluster_cnv2.cc intermediateIO.hpp intermediateIO.cc #string_unsigned_lookup.cc file_util.cc file_util.hpp string_unsigned_lookup.hpp
 #umm_te_finder_SOURCES=umm_te_finder.cc 
 #filter_edit_SOURCES=filter_edit.cc
-process_readmappings_SOURCES = process_readmappings.cc common.cc common.hpp intermediateIO.cc intermediateIO.hpp
+#process_readmappings_SOURCES=process_readmappings.cc common.cc common.hpp intermediateIO.cc intermediateIO.hpp
 #get_pair_ids_bwa_SOURCES=get_pair_ids_bwa.cc isbinary.cc
 AM_CXXFLAGS = $(am__append_1)
 all: all-am
@@ -368,17 +360,9 @@ bwa_mapdistance$(EXEEXT): $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_DEPENDENC
 	@rm -f bwa_mapdistance$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(bwa_mapdistance_OBJECTS) $(bwa_mapdistance_LDADD) $(LIBS)
 
-cluster_cnv$(EXEEXT): $(cluster_cnv_OBJECTS) $(cluster_cnv_DEPENDENCIES) $(EXTRA_cluster_cnv_DEPENDENCIES) 
-	@rm -f cluster_cnv$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(cluster_cnv_OBJECTS) $(cluster_cnv_LDADD) $(LIBS)
-
 pecnv$(EXEEXT): $(pecnv_OBJECTS) $(pecnv_DEPENDENCIES) $(EXTRA_pecnv_DEPENDENCIES) 
 	@rm -f pecnv$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(pecnv_OBJECTS) $(pecnv_LDADD) $(LIBS)
-
-process_readmappings$(EXEEXT): $(process_readmappings_OBJECTS) $(process_readmappings_DEPENDENCIES) $(EXTRA_process_readmappings_DEPENDENCIES) 
-	@rm -f process_readmappings$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(process_readmappings_OBJECTS) $(process_readmappings_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
