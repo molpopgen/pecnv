@@ -66,11 +66,11 @@ void usage(int status)
   cerr << "pecnv version " << PECNV_VERSION << '\n'
        << "Usage: pecnv module\n"
        << "Available modules are:\n"
-       << "\tversion - print version info to stdout\n"
        << "\tprocess - collect unusual read pairs from BAM file\n"
        << "\tmdist - estimate insert size distribution from BAM file\n"
        << "\tcnvclust - perform CNV clustering based on results from process step\n"
        << "\teteclust - perform TE clustering based on results from process step\n"
+       << "\tversion - print version info to stdout\n"
        << "\tcitation - print citation info to stdout\n";
   exit(status);
 }
