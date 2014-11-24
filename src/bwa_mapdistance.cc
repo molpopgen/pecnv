@@ -9,37 +9,50 @@
 #include <limits>
 #include <unordered_map>
 #include <iostream>
-#include <zlib.h>
-
+#include <boost/program_options.hpp>
 #include <common.hpp>
+
+#include <zlib.h>
+#include <sys/stat.h>
+
 using namespace std;
+using namespace boost::program_options;
 using namespace Sequence;
+
+struct mdist_opts
+{
+  string bamfilename,ofilename;
+  unsigned MAXPAIRS;
+};
+
+mdist_opts mdist_parse_argv(int argc, char ** argv);
 
 int bwa_mapdistance_main( int argc, char ** argv )
 {
-  int argn = 1;
-  if ( argc < 3 )
-    {
-      cerr << "Usage: "
-	   << argv[0] << " bamfile output.gz MAXPAIRS\n"
-	   << "Where MAXPAIRS = maximum number of read pairs to evaluate.\n"
-	   << "MAXPAIRS is an optional argument.  The default is to use all alignments\n"
-	   << "in the BAM file.\n";
-      exit(0);
-    }
-  const char * bamfilename = argv[argn++];
-  const char * ofilename = argv[argn++];
+  auto pars = mdist_parse_argv(argc, argv);
+  // int argn = 1;
+  // if ( argc < 3 )
+  //   {
+  //     cerr << "Usage: "
+  // 	   << argv[0] << " bamfile output.gz MAXPAIRS\n"
+  // 	   << "Where MAXPAIRS = maximum number of read pairs to evaluate.\n"
+  // 	   << "MAXPAIRS is an optional argument.  The default is to use all alignments\n"
+  // 	   << "in the BAM file.\n";
+  //     exit(0);
+  //   }
+  // const char * bamfilename = argv[argn++];
+  // const char * ofilename = argv[argn++];
 
-  unsigned MAXPAIRS = numeric_limits<unsigned>::max();
-  if( argc == 4 )
-    {
-      MAXPAIRS = stoi(argv[argn]);
-    }
+  // unsigned MAXPAIRS = numeric_limits<unsigned>::max();
+  // if( argc == 4 )
+  //   {
+  //     MAXPAIRS = stoi(argv[argn]);
+  //   }
 
-  bamreader reader(bamfilename);
+  bamreader reader(pars.bamfilename.c_str());
   if( ! reader )
     {
-      cerr << "Error: " << bamfilename
+      cerr << "Error: " << pars.bamfilename
 	   << " could not be opened for reading.\n";
       exit(1);
     }
@@ -97,7 +110,7 @@ int bwa_mapdistance_main( int argc, char ** argv )
 		}
 	    }
 	}
-      if( MAXPAIRS != numeric_limits<unsigned>::max() && PAIRS_EVALUATED >= MAXPAIRS ) break;
+      if( pars.MAXPAIRS != numeric_limits<unsigned>::max() && PAIRS_EVALUATED >= pars.MAXPAIRS ) break;
     }
 
   unsigned sum = 0;
@@ -106,10 +119,10 @@ int bwa_mapdistance_main( int argc, char ** argv )
     {
       sum += i->second;
     }
-  gzFile out = gzopen(ofilename,"w");
+  gzFile out = gzopen(pars.ofilename.c_str(),"w");
   if(out==NULL)
     {
-      cerr << "Error: could not open " << ofilename
+      cerr << "Error: could not open " << pars.ofilename
 	   << " for writing.\n";
       exit(1);
     }
@@ -133,4 +146,40 @@ int bwa_mapdistance_main( int argc, char ** argv )
 	}
     }
   gzclose(out);
+}
+
+mdist_opts mdist_parse_argv(int argc, char ** argv)
+{
+  mdist_opts rv;
+  options_description desc("pecnv mdist: estimate insert size distribution from BAM file");
+  desc.add_options()
+    ("help,h", "Produce help message")
+    ("bamfile,b",value<string>(&rv.bamfilename),"Input BAM file")
+    ("outfile,o",value<string>(&rv.ofilename),"Output file name")
+    ("mdist,m",value<unsigned>(&rv.MAXPAIRS)->default_value(numeric_limits<unsigned>::max()),"Max number of pairs to process")
+    ;
+  return rv;
+
+  variables_map vm;
+  store(parse_command_line(argc, argv, desc), vm);
+  notify(vm);
+
+  if( argc == 1 || 
+      vm.count("help") ||
+      !vm.count("bamfile") ||
+      !vm.count("outfile") )
+    {
+      cerr << desc << '\n';
+      exit(0);
+    }
+
+  struct stat buf;
+  if (stat(rv.bamfilename.c_str(), &buf) == -1) 
+    {
+      cerr << "Error: input file "
+	   << rv.bamfilename
+	   << " does not exist\n";
+      exit(1);
+    }
+
 }
