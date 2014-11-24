@@ -59,7 +59,7 @@ if [ -z ${SAMPLES+x} ]; then >&2 echo "Error: no input file specified"; usage; e
 if [ -z ${REFERENCE+x} ]; then >&2 echo "Error: no reference file specified"; usage; else echo "Reference file name is set to '$REFERENCE'"; fi
 
 #Check for executable dependencies
-for needed in bwa samtools process_readmappings Rscript cluster_cnv pecnv_insert_qtile
+for needed in bwa samtools pecnv Rscript pecnv_insert_qtile
 do
     PM=`which $needed`
     if [ -z ${PM} ]
@@ -149,8 +149,8 @@ else
     ulimit -v $MM
 fi
 
-process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_mappings $OUTDIR/$BAMFILESTUB.um 
-bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
+pecnv process -b $OUTDIR/"$BAMFILESTUB"_sorted.bam -s $OUTDIR/$BAMFILESTUB.cnv_mappings -u $OUTDIR/$BAMFILESTUB.um 
+pecnv mdist -b $OUTDIR/"$BAMFILESTUB"_sorted.bam -o $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###4. Cluster (uses Rscript to get the 99.9th quantile of insert size distribution)
-cluster_cnv $SAMPLEID $MINQUAL $MISMATCHES $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
+pecnv cnvclust -s $SAMPLEID -m $MINQUAL -M $MISMATCHES -g $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` -D $OUTDIR/$BAMFILESTUB.div.gz  -P $OUTDIR/$BAMFILESTUB.par.gz  -U $OUTDIR/$BAMFILESTUB.ul.gz -i $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
