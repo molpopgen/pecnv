@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iterator>
 #include <cassert>
+#include <cstring>
 #include <Sequence/bamreader.hpp>
 #include <Sequence/samfunctions.hpp>
 #include <Sequence/Fasta.hpp>
@@ -26,7 +27,8 @@ struct clusteredEvent
 {
   string chrom;
   int32_t nplus,nminus,pfirst,plast,pdist,pin,mfirst,mlast,mdist,min;
-  std::istream & read(istream &);
+  std::istream & read(istream &);     //Thru version 0.1.4
+  std::istream & read_bed(istream &); //For BED format output, 0.1.5+
 };
 
 istream & clusteredEvent::read(istream & in)
@@ -37,9 +39,65 @@ istream & clusteredEvent::read(istream & in)
   return in;
 }
 
+istream & clusteredEvent::read_bed(istream & in)
+{
+  string chr2,name,score,strand1,strand2,xtra;
+  in >> chrom >> pfirst >> plast 
+     >> chr2  >> mfirst >> mlast 
+     >> name >> score >> strand1 >> strand2 >> xtra;
+  //Subtract 1 from plast and mlast to change to 0-offset, if they are > -1
+  if( plast != -1 ) --pfirst;
+  if( mlast != -1 ) --mlast;
+
+  //if chrom is unknown (.), then chr2 must not be, so we can assign chr2 to chrom
+  if(chrom == ".") chrom = chr2;
+  assert( chrom != "." );
+
+  //parse the extra stuff, which is 6 fields : nplus, nminus, pdist, pin, mdist, min
+  char * tok = strtok( const_cast<char*>(xtra.c_str()), ":" );
+  short field = 0;
+  while( tok != NULL )
+    {
+      if(field==0)
+	{
+	  nplus = stoi(tok);
+	}
+      else if(field==1)
+	{
+	  nminus = stoi(tok);
+	}
+      else if(field==2)
+	{
+	  pdist = stoi(tok);
+	}
+      else if(field==3)
+	{
+	  pin = stoi(tok);
+	}
+      else if(field==4)
+	{
+	  mdist = stoi(tok);
+	}
+      else if(field==5)
+	{
+	  min = stoi(tok);
+	}
+      ++field;
+      tok = strtok(NULL,":");
+    }
+  if(field != 6)
+    {
+      cerr << "Error parsing xtra field data on line "
+	   << __LINE__ << " of " << __FILE__ << '\n';
+      exit(10);
+    }
+  return in;
+}
+
 istream & operator>>(istream & in, clusteredEvent & ce)
 {
-  return ce.read(in);
+  //return ce.read(in);
+  return ce.read_bed(in);
 }
 
 vector<clusteredEvent> parseClusters(const string & clusters,const teclust_params & pars)
@@ -48,7 +106,8 @@ vector<clusteredEvent> parseClusters(const string & clusters,const teclust_param
   vector<clusteredEvent> cEs;
   istringstream in(clusters);
   string temp;
-  getline(in,temp);//get rid of header
+  //Assuming BEDPE input now, so no more header
+  //getline(in,temp);//get rid of header
   while(!in.eof()) //read records
     {
       clusteredEvent e;
