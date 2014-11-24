@@ -102,6 +102,7 @@ void write_clusters( gzFile o,
 
 void write_clusters_bedpe( gzFile o,
 			   const string & sampleID,
+			   const string & eventType,
 			   const string & chrom1,
 			   const string & chrom2,
 			   const cluster_container & clusters,
@@ -207,6 +208,7 @@ int main(int argc, char ** argv)
       sort(clusters.begin(),clusters.end(),order_clusters);
       write_clusters_bedpe( divstream, 
 			    sampleID,
+			    string("div"),
 			    itr->first,itr->first,
 			    clusters,&eventid );
     }
@@ -225,6 +227,7 @@ int main(int argc, char ** argv)
       sort(clusters.begin(),clusters.end(),order_clusters);
       write_clusters_bedpe( parstream, 
 			    sampleID,
+			    string("par"),
 			    itr->first,
 			    itr->first,
 			    clusters,&eventid );
@@ -247,6 +250,7 @@ int main(int argc, char ** argv)
 	  sort(clusters.begin(),clusters.end(),order_clusters);
 	  write_clusters_bedpe( ulstream, 
 				sampleID,
+				string("unl"),
 				itr->first,
 				itr2->first,
 				clusters,&eventid );
@@ -540,6 +544,7 @@ void write_clusters( gzFile gzout,
 
 void write_clusters_bedpe( gzFile gzout,
 			   const string & sampleID,
+			   const string & eventtype,
 			   const string & chrom1,
 			   const string & chrom2,
 			   const cluster_container & clusters,
@@ -585,7 +590,7 @@ void write_clusters_bedpe( gzFile gzout,
 	<< (min2-1) << '\t'
 	<< max2 << '\t'
 	//The above are the minimal fields
-	<< sampleID << "_event" << *eventid << '\t'                               //"name"
+	<< sampleID << "_" << eventtype << "_event" << *eventid << '\t'                               //"name"
 	<< log10(clusters[i].size()) << '\t'                         //The score = log10(coverage)
 	<< ( (clusters[i][0]->strand1 == 0 ) ? '+' : '-' ) << '\t'   //strand1
 	<< ( (clusters[i][0]->strand2 == 0 ) ? '+' : '-' ) << '\t'   //strand2
