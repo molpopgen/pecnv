@@ -113,6 +113,7 @@ Mandatory options are:
  -i/--infile = A text file with the pairs of fastq file names listed.  One pair per line.  Must be TAB-separated
  -r/--reference = The reference file name to use for alignment.
 Optional arguments are:
+ -S/--sampleid = A label for the sample.  Will become part of the "name" column in BEDPE output.  Default = "sample".
  -o/--outdir = output directory name for the output.  Will be created if it does not exist.
  -q/--minqual = Min. mapping quality for clustering.  Default = 30
  -m/--mismatches = Max. number alignment mismatches to allow for clustering.  Default = 3
