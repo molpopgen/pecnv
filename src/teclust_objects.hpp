@@ -16,8 +16,9 @@ struct teclust_params //Command-line parameter options
     the um_m files that is the output of cluster_cnv for the sample
     The output of this program run on the reference genome, if available
     Directory for writing the phrap output
+    An ID for the sample
   */
-  std::string  reference_datafile, outfile, bamfile, readfile, umufile, ummfile, phrapdir;//,teclust_ref;
+  std::string  reference_datafile, outfile, bamfile, readfile, umufile, ummfile, phrapdir,samplename;//,teclust_ref;
   /*
     Upper limit on insert size distribution
     Maximum distance used for matching up left and right ends of putative TE calls
