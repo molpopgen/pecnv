@@ -42,16 +42,6 @@ teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv
 ##Method 4b: different positions files
 teclust -u TEtestData/pecnv_output/pecnv_bamfile.um_u.csv.gz -m TEtestData/pecnv_output/pecnv_bamfile.um_m.csv.gz -t TEtestData/TE_position_r5.1_KRT.bed --ummHitTE -b TEtestData/pecnv_output/pecnv_bamfile_sorted.bam -i `pecnv_insert_qtile TEtestData/pecnv_output/pecnv_bamfile.mdist.gz 0.99` -o method4b.out.gz
 
-##Reformat
-
-for i in TEtestData/teclust_output.gz method1b.out.gz method2.out.gz method3.out.gz method3b.out.gz method4.out.gz method4b.out.gz
-do
-    n=`basename $i gz`
-    ./reformatForR.sh $i| gzip > "$n"R.gz
-done
-
-
-
 ##Method 1 = Cridland et al approach
 ./checkTEoutput.R TEtestData/teclust_outputR.gz TEtestData/TE_position_r5.1 TEtestData/line99_truth method1.compare.out
 ./checkTEoutput.R method1b.outR.gz TEtestData/TE_position_r5.1_KRT.bed TEtestData/line99_truth method1b.compare.out
