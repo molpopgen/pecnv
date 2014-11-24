@@ -30,16 +30,18 @@ CPU=32;
 SORTMEM=50000000
 ALNMEM=5000000
 BAMFILESTUB="pecnv_bamfile"
+SAMPLEID=sample
 
 while true; do
     case "$1" in
+	-i | --infile ) SAMPLES="$2"; shift 2;;
+	-r | --reference ) REFERENCE="$2"; shift 2;;
+	-S | --sampleid ) SAMPLEID="$2" ; shift 2;;
 	-o | --outdir ) OUTDIR="$2"; shift 2 ;;
 	-q | --minqual ) MINQUAL="$2"; shift 2;;
 	-m | --mismatches ) MISMATCHES="$2"; shift 2;;
 	-g | --gaps ) GAPS="$2"; shift 2;;
-	-i | --infile ) SAMPLES="$2"; shift 2;;
 	-c | --cpu ) CPU="$2"; shift 2;;
-	-r | --reference ) REFERENCE="$2"; shift 2;;
 	-s | --sortmem ) SORTMEM="$2"; shift 2;;
 	-a | --alnmem ) ALNMEM="$2"; shift 2;;
 	-b | --bamfilebase ) BAMFILESTUB="$2" ; shift 2;;
@@ -151,4 +153,4 @@ process_readmappings $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.cnv_
 bwa_mapdistance $OUTDIR/"$BAMFILESTUB"_sorted.bam $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###4. Cluster (uses Rscript to get the 99.9th quantile of insert size distribution)
-cluster_cnv $MINQUAL $MISMATCHES $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
+cluster_cnv $SAMPLEID $MINQUAL $MISMATCHES $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` $OUTDIR/$BAMFILESTUB.div.gz  $OUTDIR/$BAMFILESTUB.par.gz  $OUTDIR/$BAMFILESTUB.ul.gz $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
