@@ -156,9 +156,9 @@ mdist_opts mdist_parse_argv(int argc, char ** argv)
     ("help,h", "Produce help message")
     ("bamfile,b",value<string>(&rv.bamfilename),"Input BAM file")
     ("outfile,o",value<string>(&rv.ofilename),"Output file name")
-    ("mdist,m",value<unsigned>(&rv.MAXPAIRS)->default_value(numeric_limits<unsigned>::max()),"Max number of pairs to process")
+    ("mdist,m",value<unsigned>(&rv.MAXPAIRS)->default_value(numeric_limits<unsigned>::max()),"Max number of pairs to process. Default is \"unlimited.\"")
     ;
-  return rv;
+
 
   variables_map vm;
   store(parse_command_line(argc, argv, desc), vm);
@@ -181,5 +181,5 @@ mdist_opts mdist_parse_argv(int argc, char ** argv)
 	   << " does not exist\n";
       exit(1);
     }
-
+  return rv;
 }
