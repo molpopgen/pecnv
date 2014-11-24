@@ -41,6 +41,7 @@ void output_results(ostringstream & out,
 void output_results_bedpe(ostringstream & out,
 			  const vector<pair<cluster,cluster> > & clusters, 
 			  const string & chrom_label, 
+			  const string & samplename,
 			  const refTEcont & reftes);
 void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
@@ -98,6 +99,7 @@ int main( int argc, char ** argv )
       cluster_data(clusters,itr->second,pars.INSERTSIZE,pars.MDIST);
       output_results_bedpe(out,clusters,
 			   itr->first,
+			   pars.samplename,
 			   refTEs);
     }
 
@@ -540,6 +542,7 @@ void output_results( ostringstream & out,
 void output_results_bedpe( ostringstream & out,
 			   const vector<pair<cluster,cluster> > & clusters, 
 			   const string & chrom_label , 
+			   const string & samplename,
 			   const refTEcont & reftes )
 {
   out.flush();
@@ -638,8 +641,8 @@ void output_results_bedpe( ostringstream & out,
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE;// << endl;
 	}
-      out << "chr" << chrom_label << "_event_" << i << '\t'
-	  <<  (clusters[i].first.nreads+clusters[i].second.nreads) << '\t'
+      out << samplename << "_" << chrom_label << "_event_" << i << '\t'         //This is the "name" column in the bedpe
+	  <<  log10(clusters[i].first.nreads+clusters[i].second.nreads) << '\t'
 	  << "+\t-\t"
 	  << xtra.str() << '\n';
       out.flush();
