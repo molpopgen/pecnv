@@ -641,7 +641,7 @@ void output_results_bedpe( ostringstream & out,
 	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	  xtra << ((withinTE) ? 0 : mindist) << ':' << withinTE;// << endl;
 	}
-      out << samplename << "_" << chrom_label << "_event_" << i << '\t'         //This is the "name" column in the bedpe
+      out << samplename << "_" << chrom_label << "_event" << i << '\t'         //This is the "name" column in the bedpe
 	  <<  log10(clusters[i].first.nreads+clusters[i].second.nreads) << '\t'
 	  << "+\t-\t"
 	  << xtra.str() << '\n';
