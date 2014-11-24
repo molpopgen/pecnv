@@ -11,16 +11,17 @@ This package also contains a C++ implementation of the transposable element (TE)
 
 #A note on version numbers
 
-1.  Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
-2.  Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
-3.  Release 0.1.2 = No more need to rename references or read names.  This shaves a load of time off of the workflow.
-4.  Release 0.1.3 = re-implementation of process_readmappings to read directly from BAM files.  No more need to make a BAM file sorted by read name.  This shaves hours off of the pipeline.
-5.  Release 0.1.4 = integration of the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  Intermediate files are now written in a binary format for more efficient downstream-processing.  This version depends on the boost libraries for parsing command-line arguments
+1. Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
+2. Release 0.1.1 = a bug fix resolving issue number 1 regarding inconsistent SAM flags within read pairs.  This bug does not affect the conclusions of the previous work because it affects very few reads that make it into the final clustering steps.
+3. Release 0.1.2 = No more need to rename references or read names.  This shaves a load of time off of the workflow.
+4. Release 0.1.3 = re-implementation of process_readmappings to read directly from BAM files.  No more need to make a BAM file sorted by read name.  This shaves hours off of the pipeline.
+5. Release 0.1.4 = integration of the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  Intermediate files are now written in a binary format for more efficient downstream-processing.  This version depends on the boost libraries for parsing command-line arguments
+6. Release 0.1.5 = bed/bedpe input and output where possible.
 
 ##Tentative plan for future releases
 
 1. Bugfixes, better documentation, etc.
-2. Support for additional output files in BED format, for compatibility with other tools.
+
 
 #Installation
 
@@ -409,7 +410,7 @@ Keeping this picture in mind will hopefully make the next section easier to unde
 
 The output file is gzipped BEDPE file.  Missing values correspond to no information on the right or left end of a putative insertion.  The score is the log10( coverage ) for the event.
 
-The 11th column is a colon-separated list of 6 signed integers:
+Extra six columns in the bedpe output contain:
 
 1. nplus (int) = the number of read pairs on the left-hand side/plus strand of the event.
 2. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, columns 2 and 3 are the "coverage" in support of this event
