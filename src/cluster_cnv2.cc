@@ -296,7 +296,7 @@ cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)
     ("maxgap,g",value<int16_t>(&rv.max_gap)->default_value(0),"Max no. alignment gaps in a read for it to be included")
     ("divfile,D",value<string>(&rv.divfile)->default_value("div_clusters.gz"),"Output file for divergent clusters")
     ("parfile,P",value<string>(&rv.parfile)->default_value("par_clusters.gz"),"Output file for parallel clusters")
-    ("parfile,U",value<string>(&rv.ulfile)->default_value("unl_clusters.gz"),"Output file for unlinked clusters")
+    ("unlfile,U",value<string>(&rv.ulfile)->default_value("unl_clusters.gz"),"Output file for unlinked clusters")
     ;
 
   variables_map vm;
