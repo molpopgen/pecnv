@@ -159,22 +159,15 @@ Where $ODIR is the value passed to the -o option and $BAM is the bam file name.
 
 The first three files in the above list correspond to clusters of reads mapping in divergent orientation, parallel orientation, and read pairs mapping to different chromosomes ("unlinked"), respectively.  See Figure 2 of [Cridland _et al._ 2010](http://gbe.oxfordjournals.org/content/2/83.full) for a figure representing these three mapping types.
 
-The format of the output files is as follows:
+The format of the output files is in [BEDPE](http://bedtools.readthedocs.org/en/latest/content/general-usage.html) format.  Note that the BEDPE formats means that the cluster coordinates are different than the output in earlier version of pecnv.
 
-* id = Event identification number (arb. integer)
-* chrom1 = Chromosome number in reference where the first read cluster is
-* coverage = Number of read pairs supporting the event
-* strand1 = Strand of first read cluster.  0 = plus, 1 = minus
-* start1 = Start position of first read cluster.  
-* stop1 = Stop position of second read cluster.
-* chrom2 = Chromosome number in reference where the second read cluster is
-* start2 = Start position of second read cluster.  
-* stop2 = Stop position of second read cluster. 
-* reads = Pipe-separated (the pipe is the | character) list of the read pairs supporting the event.  Format is readPairName;start,stop,strand,start,stop,strand, where the last two values are for the two reads in the pair.  
+The first 10 columns of the output files are the standard bedpe columns.  The positions correspond to the clustering done by cluster_cnv.  The score is the log10(coverage) for the event. The final column is a pipe-separated list of read pairs making up the cluster.  For each record in the list, the format is:
 
-FOr the above, all references to positions are with respect to a 1-offset coordinate system.  (In other words, 1 is the first position on a contig.)
+```
+Read pair prefix;start1,stop1,strand1,start2,stop2,strand2
+```
 
-For all referencs to "strand" in the above, 0 = plus, 1 = minus.
+The positions in these records start counting from position 1.
 
 ###What does the output mean?
 
@@ -413,24 +406,18 @@ Keeping this picture in mind will hopefully make the next section easier to unde
 
 ###The file contents
 
-The output file is gzipped text and contains a header line for easy processing using tools like R.  The columns are:
+The output file is gzipped BEDPE file.  Missing values correspond to no information on the right or left end of a putative insertion.  The score is the log10( coverage ) for the event.
 
-1. chromo (string) = the chromosome
-2. nplus (int) = the number of read pairs on the left-hand side/plus strand of the event.
-3. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, columns 2 and 3 are the "coverage" in support of this event
-4. pfirst (int) = the first position of the left-hand cluster
-5. plast (int) = the last position of the left-hand cluster
-6. pdist (int) = the distance from the left-hand cluster to the first annotated TE 3' of the cluster
-7. pin (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
-8. mfirst (int) = the first position of the right-hand cluster
-9. mlast (int) = the last position of the right-hand cluster
-10. mdist (int) = the distance from the right-hand cluster to the first annotated TE 5' of the cluster
-11. min (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
+The 11th column is a colon-separated list of 6 signed integers:
 
-The following comments apply to this file:
+1. nplus (int) = the number of read pairs on the left-hand side/plus strand of the event.
+2. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, columns 2 and 3 are the "coverage" in support of this event
+3. pdist (int) = the distance from the left-hand cluster to the first annotated TE 3' of the cluster
+4. pin (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
+5. mdist (int) = the distance from the right-hand cluster to the first annotated TE 5' of the cluster
+6. min (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
 
-* positions start from 1
-* The pfirst/plast and mfirst/mlast intervals are based on the alignment start positions of reads.  In other words, they correpond to the run of positions given by what would be in the fourth column of a SAM record.
-* A value of -1 is used to represent "not applicable".  Old versions of this code used to output NA, which was fine when the file was read using R, but problematic when read using C/C++, etc.
+log10(nplus + nminus) = the score column in the regular bedpe columns.  Values of -1 represent missing data.
+
 * Values of -1 may occur if: nplus and/or nminus equal 0.  The --tefile/-t option is not used, therfore pdist,pin,mdist, and min cannot be known.
 
