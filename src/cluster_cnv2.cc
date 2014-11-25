@@ -31,8 +31,9 @@
 #include <limits>
 #include <zlib.h>
 #include <intermediateIO.hpp>
+#include <file_common.hpp>
 #include <boost/program_options.hpp>
-#include <sys/stat.h>
+
 
 using namespace std;
 using namespace boost::program_options;
@@ -322,8 +323,7 @@ cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)
 
   for(unsigned i = 0 ; i < rv.infiles.size() ; ++i )
     {
-      struct stat buf;
-      if (stat(rv.infiles[i].c_str(), &buf) == -1) 
+      if (!file_exists(rv.infiles[i].c_str()))
 	{
 	  cerr << "Error: input file "
 	       << rv.infiles[i]

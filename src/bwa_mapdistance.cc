@@ -11,9 +11,9 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 #include <common.hpp>
-
+#include <file_common.hpp>
 #include <zlib.h>
-#include <sys/stat.h>
+
 
 using namespace std;
 using namespace boost::program_options;
@@ -173,8 +173,7 @@ mdist_opts mdist_parse_argv(int argc, char ** argv)
       exit(0);
     }
 
-  struct stat buf;
-  if (stat(rv.bamfilename.c_str(), &buf) == -1) 
+  if (!file_exists(rv.bamfilename.c_str()))
     {
       cerr << "Error: input file "
 	   << rv.bamfilename

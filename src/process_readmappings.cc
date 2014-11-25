@@ -25,8 +25,9 @@
 #include <boost/program_options.hpp>
 #include <common.hpp>
 #include <intermediateIO.hpp>
+#include <file_common.hpp>
 #include <zlib.h>
-#include <sys/stat.h>
+
 
 using namespace std;
 using namespace boost::program_options;
@@ -301,10 +302,9 @@ process_mapping_params parse_rmappings_args(int argc, char ** argv)
       exit(0);
     }
 
-  struct stat buf;
   if( vm.count("bamfile") )
     {
-      if (stat(rv.bamfile.c_str(), &buf) == -1) 
+      if (!file_exists(rv.bamfile.c_str()))
 	{
 	  cerr << "Error: "
 	       << rv.bamfile

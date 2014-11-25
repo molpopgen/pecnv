@@ -96,7 +96,8 @@ am_pecnv_OBJECTS = pecnv.$(OBJEXT) process_readmappings.$(OBJEXT) \
 	teclust.$(OBJEXT) common.$(OBJEXT) teclust_objects.$(OBJEXT) \
 	teclust_phrapify.$(OBJEXT) teclust_parseargs.$(OBJEXT) \
 	teclust_scan_bamfile.$(OBJEXT) intermediateIO.$(OBJEXT) \
-	cluster_cnv2.$(OBJEXT) bwa_mapdistance.$(OBJEXT)
+	cluster_cnv2.$(OBJEXT) bwa_mapdistance.$(OBJEXT) \
+	file_common.$(OBJEXT)
 pecnv_OBJECTS = $(am_pecnv_OBJECTS)
 pecnv_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -260,7 +261,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-pecnv_SOURCES = pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc mdist.hpp bwa_mapdistance.cc
+pecnv_SOURCES = pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc mdist.hpp bwa_mapdistance.cc file_common.hpp file_common.cc
 AM_CXXFLAGS = $(am__append_1)
 all: all-am
 
@@ -352,6 +353,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bwa_mapdistance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster_cnv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intermediateIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pecnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/process_readmappings.Po@am__quote@

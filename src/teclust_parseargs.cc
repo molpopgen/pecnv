@@ -1,6 +1,7 @@
 #include <teclust_parseargs.hpp>
+#include <file_common.hpp>
 #include <boost/program_options.hpp>
-#include <sys/stat.h>
+
 using namespace std;
 using namespace boost::program_options;
 
@@ -75,10 +76,9 @@ teclust_params teclust_parseargs(const int argc, char ** argv)
     }
 
   //Check that specified input files exist
-  struct stat buf;
   if( vm.count("bamfile") )
     {
-      if (stat(rv.bamfile.c_str(), &buf) == -1) 
+      if (!file_exists(rv.bamfile.c_str()))
 	{
 	  cerr << "Error: "
 	       << rv.bamfile
@@ -87,20 +87,20 @@ teclust_params teclust_parseargs(const int argc, char ** argv)
     }
   if ( vm.count("tepos") )
     {
-      if (stat(rv.reference_datafile.c_str(), &buf) == -1) 
+      if (!file_exists(rv.reference_datafile.c_str()))
 	{
 	  cerr << "Error: "
 	       << rv.reference_datafile
 	       << " does not exist\n";
 	}
     }
-  if (stat(rv.umufile.c_str(), &buf) == -1) 
+  if (!file_exists(rv.umufile.c_str()))
     {
       cerr << "Error: "
 	   << rv.umufile
 	   << " does not exist\n";
     }
-  if (stat(rv.ummfile.c_str(), &buf) == -1) 
+  if (!file_exists(rv.ummfile.c_str()))
     {
       cerr << "Error: "
 	   << rv.ummfile
