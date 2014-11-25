@@ -619,17 +619,17 @@ void write_clusters_bedpe( gzFile gzout,
 	}
       ostringstream o;
       o << chrom1 << '\t'
-	<< (min1-1) << '\t'                                          //b/c start1 is zero-based
-	<< max1 << '\t'                                              //b/c start2 is one-based
+	<< (min1-1) << '\t'                                             //b/c start1 is zero-based
+	<< max1 << '\t'                                                 //b/c start2 is one-based
 	<< chrom2 << '\t' 
 	<< (min2-1) << '\t'
 	<< max2 << '\t'
 	//The above are the minimal fields
-	<< sampleID << "_" << eventtype << "_event" << *eventid << '\t'                               //"name"
-	<< log10(clusters[i].size()) << '\t'                         //The score = log10(coverage)
-	<< ( (clusters[i][0]->strand1 == 0 ) ? '+' : '-' ) << '\t'   //strand1
-	<< ( (clusters[i][0]->strand2 == 0 ) ? '+' : '-' ) << '\t'   //strand2
-	<< readnames <<'\n';                                         //The reads are the optional column
+	<< sampleID << "_" << eventtype << "_event" << *eventid << '\t' //"name"
+	<< log10(clusters[i].size()) << '\t'                            //The score = log10(coverage)
+	<< ( (clusters[i][0]->strand1 == 0 ) ? '+' : '-' ) << '\t'      //strand1
+	<< ( (clusters[i][0]->strand2 == 0 ) ? '+' : '-' ) << '\t'      //strand2
+	<< readnames <<'\n';                                            //The reads are the optional column
       if(!gzwrite(gzout,o.str().c_str(),o.str().size()))
 	{
 	  cerr << "Error: gzwrite error encountered at line " << __LINE__ 
