@@ -98,11 +98,14 @@ bool unique_positions(const lvector & data,
 		      const unsigned & start,
 		      const unsigned & start2);
 
+/*
+//Old version, prior to bedpe output
 void write_clusters( gzFile o,
 		     const string & chrom1,
 		     const string & chrom2,
 		     const cluster_container & clusters,
 		     unsigned * eventid );
+*/
 
 void write_clusters_bedpe( gzFile o,
 			   const string & sampleID,
@@ -514,6 +517,7 @@ void reduce_clusters( cluster_container & clusters,
     }
 }
 
+/*
 void write_clusters( gzFile gzout,
 		     const string & chrom1,
 		     const string & chrom2,
@@ -571,6 +575,7 @@ void write_clusters( gzFile gzout,
       ++(*eventid);
     } 
 }
+*/
 
 void write_clusters_bedpe( gzFile gzout,
 			   const string & sampleID,

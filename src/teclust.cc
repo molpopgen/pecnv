@@ -33,10 +33,13 @@ refTEcont read_refdata( const teclust_params & p );
 unordered_set<string> procUMM(const teclust_params & pars,
 			      const refTEcont & reftes,
 			      map<string,vector< puu > > * data);
+/*
+//Old version, prior to bedpe output
 void output_results(ostringstream & out,
 		    const vector<pair<cluster,cluster> > & clusters, 
 		    const string & chrom_label, 
 		    const refTEcont & reftes);
+*/
 void output_results_bedpe(ostringstream & out,
 			  const vector<pair<cluster,cluster> > & clusters, 
 			  const string & chrom_label, 
@@ -438,6 +441,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
     }
 }
 
+/*
 void output_results( ostringstream & out,
 		     const vector<pair<cluster,cluster> > & clusters, 
 		     const string & chrom_label , 
@@ -532,6 +536,7 @@ void output_results( ostringstream & out,
       out.flush();
     }
 }
+*/
 
 void output_results_bedpe( ostringstream & out,
 			   const vector<pair<cluster,cluster> > & clusters, 
