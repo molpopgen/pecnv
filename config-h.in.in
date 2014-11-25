@@ -6,6 +6,10 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `boost_iostreams' library (-lboost_iostreams).
+   */
+#undef HAVE_LIBBOOST_IOSTREAMS
+
 /* Define to 1 if you have the `boost_program_options' library
    (-lboost_program_options). */
 #undef HAVE_LIBBOOST_PROGRAM_OPTIONS

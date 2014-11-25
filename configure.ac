@@ -47,6 +47,12 @@ AC_CHECK_HEADER(Sequence/bamreader.hpp,,[AC_MSG_ERROR([Sequence/bamreader.hpp no
 AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(boost/program_options.hpp,,[AC_MSG_ERROR([boost/program_options.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
+AC_CHECK_HEADER(boost/iostreams/filter/gzip.hpp,,[AC_MSG_ERROR([boost/iostreams/filter/gzip.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
+AC_CHECK_HEADER(boost/iostreams/filtering_stream.hpp,,[AC_MSG_ERROR([boost/iostreams/filter/filtering_stream.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
+AC_CHECK_HEADER(boost/iostreams/device/file.hpp,,[AC_MSG_ERROR([boost/iostreams/device/file.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/device/file.hpp>
 
 AC_CHECK_HEADER(zlib.h,,[AC_MSG_ERROR([zlib development files required])])
 
@@ -56,6 +62,7 @@ AC_LANG_SAVE
           AC_REQUIRE_CPP
 	  AC_CHECK_LIB(sequence, main,,[echo "libsequence runtime library does not seem to be here";exit 1])	
 	  AC_CHECK_LIB(boost_program_options, main,,[echo "boost_program_options runtime library does not seem to be here.  Please install.";exit 1])	
+	  AC_CHECK_LIB(boost_iostreams, main,,[echo "boost_iostreams runtime library does not seem to be here.  Please install.";exit 1])	
 AC_LANG_RESTORE
 dnl AM_CONFIG_HEADER(config.h)
 
