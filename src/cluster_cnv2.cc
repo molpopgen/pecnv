@@ -135,55 +135,18 @@ cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv);
 int cluster_cnv_main(int argc, char ** argv)
 {
   auto pars = clusterCNV_parseargs(argc, argv);
-  // int argn=1;
-  // if( argc < 9 )
-  //   {
-  //     cerr << "usage: "
-  // 	   << argv[0]
-  // 	   << " sampleID min_quality max_mm max_gap insert_size outfile_div outfile_par outfile_ul "
-  // 	   << "structural_file1a structural_file1b ... structural_fileNa structural_fileNb\n";
-  //     exit(0);
-  //   }
-  // const string sampleID(argv[argn++]);
-  // const int8_t min_mqual = stoi(argv[argn++]);
-  // const int16_t max_mm = stoi(argv[argn++]);
-  // const int16_t max_gap = stoi(argv[argn++]);
-  // const unsigned mdist = stoi(argv[argn++]);
-  // const char * divfile = argv[argn++];
-  // const char * parfile = argv[argn++];
-  // const char * ulfile = argv[argn++];
-
-  //make sure output files are writable
-  //const string header = "id\tchrom1\tcoverage\tstrand1\tstart1\tstop1\tchrom2\tstrand2\tstart2\tstop2\treads";
-
   gzFile divstream = gzopen(pars.divfile.c_str(),"wb");
   if(divstream==NULL) {
     cerr << "Error: could not open "
 	 << pars.divfile
 	 << " for writing\n";
   }
-  /*
-    if( gzprintf(divstream,"%s\n",header.c_str()) <= 0 )
-    {
-    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-    << " of " << __FILE__ << '\n';
-    exit(1);
-    }
-  */
   gzFile parstream = gzopen(pars.parfile.c_str(),"wb");
   if(parstream == NULL) {
     cerr << "Error: could not open "
 	 << pars.parfile << " for writing\n";
     exit(1);
   }
-  /*
-    if (gzprintf(parstream,"%s\n",header.c_str()) <= 0 )
-    {
-    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-    << " of " << __FILE__ << '\n';
-    exit(1);
-    }
-  */
   gzFile ulstream = gzopen(pars.ulfile.c_str(),"wb");
   if(ulstream == NULL)
     {
@@ -192,21 +155,12 @@ int cluster_cnv_main(int argc, char ** argv)
 	   << " for writing\n";
       exit(1);
     }
-  /*
-    if (gzprintf(ulstream,"%s\n",header.c_str()) <= 0 )
-    {
-    cerr << "Error: gzprintf error encountered at line " << __LINE__ 
-    << " of " << __FILE__ << '\n';
-    exit(1);
-    }
-  */
   map<string, lvector > raw_div;
   map<string, lvector > raw_par;
   map<string, putCNVs > raw_ul;
-  //for(int i = argn;i<argc;++i)//i+=2)
+
   for(unsigned i = 0 ; i < pars.infiles.size() ; ++i )
     {
-      cerr << "processing " << argv[i] << '\n';
       read_data(raw_div,raw_par,raw_ul,
 		pars.infiles[i].c_str(),
 		pars.min_mqual,

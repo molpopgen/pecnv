@@ -142,21 +142,6 @@ process_mapping_params parse_rmappings_args(int argc, char ** argv);
 int process_readmappings_main(int argc, char ** argv)
 {
   process_mapping_params pars = parse_rmappings_args(argc, argv);
-  // const char * bamfile = argv[argn++];
-  // const char * structural_base = argv[argn++];
-  // const char * um_base = argv[argn++];
-
-  // if( argc != 4 )
-  //   {
-  //     cerr << "Usage:\n"
-  // 	   << argv[0]
-  // 	   << " bamfile structural_base um_base\n"
-  // 	   << "Where:\n"
-  // 	   << "\tbamfile = the bam file containing alignments\n"
-  // 	   << "\tstructural_base = prefix for file names containing PAR/DIV/UL read pairs\n"
-  // 	   << "\tum_base = prefix for file names containing unique/multi read pairs\n";
-  //     exit(0);
-  //   }
   struct output_files of(pars.structural_base.c_str(),pars.um_base.c_str());
   
   bamreader reader(pars.bamfile.c_str());

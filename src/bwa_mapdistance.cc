@@ -30,24 +30,6 @@ mdist_opts mdist_parse_argv(int argc, char ** argv);
 int bwa_mapdistance_main( int argc, char ** argv )
 {
   auto pars = mdist_parse_argv(argc, argv);
-  // int argn = 1;
-  // if ( argc < 3 )
-  //   {
-  //     cerr << "Usage: "
-  // 	   << argv[0] << " bamfile output.gz MAXPAIRS\n"
-  // 	   << "Where MAXPAIRS = maximum number of read pairs to evaluate.\n"
-  // 	   << "MAXPAIRS is an optional argument.  The default is to use all alignments\n"
-  // 	   << "in the BAM file.\n";
-  //     exit(0);
-  //   }
-  // const char * bamfilename = argv[argn++];
-  // const char * ofilename = argv[argn++];
-
-  // unsigned MAXPAIRS = numeric_limits<unsigned>::max();
-  // if( argc == 4 )
-  //   {
-  //     MAXPAIRS = stoi(argv[argn]);
-  //   }
 
   bamreader reader(pars.bamfilename.c_str());
   if( ! reader )

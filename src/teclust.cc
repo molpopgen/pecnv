@@ -27,7 +27,6 @@ using namespace Sequence;
 
 using puu = pair<int32_t,int8_t>;
 
-//const unsigned UMAX = std::numeric_limits<unsigned>::max();
 const unsigned IMAX = std::numeric_limits<int32_t>::max();
 
 refTEcont read_refdata( const teclust_params & p );
@@ -86,19 +85,6 @@ int teclust_main( int argc, char ** argv )
     }
   //Cluster the raw data and buffer results
   ostringstream out;
-  /*
-  out << "chromo\t"
-      << "nplus\t"
-      << "nminus\t"
-      << "pfirst\t"
-      << "plast\t"
-      << "pdist\t"
-      << "pin\t"
-      << "mfirst\t"
-      << "mlast\t"
-      << "mdist\t"
-      << "min\n";
-  */
   for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
     {
       vector<pair<cluster,cluster> > clusters;
@@ -582,10 +568,6 @@ void output_results_bedpe( ostringstream & out,
 	   << '\t'
 	   << clusters[i].second.nreads 
 	   << '\t';
-      // out.flush();
-      // out << chrom_label << '\t'
-      // 	  << clusters[i].first.nreads << '\t'
-      // 	  << clusters[i].second.nreads << '\t';
       if( clusters[i].first.positions.first == IMAX )
 	{
 	  //Chrom, start, stop, unknown.
@@ -616,7 +598,6 @@ void output_results_bedpe( ostringstream & out,
 	      withinTE = ( __win != refItr->second.cend() );
 	    }
 	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';
-	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << '\t';	  
 	}
       if( clusters[i].second.positions.first == IMAX )
 	{
@@ -646,7 +627,6 @@ void output_results_bedpe( ostringstream & out,
 				   bind(within,placeholders::_1,clusters[i].second.positions.first,clusters[i].second.positions.second));
 	      withinTE = (__win != refItr->second.cend());
 	    }
-	  //out << ((withinTE) ? 0 : mindist) << '\t' << withinTE << endl;
 	  xtra << ((withinTE) ? 0 : mindist) << '\t' << withinTE;// << endl;
 	}
       out << samplename << "_" << chrom_label << "_event" << i << '\t'         //This is the "name" column in the bedpe
