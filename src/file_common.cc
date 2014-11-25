@@ -3,5 +3,5 @@
 int file_exists(const char * fn)
 {
   struct stat buf;
-  return stat(fn,&buf) != -1;
+  return (stat(fn,&buf) != -1);
 }
