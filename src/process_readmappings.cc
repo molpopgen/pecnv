@@ -141,7 +141,6 @@ process_mapping_params parse_rmappings_args(int argc, char ** argv);
 
 int process_readmappings_main(int argc, char ** argv)
 {
-  int argn = 1;
   process_mapping_params pars = parse_rmappings_args(argc, argv);
   // const char * bamfile = argv[argn++];
   // const char * structural_base = argv[argn++];
@@ -275,6 +274,7 @@ int process_readmappings_main(int argc, char ** argv)
 	    }
 	}
     }
+  return 0;
 }
 
 process_mapping_params parse_rmappings_args(int argc, char ** argv)

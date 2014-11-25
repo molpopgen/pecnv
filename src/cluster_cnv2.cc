@@ -280,6 +280,8 @@ int cluster_cnv_main(int argc, char ** argv)
   gzclose(parstream);
   gzclose(ulstream);
   gzclose(divstream);
+
+  return 0;
 }
 
 cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)

@@ -128,6 +128,8 @@ int teclust_main( int argc, char ** argv )
 
   //Output the input to phrap, if desired
   phrapify( pars, out.str() );
+
+  return 0;
 }
 
 refTEcont read_refdata( const teclust_params & p )

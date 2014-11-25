@@ -146,6 +146,8 @@ int bwa_mapdistance_main( int argc, char ** argv )
 	}
     }
   gzclose(out);
+
+  return 0;
 }
 
 mdist_opts mdist_parse_argv(int argc, char ** argv)
