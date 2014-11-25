@@ -153,4 +153,4 @@ pecnv process -b $OUTDIR/"$BAMFILESTUB"_sorted.bam -s $OUTDIR/$BAMFILESTUB.cnv_m
 pecnv mdist -b $OUTDIR/"$BAMFILESTUB"_sorted.bam -o $OUTDIR/$BAMFILESTUB.mdist.gz
 
 ###4. Cluster (uses Rscript to get the 99.9th quantile of insert size distribution)
-pecnv cnvclust -s $SAMPLEID -m $MINQUAL -M $MISMATCHES -g $GAPS `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` -D $OUTDIR/$BAMFILESTUB.div.gz  -P $OUTDIR/$BAMFILESTUB.par.gz  -U $OUTDIR/$BAMFILESTUB.ul.gz -i $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
+pecnv cnvclust -s $SAMPLEID -m $MINQUAL -M $MISMATCHES -g $GAPS -d `pecnv_insert_qtile $OUTDIR/$BAMFILESTUB.mdist.gz 0.999` -D $OUTDIR/$BAMFILESTUB.div.gz  -P $OUTDIR/$BAMFILESTUB.par.gz  -U $OUTDIR/$BAMFILESTUB.ul.gz -i $OUTDIR/$BAMFILESTUB.cnv_mappings.csv.gz
