@@ -424,11 +424,11 @@ The output file is gzipped BEDPE file.  Missing values correspond to no informat
 Extra six columns in the bedpe output contain:
 
 1. nplus (int) = the number of read pairs on the left-hand side/plus strand of the event.
-2. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, columns 2 and 3 are the "coverage" in support of this event
+2. minus (int) = the number of read pairs on the right-hand side/minus strand of the event.  In total, extra columns 1 and 2 are the "coverage" in support of this event
 3. pdist (int) = the distance from the left-hand cluster to the first annotated TE 3' of the cluster
 4. pin (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
 5. mdist (int) = the distance from the right-hand cluster to the first annotated TE 5' of the cluster
-6. min (bool) = 0 of the interval pfirst to plast does __not__ overlap an annotated TE, 1 if it __does__
+6. min (bool) = 0 of the interval mfirst to mlast does __not__ overlap an annotated TE, 1 if it __does__
 
 log10(nplus + nminus) = the score column in the regular bedpe columns.  Values of -1 represent missing data.
 
