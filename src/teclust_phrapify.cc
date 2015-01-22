@@ -44,7 +44,9 @@ istream & clusteredEvent::read_bed(istream & in)
   string chr2,name,score,strand1,strand2,xtra;
   in >> chrom >> pfirst >> plast 
      >> chr2  >> mfirst >> mlast 
-     >> name >> score >> strand1 >> strand2 >> xtra;
+     >> name >> score >> strand1 >> strand2;
+  getline(in,xtra);
+
   //Subtract 1 from plast and mlast to change to 0-offset, if they are > -1
   if( plast != -1 ) --pfirst;
   if( mlast != -1 ) --mlast;
@@ -54,7 +56,7 @@ istream & clusteredEvent::read_bed(istream & in)
   assert( chrom != "." );
 
   //parse the extra stuff, which is 6 fields : nplus, nminus, pdist, pin, mdist, min
-  char * tok = strtok( const_cast<char*>(xtra.c_str()), ":" );
+  char * tok = strtok( const_cast<char*>(xtra.c_str()), "\t" );
   short field = 0;
   while( tok != NULL )
     {
@@ -83,7 +85,7 @@ istream & clusteredEvent::read_bed(istream & in)
 	  min = stoi(tok);
 	}
       ++field;
-      tok = strtok(NULL,":");
+      tok = strtok(NULL,"\t");
     }
   if(field != 6)
     {
