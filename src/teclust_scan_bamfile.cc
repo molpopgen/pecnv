@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <common.hpp>
 #include <sys/stat.h>
-
+#include <assert.h>
 using namespace std;
 using namespace Sequence;
 
@@ -45,7 +45,9 @@ void scan_bamfile(const teclust_params & p,
 
   auto firstREC = reader.tell();
   //unordered_set<string> RPlocal;
-  unordered_map< string, pair<int32_t,int32_t> > RPlocal;
+  //unordered_map< string, pair<int32_t,int32_t> > RPlocal;
+  vector<pair<string,int64_t> > RPlocal;
+  RPlocal.reserve(2000000);
   while(! reader.eof() && !reader.error() )
     {
       bamrecord b = reader.next_record();
@@ -102,13 +104,24 @@ void scan_bamfile(const teclust_params & p,
 			{
 			  //readPairs->insert( n );
 			  //RPlocal.insert(n);
-			  RPlocal[n] = make_pair( b.next_refid(), b.next_pos() );
+			  //RPlocal[n] = make_pair( b.next_refid(), b.next_pos() );
+			  //get offset of the other read
+			  hts_itr_t *iter = bam_itr_queryi(idx,b.next_refid(),b.next_pos(),b.next_pos()+1);
+			  assert(iter->off != NULL);
+			  RPlocal.emplace_back(std::move(std::make_pair(std::move(n),std::move(iter->off->u))));
+			  hts_itr_destroy(iter);
 			}
 		    }
 		}
 	    }
 	}
     }
+
+  sort(RPlocal.begin(),RPlocal.end(),
+       [](const pair<string,int64_t> & a,
+	  const pair<string,int64_t> & b) { 
+	 return a.second < b.second;
+       } );
 
   //SECOND PASS -- new version based on seeking within the bgzf file
   cerr << "Second pass starting.  There are " << RPlocal.size() << " names to process\n";
@@ -119,56 +132,55 @@ void scan_bamfile(const teclust_params & p,
 	We are seeking to the position where this read should be to this position + 1
 	htslib doesn't seem to like to seek to an i,i range.
        */
-      hts_itr_t *iter = bam_itr_queryi(idx,itr->second.first,itr->second.second,itr->second.second+1);
-      if(iter->off != NULL) //If there are reads in the range
+      //hts_itr_t *iter = bam_itr_queryi(idx,itr->second.first,itr->second.second,itr->second.second+1);
+      //if(iter->off != NULL) //If there are reads in the range
+	//{
+      //reader.seek(iter->off->u,SEEK_SET); //seek to position
+      reader.seek(itr->second,SEEK_SET);
+      bool found = false;
+      while(!found)
 	{
-	  reader.seek(iter->off->u,SEEK_SET); //seek to position
-	  bool found = false;
-	  while(!found && reader.tell() < iter->off->v )
+	  bamrecord b = reader.next_record();
+	  samflag f(b.flag());
+	  if( !f.query_unmapped && !f.mate_unmapped )
 	    {
-	      bamrecord b = reader.next_record();
-	      samflag f(b.flag());
-	      if( !f.query_unmapped && !f.mate_unmapped )
+	      auto itr2 = lookup.find(b.refid());
+	      string n = editRname(b.read_name());
+	      if(n == itr->first)
 		{
-		  auto itr2 = lookup.find(b.refid());
-		  string n = editRname(b.read_name());
-		  if(n == itr->first)
+		  found = true;
+		  ++FOUND;
+		  if( FOUND > 0 && FOUND % 100 == 0. ) cerr << FOUND << '\n';
+		  int32_t start = b.pos(),stop=b.pos() + alignment_length(b) - 1;
+		  auto CHROM = refTEs.find(itr2->second);
+		  if( CHROM != refTEs.end() )
 		    {
-		      found = true;
-		      ++FOUND;
-		      if( FOUND > 0 && FOUND % 100 == 0. ) cerr << FOUND << '\n';
-		      int32_t start = b.pos(),stop=b.pos() + alignment_length(b) - 1;
-		      auto CHROM = refTEs.find(itr2->second);
-		      if( CHROM != refTEs.end() )
+		      bool hitsTE = find_if( CHROM->second.cbegin(),
+					     CHROM->second.cend(),
+					     [&](const teinfo & __t) {
+					       bool A = (start >= __t.start() && start <= __t.stop());
+					       bool B = (stop >= __t.start() && stop <= __t.stop());
+					       return A||B;
+					     }) != CHROM->second.cend();
+		      if(!hitsTE)
 			{
-			  bool hitsTE = find_if( CHROM->second.cbegin(),
-						 CHROM->second.cend(),
-						 [&](const teinfo & __t) {
-						   bool A = (start >= __t.start() && start <= __t.stop());
-						   bool B = (stop >= __t.start() && stop <= __t.stop());
-						   return A||B;
-						 }) != CHROM->second.cend();
-			  if(!hitsTE)
+			  auto DCHROM = data->find(itr2->second);
+			  if(DCHROM == data->end())
 			    {
-			      auto DCHROM = data->find(itr2->second);
-			      if(DCHROM == data->end())
-				{
-				  data->insert( make_pair(itr2->second,
-							  vector<pair<int32_t,int8_t> >(1,make_pair(start,f.qstrand) ) ) );
-				}
-			      else
-				{
-				  DCHROM->second.emplace_back(make_pair(start,f.qstrand));
-				}
+			      data->insert( make_pair(itr2->second,
+						      vector<pair<int32_t,int8_t> >(1,make_pair(start,f.qstrand) ) ) );
+			    }
+			  else
+			    {
+			      DCHROM->second.emplace_back(make_pair(start,f.qstrand));
 			    }
 			}
 		    }
 		}
 	    }
 	}
-      //cleanup
-      hts_itr_destroy(iter);
     }
+
   //Second pass -- OLD VERSION
   // reader.seek( firstREC, SEEK_SET );
   // while(! reader.eof() && !reader.error() )
