@@ -13,8 +13,13 @@
 #include <sstream>
 #include <zlib.h>
 #include <common.hpp>
+#include <thread>
+#include <mutex>
+#include <htslib/sam.h>
+#include <htslib/bgzf.h>
 #include <Sequence/IOhelp.hpp>
-
+#include <Sequence/bamreader.hpp>
+#include <Sequence/bamrecord.hpp>
 //Functions for this program
 #include <teclust_objects.hpp>
 #include <teclust_parseargs.hpp>
@@ -24,6 +29,9 @@
 
 using namespace std;
 using namespace Sequence;
+
+//The mutex is for the main output file
+mutex ofile_mutex;
 
 using puu = pair<int32_t,int8_t>;
 
@@ -51,10 +59,86 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 void reduce_ends( vector<cluster> & clusters,
 		  const int32_t & INSERTSIZE );
 
+hts_idx_t * get_index(const teclust_params & pars)
+{
+  string indexfilename = pars.bamfile + ".bai";
+  BGZF * bam = bgzf_open(pars.bamfile.c_str(),"rb");
+  hts_idx_t * idx = bam_index_load(indexfilename.c_str());
+  bgzf_close(bam);
+  return idx;
+}
+
+//use htslib to find out where chromosomes begin and end in our bam file
+//Christ, they really need to document that fucking library...
+vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & pars)
+{
+  string indexfilename = pars.bamfile + ".bai";
+
+  vector<pair<string,pair<uint64_t,uint64_t> > > rv;
+  //open fam file, read header
+  BGZF * bam = bgzf_open(pars.bamfile.c_str(),"rb");
+  bam_hdr_t * hdr = bam_hdr_read(bam);
+
+  //read in the index
+  hts_idx_t * idx = bam_index_load(indexfilename.c_str());
+
+  //print out the names
+  for( int32_t i = 0 ; i < hdr->n_targets ; ++i )
+    {
+      // cerr << i << ' ' 
+      // 	   << hdr->target_len[i] << ' '
+      // 	   << hdr->target_name[i] << ' ';
+      hts_itr_t *iter = bam_itr_queryi(idx,i,0,hdr->target_len[i]);
+      //cerr << iter->beg << ' ' << iter->end << ' ';
+      //cerr << (iter->bins.a==NULL) << '\n';
+      if(iter->off != NULL )
+	{
+	  //rv[string(hdr->target_name[i])] = make_pair(iter->off->u,iter->off->v);
+	  rv.push_back( make_pair( string(hdr->target_name[i]),
+				   make_pair(iter->off->u,iter->off->v) ));
+	}
+      hts_itr_destroy(iter);
+    }
+  
+  //cleanup
+  bam_hdr_destroy(hdr);
+  hts_idx_destroy(idx);
+  bgzf_close(bam);
+  return rv;
+} 
+
 int teclust_main( int argc, char ** argv )
 {
   const teclust_params pars = teclust_parseargs(argc,argv);
-
+  auto idx = read_index(pars);
+  sort( idx.begin(), idx.end(),
+	[](const pair<string,pair<int64_t,int64_t> > & a,
+	   const pair<string,pair<int64_t,int64_t> > & b) {
+	  return( a.second.second - a.second.first > b.second.second-b.second.first );
+	});
+  std::for_each(idx.begin(),idx.end(),
+		[](const pair<string,pair<int64_t,int64_t> > & a) {
+		  cerr << a.first << ' ' << a.second.first << ' ' << a.second.second << '\n';
+		});
+  /*
+   bamreader reader(pars.bamfile.c_str());
+   while(!reader.eof())
+     {
+       bamrecord b = reader.next_record();
+       samflag sf(b.flag());
+       if(!sf.query_unmapped && !sf.mate_unmapped)
+	 {
+	   if(b.refid()!=b.next_refid())
+	     {
+	       cerr << b.refid() << ' ' 
+		    << b.pos() << ' ' 
+		    << b.next_refid() << ' '
+		    << b.next_pos() << '\n';
+	     }
+	 }
+     }
+   exit(1);
+  */
   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
   /*
@@ -64,13 +148,45 @@ int teclust_main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
+  unsigned ttl = 0;
+  for(auto  i = rawData.begin() ; i != rawData.end() ; ++i )
+    {
+      cerr << i->first << ' ' << i->second.size() << '\n';
+      ttl += i->second.size();
+    }
+  cerr << "total = " << ttl << '\n';
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  scan_bamfile(pars,refTEs,&readPairs,&rawData);
+  cerr << "scanning bam file...\n";
+  if(pars.NTHREADS == 1 || idx.empty())
+    {
+      auto idx = get_index(pars);
+      scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
+      hts_idx_destroy(idx);
+    }
+  else
+    {
+      //Allocate the return value containers
+      for(auto itr = idx.begin();itr != idx.end();++itr)
+	{
+	  rawData[itr->first] = vector<puu>();
+	}
+      auto itr = idx.begin();
+      vector<thread> cthreads(pars.NTHREADS);
+      int32_t t=0;
+      for(  ; t < pars.NTHREADS && itr != idx.end() ; ++t,++itr )
+	{
+	  cerr << "scanning bam file for chromosome " << itr->first << ' '
+	       << itr->second.first << ' ' << itr->second.second << '\n';
+	  cthreads[t] = thread(scan_bamfile_t,std::cref(pars),std::cref(refTEs),
+			       &readPairs,std::ref(rawData[itr->first]),itr->second.first,itr->second.second);
+	}
+      for(int32_t i = 0 ; i < t ; ++i ) cthreads[i].join();
+    }
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
     {
@@ -79,7 +195,7 @@ int teclust_main( int argc, char ** argv )
 	     return lhs.first < rhs.first;
 	   });
     }
-
+  cerr << "done\n";
 
   if( rawData.empty() )
     {
@@ -87,16 +203,51 @@ int teclust_main( int argc, char ** argv )
       exit(0);
     }
   //Cluster the raw data and buffer results
+  //Threads can happen here...will need mutex-locking of output file or to store them...
   ostringstream out;
-  for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
+  cerr << "clustering\n";
+  if( pars.NTHREADS == 1 )
     {
-      vector<pair<cluster,cluster> > clusters;
-      cluster_data(clusters,itr->second,pars.INSERTSIZE,pars.MDIST);
-      output_results_bedpe(out,clusters,
-			   itr->first,
-			   pars.samplename,
-			   refTEs);
+      cerr <<"single-threaded...\n";
+      for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
+	{
+	  vector<pair<cluster,cluster> > clusters;
+	  cluster_data(clusters,itr->second,pars.INSERTSIZE,pars.MDIST);
+	  output_results_bedpe(out,clusters,
+			       itr->first,
+			       pars.samplename,
+			       refTEs);
+	}
     }
+  else if (pars.NTHREADS > 1 )
+    {
+      auto itr = rawData.begin();
+      vector<std::thread> cthreads(pars.NTHREADS);
+      while(itr != rawData.end())
+	{
+	  int32_t t = 0;
+	  vector< vector<pair<cluster,cluster> > > clusters(pars.NTHREADS);
+	  vector<string> chroms(pars.NTHREADS);
+	  for( ; itr!=rawData.end() && t < pars.NTHREADS ; ++t,++itr )
+	    {
+	      cerr << "adding thread " << t << " for reference sequence " << itr->first << '\n';
+	      cthreads[t] = std::thread(cluster_data,std::ref(clusters[t]),itr->second,pars.INSERTSIZE,pars.MDIST);
+	      chroms[t]=itr->first;
+	    }
+	  for( int32_t i = 0 ; i < t ; ++i )
+	    {
+	      cthreads[i].join();
+	    }
+	  for( int32_t i = 0 ; i < t ; ++i )
+	    {
+	      output_results_bedpe(out,clusters[i],
+				   chroms[i],
+				   pars.samplename,
+				   refTEs);
+	    }
+	}
+    }
+  cerr << "done\n";
 
   //write output
   gzFile gzout = gzopen(pars.outfile.c_str(),"w");
@@ -284,6 +435,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		   const vector<puu> & raw_data, 
 		   const int32_t & INSERTSIZE, const int32_t & MDIST )
 {
+  clusters.reserve(10000);
   vector<cluster> plus,minus;
   for( unsigned i=0;i<raw_data.size();++i )
     {
@@ -291,7 +443,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	{
 	  if(plus.empty())
 	    {
-	      plus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
+	      plus.emplace_back( move(cluster(raw_data[i].first,raw_data[i].first,1)) );
 	    }
 	  else
 	    {
@@ -310,7 +462,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		}
 	      if(!clustered)
 		{
-		  plus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
+		  plus.emplace_back( move(cluster(raw_data[i].first,raw_data[i].first,1)) );
 		}
 	    }
 	}
@@ -318,7 +470,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	{
 	  if( minus.empty() )
 	    {
-	      minus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
+	      minus.emplace_back( move(cluster(raw_data[i].first,raw_data[i].first,1)) );
 	    }
 	  else
 	    {
@@ -337,7 +489,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 		}
 	      if(!clustered)
 		{
-		  minus.push_back( cluster(raw_data[i].first,raw_data[i].first,1) );
+		  minus.emplace_back( move(cluster(raw_data[i].first,raw_data[i].first,1)) );
 		}
 	    }
 	}
@@ -380,20 +532,20 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 			}
 		    }
 		}
-	      clusters.push_back( make_pair(plus[winner],*j) );
+	      clusters.emplace_back( move(make_pair(plus[winner],*j)) );
 	      minus.erase(j);
 	      matched[winner]=1;
 	      //need to take care of i, too, if i no longer matches
 	      if(winner!=i)
 		{
 		  matched[i]=1;
-		  clusters.push_back( make_pair(plus[i],cluster()) );
+		  clusters.emplace_back( move(make_pair(plus[i],cluster())) );
 		}
 	    }
 	  else
 	    {
 	      matched[i]=1;
-	      clusters.push_back( make_pair(plus[i],cluster()) );
+	      clusters.emplace_back( move(make_pair(plus[i],cluster())) );
 	    }
 	}
     }
@@ -436,7 +588,7 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 	}
       if(!pushed)
 	{
-	  clusters.push_back(make_pair(cluster(),minus[i]));
+	  clusters.emplace_back(move(make_pair(cluster(),minus[i])));
 	}
     }
 }
