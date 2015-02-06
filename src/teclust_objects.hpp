@@ -23,8 +23,9 @@ struct teclust_params //Command-line parameter options
     Upper limit on insert size distribution
     Maximum distance used for matching up left and right ends of putative TE calls
     Min # of reads for phrap output, if wanted
+    Number of threads for clustering (default = 1)
   */
-  std::int32_t INSERTSIZE,MDIST,MINREADS;
+  std::int32_t INSERTSIZE,MDIST,MINREADS,NTHREADS;
   /*
     Closest distance to known TE in reference.  For PHRAP output: only write if pdist || mdist > CLOSEST
   */
