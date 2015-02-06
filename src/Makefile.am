@@ -6,3 +6,5 @@ AM_CXXFLAGS=
 if HAVE_HTSLIB
 AM_CXXFLAGS+=-DHAVE_HTSLIB
 endif
+
+pecnv_LDADD=-lhts
