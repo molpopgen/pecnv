@@ -182,8 +182,8 @@ int teclust_main( int argc, char ** argv )
 	{
 	  cerr << "scanning bam file for chromosome " << itr->first << ' '
 	       << itr->second.first << ' ' << itr->second.second << '\n';
-	  cthreads[t] = thread(scan_bamfile_t,std::cref(pars),std::cref(refTEs),
-			       &readPairs,std::ref(rawData[itr->first]),itr->second.first,itr->second.second);
+	  // cthreads[t] = thread(scan_bamfile_t,std::cref(pars),std::cref(refTEs),
+	  // 		       &readPairs,std::ref(rawData[itr->first]),itr->second.first,itr->second.second);
 	}
       for(int32_t i = 0 ; i < t ; ++i ) cthreads[i].join();
     }
