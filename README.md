@@ -18,6 +18,7 @@ This package also contains a C++ implementation of the transposable element (TE)
 5. Release 0.1.4 = integration of the workflow for calling transposable-element insertions from PE mapping data using the Cridland _et al._ approach.  Intermediate files are now written in a binary format for more efficient downstream-processing.  This version depends on the boost libraries for parsing command-line arguments
 6. Release 0.1.5 = bed/bedpe input and output where possible.
 7. Release 0.1.6 = separate C++ binaries replaced by pecnv, a single binary with subcommands a la git, bwa, etc.
+8. Release 0.1.7 = multithreading the teclust module
 
 ##Tentative plan for future releases
 
