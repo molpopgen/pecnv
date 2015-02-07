@@ -162,33 +162,53 @@ int teclust_main( int argc, char ** argv )
     mapped but does not hit a TE
   */
   cerr << "scanning bam file...\n";
+  auto idx = get_index(pars);
   if(pars.NTHREADS == 1 )//|| idx.empty())
     {
-      auto idx = get_index(pars);
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
-      hts_idx_destroy(idx);
     }
   else
     {
-      //Allocate the return value containers
-      /*
-      for(auto itr = idx.begin();itr != idx.end();++itr)
+      auto data_idx = read_index(pars);
+      vector< map<string,vector< puu > > > tempData(data_idx.size());
+      sort(data_idx.begin(),data_idx.end(),
+	   [](const pair<string,pair<int64_t,int64_t> > & __a,
+	      const pair<string,pair<int64_t,int64_t> > & __b) {
+	     return (__a.second.second-__a.second.first >
+		     __b.second.second-__b.second.first );
+	   });
+      auto task_id = 0;
+      vector<thread> vthreads(pars.NTHREADS);
+      for( ; task_id < data_idx.size() ; )
 	{
-	  rawData[itr->first] = vector<puu>();
+	  int32_t t = 0;
+	  for( ; t < pars.NTHREADS && task_id < data_idx.size() ; ++t,++task_id)
+	    {
+	      vthreads[t]=thread(scan_bamfile_t,
+				 task_id,
+				 data_idx[task_id].second.first,
+				 data_idx[task_id].second.second,
+				 pars,
+				 refTEs,
+				 &readPairs,
+				 std::ref(tempData),
+				 idx);
+	    }
+	  //Join the threads
+	  for( int32_t i=0;i<t;++i ) vthreads[i].join();
 	}
-      auto itr = idx.begin();
-      vector<thread> cthreads(pars.NTHREADS);
-      int32_t t=0;
-      for(  ; t < pars.NTHREADS && itr != idx.end() ; ++t,++itr )
+      //Copy tempData into the main data
+      for(unsigned i = 0 ; i < tempData.size() ; ++i )
 	{
-	  cerr << "scanning bam file for chromosome " << itr->first << ' '
-	       << itr->second.first << ' ' << itr->second.second << '\n';
-	  // cthreads[t] = thread(scan_bamfile_t,std::cref(pars),std::cref(refTEs),
-	  // 		       &readPairs,std::ref(rawData[itr->first]),itr->second.first,itr->second.second);
+	  for( auto j = tempData[i].begin() ; j != tempData[i].end() ; ++j )
+	    {
+	      copy(make_move_iterator(j->second.begin()),
+		   make_move_iterator(j->second.end()),
+		   std::back_inserter(rawData[j->first]));
+	    }
 	}
-      for(int32_t i = 0 ; i < t ; ++i ) cthreads[i].join();
-      */
     }
+  hts_idx_destroy(idx);
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
     {
