@@ -110,16 +110,16 @@ vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & 
 int teclust_main( int argc, char ** argv )
 {
   const teclust_params pars = teclust_parseargs(argc,argv);
-  auto idx = read_index(pars);
-  sort( idx.begin(), idx.end(),
-	[](const pair<string,pair<int64_t,int64_t> > & a,
-	   const pair<string,pair<int64_t,int64_t> > & b) {
-	  return( a.second.second - a.second.first > b.second.second-b.second.first );
-	});
-  std::for_each(idx.begin(),idx.end(),
-		[](const pair<string,pair<int64_t,int64_t> > & a) {
-		  cerr << a.first << ' ' << a.second.first << ' ' << a.second.second << '\n';
-		});
+  // auto idx = read_index(pars);
+  // sort( idx.begin(), idx.end(),
+  // 	[](const pair<string,pair<int64_t,int64_t> > & a,
+  // 	   const pair<string,pair<int64_t,int64_t> > & b) {
+  // 	  return( a.second.second - a.second.first > b.second.second-b.second.first );
+  // 	});
+  // std::for_each(idx.begin(),idx.end(),
+  // 		[](const pair<string,pair<int64_t,int64_t> > & a) {
+  // 		  cerr << a.first << ' ' << a.second.first << ' ' << a.second.second << '\n';
+  // 		});
   /*
    bamreader reader(pars.bamfile.c_str());
    while(!reader.eof())
@@ -148,13 +148,13 @@ int teclust_main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
-  unsigned ttl = 0;
-  for(auto  i = rawData.begin() ; i != rawData.end() ; ++i )
-    {
-      cerr << i->first << ' ' << i->second.size() << '\n';
-      ttl += i->second.size();
-    }
-  cerr << "total = " << ttl << '\n';
+  // unsigned ttl = 0;
+  // for(auto  i = rawData.begin() ; i != rawData.end() ; ++i )
+  //   {
+  //     cerr << i->first << ' ' << i->second.size() << '\n';
+  //     ttl += i->second.size();
+  //   }
+  // cerr << "total = " << ttl << '\n';
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
@@ -162,7 +162,7 @@ int teclust_main( int argc, char ** argv )
     mapped but does not hit a TE
   */
   cerr << "scanning bam file...\n";
-  if(pars.NTHREADS == 1 || idx.empty())
+  if(pars.NTHREADS == 1 )//|| idx.empty())
     {
       auto idx = get_index(pars);
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
@@ -171,6 +171,7 @@ int teclust_main( int argc, char ** argv )
   else
     {
       //Allocate the return value containers
+      /*
       for(auto itr = idx.begin();itr != idx.end();++itr)
 	{
 	  rawData[itr->first] = vector<puu>();
@@ -186,6 +187,7 @@ int teclust_main( int argc, char ** argv )
 	  // 		       &readPairs,std::ref(rawData[itr->first]),itr->second.first,itr->second.second);
 	}
       for(int32_t i = 0 ; i < t ; ++i ) cthreads[i].join();
+      */
     }
   //Sort the raw data
   for( auto itr = rawData.begin();itr!=rawData.end();++itr )
