@@ -15,6 +15,7 @@
 #include <common.hpp>
 #include <thread>
 #include <mutex>
+#include <sys/stat.h>
 #include <htslib/sam.h>
 #include <htslib/bgzf.h>
 #include <Sequence/IOhelp.hpp>
@@ -62,6 +63,8 @@ void reduce_ends( vector<cluster> & clusters,
 hts_idx_t * get_index(const teclust_params & pars)
 {
   string indexfilename = pars.bamfile + ".bai";
+  struct stat buf;
+  if (stat(indexfilename.c_str(), &buf) == -1) return nullptr;
   BGZF * bam = bgzf_open(pars.bamfile.c_str(),"rb");
   hts_idx_t * idx = bam_index_load(indexfilename.c_str());
   bgzf_close(bam);
@@ -81,7 +84,12 @@ vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & 
 
   //read in the index
   hts_idx_t * idx = bam_index_load(indexfilename.c_str());
-
+  if( idx == nullptr )
+    {
+      bam_hdr_destroy(hdr);
+      bgzf_close(bam);
+      return rv;
+    }
   //print out the names
   for( int32_t i = 0 ; i < hdr->n_targets ; ++i )
     {
@@ -161,15 +169,21 @@ int teclust_main( int argc, char ** argv )
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  cerr << "scanning bam file...\n";
+  //cerr << "scanning bam file...\n";
   auto idx = get_index(pars);
-  if(pars.NTHREADS == 1 )//|| idx.empty())
+  if(pars.NTHREADS == 1||idx==nullptr)
     {
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
     }
   else
     {
       auto data_idx = read_index(pars);
+      if(data_idx.empty())
+	{
+	  cerr << "Fatal error: unable to read in bam file index on line "
+	       << __LINE__ << " of " << __FILE__ << '\n';
+	  exit(EXIT_FAILURE);
+	}
       vector< map<string,vector< puu > > > tempData(data_idx.size());
       sort(data_idx.begin(),data_idx.end(),
 	   [](const pair<string,pair<int64_t,int64_t> > & __a,
@@ -217,7 +231,7 @@ int teclust_main( int argc, char ** argv )
 	     return lhs.first < rhs.first;
 	   });
     }
-  cerr << "done\n";
+  //cerr << "done\n";
 
   if( rawData.empty() )
     {
@@ -227,10 +241,10 @@ int teclust_main( int argc, char ** argv )
   //Cluster the raw data and buffer results
   //Threads can happen here...will need mutex-locking of output file or to store them...
   ostringstream out;
-  cerr << "clustering\n";
+  //cerr << "clustering\n";
   if( pars.NTHREADS == 1 )
     {
-      cerr <<"single-threaded...\n";
+      //cerr <<"single-threaded...\n";
       for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
 	{
 	  vector<pair<cluster,cluster> > clusters;
@@ -252,7 +266,7 @@ int teclust_main( int argc, char ** argv )
 	  vector<string> chroms(pars.NTHREADS);
 	  for( ; itr!=rawData.end() && t < pars.NTHREADS ; ++t,++itr )
 	    {
-	      cerr << "adding thread " << t << " for reference sequence " << itr->first << '\n';
+	      //cerr << "adding thread " << t << " for reference sequence " << itr->first << '\n';
 	      cthreads[t] = std::thread(cluster_data,std::ref(clusters[t]),itr->second,pars.INSERTSIZE,pars.MDIST);
 	      chroms[t]=itr->first;
 	    }
@@ -269,7 +283,7 @@ int teclust_main( int argc, char ** argv )
 	    }
 	}
     }
-  cerr << "done\n";
+  //cerr << "done\n";
 
   //write output
   gzFile gzout = gzopen(pars.outfile.c_str(),"w");
