@@ -56,12 +56,12 @@ void cluster_data( vector<pair<cluster,cluster> > & clusters,
 void reduce_ends( vector<cluster> & clusters,
 		  const int32_t & INSERTSIZE );
 
-hts_idx_t * get_index(const teclust_params & pars)
+hts_idx_t * get_index(const std::string & bamfilename)
 {
-  string indexfilename = pars.bamfile + ".bai";
+  string indexfilename = bamfilename + ".bai";
   struct stat buf;
   if (stat(indexfilename.c_str(), &buf) == -1) return nullptr;
-  BGZF * bam = bgzf_open(pars.bamfile.c_str(),"rb");
+  BGZF * bam = bgzf_open(bamfilename.c_str(),"rb");
   hts_idx_t * idx = bam_index_load(indexfilename.c_str());
   bgzf_close(bam);
   return idx;
@@ -69,13 +69,13 @@ hts_idx_t * get_index(const teclust_params & pars)
 
 //use htslib to find out where chromosomes begin and end in our bam file
 //Christ, they really need to document that fucking library...
-vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & pars)
+vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const std::string & bamfilename)
 {
-  string indexfilename = pars.bamfile + ".bai";
+  string indexfilename = bamfilename + ".bai";
 
   vector<pair<string,pair<uint64_t,uint64_t> > > rv;
   //open fam file, read header
-  BGZF * bam = bgzf_open(pars.bamfile.c_str(),"rb");
+  BGZF * bam = bgzf_open(bamfilename.c_str(),"rb");
   bam_hdr_t * hdr = bam_hdr_read(bam);
 
   //read in the index
@@ -115,14 +115,14 @@ int teclust_main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
-  auto data_idx = read_index(pars);
+  auto data_idx = read_index(pars.bamfile);
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  auto idx = get_index(pars);
+  auto idx = get_index(pars.bamfile);
   if(pars.NTHREADS == 1||idx==nullptr)
     {
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
