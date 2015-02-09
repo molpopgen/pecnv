@@ -78,6 +78,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = pecnv$(EXEEXT)
 @HAVE_HTSLIB_TRUE@am__append_1 = -DHAVE_HTSLIB
+@NEED_PTHREAD_TRUE@am__append_2 = -pthread
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -100,6 +101,8 @@ am_pecnv_OBJECTS = pecnv.$(OBJEXT) process_readmappings.$(OBJEXT) \
 	file_common.$(OBJEXT) mkgenome.$(OBJEXT) htslibUtils.$(OBJEXT)
 pecnv_OBJECTS = $(am_pecnv_OBJECTS)
 pecnv_DEPENDENCIES =
+pecnv_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(pecnv_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -264,6 +267,7 @@ top_srcdir = @top_srcdir@
 pecnv_SOURCES = pecnv.cc process_readmappings.hpp process_readmappings.cc teclust.cc teclust.hpp common.cc teclust_objects.hpp teclust_objects.cc teclust_phrapify.hpp teclust_phrapify.cc teclust_parseargs.hpp teclust_parseargs.cc teclust_scan_bamfile.hpp teclust_scan_bamfile.cc intermediateIO.hpp intermediateIO.cc cluster_cnv.hpp cluster_cnv2.cc mdist.hpp bwa_mapdistance.cc file_common.hpp file_common.cc mkgenome.hpp mkgenome.cc htslibUtils.cc
 AM_CXXFLAGS = $(am__append_1)
 pecnv_LDADD = -lhts
+pecnv_LDFLAGS = $(am__append_2)
 all: all-am
 
 .SUFFIXES:
@@ -343,7 +347,7 @@ clean-binPROGRAMS:
 
 pecnv$(EXEEXT): $(pecnv_OBJECTS) $(pecnv_DEPENDENCIES) $(EXTRA_pecnv_DEPENDENCIES) 
 	@rm -f pecnv$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(pecnv_OBJECTS) $(pecnv_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(pecnv_LINK) $(pecnv_OBJECTS) $(pecnv_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

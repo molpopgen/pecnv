@@ -8,3 +8,8 @@ AM_CXXFLAGS+=-DHAVE_HTSLIB
 endif
 
 pecnv_LDADD=-lhts
+
+pecnv_LDFLAGS=
+if NEED_PTHREAD
+pecnv_LDFLAGS+=-pthread
+endif
