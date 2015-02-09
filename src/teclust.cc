@@ -86,24 +86,16 @@ vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & 
       bgzf_close(bam);
       return rv;
     }
-  //print out the names
   for( int32_t i = 0 ; i < hdr->n_targets ; ++i )
     {
-      // cerr << i << ' ' 
-      // 	   << hdr->target_len[i] << ' '
-      // 	   << hdr->target_name[i] << ' ';
       hts_itr_t *iter = bam_itr_queryi(idx,i,0,hdr->target_len[i]);
-      //cerr << iter->beg << ' ' << iter->end << ' ';
-      //cerr << (iter->bins.a==NULL) << '\n';
       if(iter->off != NULL )
 	{
-	  //rv[string(hdr->target_name[i])] = make_pair(iter->off->u,iter->off->v);
 	  rv.push_back( make_pair( string(hdr->target_name[i]),
 				   make_pair(iter->off->u,iter->off->v) ));
 	}
       hts_itr_destroy(iter);
     }
-  
   //cleanup
   bam_hdr_destroy(hdr);
   hts_idx_destroy(idx);
@@ -114,36 +106,7 @@ vector<pair<string,pair<uint64_t,uint64_t> >> read_index(const teclust_params & 
 int teclust_main( int argc, char ** argv )
 {
   const teclust_params pars = teclust_parseargs(argc,argv);
-  // auto idx = read_index(pars);
-  // sort( idx.begin(), idx.end(),
-  // 	[](const pair<string,pair<int64_t,int64_t> > & a,
-  // 	   const pair<string,pair<int64_t,int64_t> > & b) {
-  // 	  return( a.second.second - a.second.first > b.second.second-b.second.first );
-  // 	});
-  // std::for_each(idx.begin(),idx.end(),
-  // 		[](const pair<string,pair<int64_t,int64_t> > & a) {
-  // 		  cerr << a.first << ' ' << a.second.first << ' ' << a.second.second << '\n';
-  // 		});
-  /*
-   bamreader reader(pars.bamfile.c_str());
-   while(!reader.eof())
-     {
-       bamrecord b = reader.next_record();
-       samflag sf(b.flag());
-       if(!sf.query_unmapped && !sf.mate_unmapped)
-	 {
-	   if(b.refid()!=b.next_refid())
-	     {
-	       cerr << b.refid() << ' ' 
-		    << b.pos() << ' ' 
-		    << b.next_refid() << ' '
-		    << b.next_pos() << '\n';
-	     }
-	 }
-     }
-   exit(1);
-  */
-  //Read in the locations of TEs in the reference
+   //Read in the locations of TEs in the reference
   auto refTEs = read_refdata(pars);
   /*
     Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
@@ -153,20 +116,12 @@ int teclust_main( int argc, char ** argv )
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
   auto data_idx = read_index(pars);
-  // unsigned ttl = 0;
-  // for(auto  i = rawData.begin() ; i != rawData.end() ; ++i )
-  //   {
-  //     cerr << i->first << ' ' << i->second.size() << '\n';
-  //     ttl += i->second.size();
-  //   }
-  // cerr << "total = " << ttl << '\n';
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  //cerr << "scanning bam file...\n";
   auto idx = get_index(pars);
   if(pars.NTHREADS == 1||idx==nullptr)
     {
@@ -227,7 +182,6 @@ int teclust_main( int argc, char ** argv )
 	     return lhs.first < rhs.first;
 	   });
     }
-  //cerr << "done\n";
 
   if( rawData.empty() )
     {
@@ -240,7 +194,6 @@ int teclust_main( int argc, char ** argv )
   //cerr << "clustering\n";
   if( pars.NTHREADS == 1 )
     {
-      //cerr <<"single-threaded...\n";
       for( auto itr = rawData.begin() ; itr != rawData.end(); ++itr)
 	{
 	  vector<pair<cluster,cluster> > clusters;
@@ -262,7 +215,6 @@ int teclust_main( int argc, char ** argv )
 	  vector<string> chroms(pars.NTHREADS);
 	  for( ; itr!=rawData.end() && t < pars.NTHREADS ; ++t,++itr )
 	    {
-	      //cerr << "adding thread " << t << " for reference sequence " << itr->first << '\n';
 	      cthreads[t] = std::thread(cluster_data,std::ref(clusters[t]),itr->second,pars.INSERTSIZE,pars.MDIST);
 	      chroms[t]=itr->first;
 	    }
@@ -279,7 +231,6 @@ int teclust_main( int argc, char ** argv )
 	    }
 	}
     }
-  //cerr << "done\n";
 
   //write output
   gzFile gzout = gzopen(pars.outfile.c_str(),"w");
