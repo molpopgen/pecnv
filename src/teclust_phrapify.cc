@@ -12,6 +12,8 @@
 #include <iterator>
 #include <cassert>
 #include <cstring>
+#include <map>
+#include <thread>
 #include <Sequence/bamreader.hpp>
 #include <Sequence/samfunctions.hpp>
 #include <Sequence/Fasta.hpp>
@@ -169,7 +171,9 @@ auto Cfinder = [](const clusteredEvent & __cE,
 
 ReadCollection
 getRnames( const teclust_params & pars,
-	   const vector<clusteredEvent> & cEs )
+	   const vector<clusteredEvent> & cEs,
+	   const int64_t * begin = nullptr,
+	   const int64_t * end = nullptr)
 {
 
   bamreader reader(pars.bamfile.c_str());
@@ -183,7 +187,9 @@ getRnames( const teclust_params & pars,
     }
 
   ReadCollection rv;//( cEs.size() );
-  while(!reader.eof() && !reader.error())
+  if( begin != nullptr ) reader.seek(*begin, SEEK_SET);
+  while( (begin == nullptr && end == nullptr && !reader.eof() && !reader.error()) ||
+	 (begin != nullptr && end != nullptr && reader.tell() <= *end) )
     {
       bamrecord b = reader.next_record();
       if(b.empty()) break;
@@ -207,7 +213,9 @@ getRnames( const teclust_params & pars,
 }
 
 PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & cEs,
-		    const ReadCollection & r )
+		    const ReadCollection & r,
+		    const int64_t * begin = nullptr,
+		    const int64_t * end = nullptr)
 {
   bamreader reader(pars.bamfile.c_str());
 
@@ -220,7 +228,10 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
     }
 
   PhrapInput rv(cEs.size());
-  while(!reader.eof() && !reader.error())
+  if(begin!=nullptr)reader.seek(*begin,SEEK_SET);
+  //while(!reader.eof() && !reader.error())
+  while( (begin == nullptr && end == nullptr && !reader.eof() && !reader.error()) ||
+	 (begin != nullptr && end != nullptr && reader.tell() <= *end) )
     {
       bamrecord b = reader.next_record();
       if(b.empty()) break;
@@ -317,12 +328,8 @@ void output( const teclust_params & pars,
 	    });
 }
 
-void phrapify( const teclust_params & pars,
-	       const string & clusters )
+void checkdir( const teclust_params & pars)
 {
-  if(pars.phrapdir.empty()) return;
-  if(pars.bamfile.empty()) return;
-
   //Try to create the output directory
   int status = mkdir( pars.phrapdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH );
   if( status == -1 && errno != EEXIST )
@@ -333,6 +340,16 @@ void phrapify( const teclust_params & pars,
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
+}
+
+void phrapify( const teclust_params & pars,
+	       const string & clusters )
+{
+  if(pars.phrapdir.empty()) return;
+  if(pars.bamfile.empty()) return;
+
+  checkdir(pars);
+
   //This is the new "filter_edit"
   vector<clusteredEvent> cEs = parseClusters(clusters,pars);
  
@@ -344,4 +361,62 @@ void phrapify( const teclust_params & pars,
 
   //Output
   output(pars,cEs,sq);
+}
+
+void phrapify_t_work(const teclust_params & pars, 
+		     const vector<clusteredEvent> & cEs,
+		     const int64_t & begin,
+		     const int64_t & end)
+{
+  auto LR = getRnames(pars,cEs,&begin,&end);
+  auto sq = seqQual(pars,cEs,LR,&begin,&end);
+  output(pars,cEs,sq);
+}
+
+/*
+  Threaded version
+ */
+void phrapify_t( const teclust_params & pars,
+		 const vector<pair<string,pair<uint64_t,uint64_t> > > & offsets,
+		 const string & clusters )
+{
+  
+  if(offsets.empty())
+    {
+      cerr << "Warning from phrapify_t: empty offsets vector encountered.  Defaulting to using a single thread";
+      phrapify(pars,clusters);
+    }
+  if(pars.phrapdir.empty()) return;
+  if(pars.bamfile.empty()) return;
+
+  checkdir(pars);
+
+  //This is the new "filter_edit"
+  vector<clusteredEvent> cEs = parseClusters(clusters,pars);
+
+  //rearrange cEs into a container that is per-reference arm.
+  map<string,vector<clusteredEvent> > cEs2;
+  for( auto i = cEs.begin() ; i != cEs.end() ; ++i )
+    {
+      cEs2[i->chrom].emplace_back(std::move(*i));
+    }
+
+  //vector<ReadCollection> vRC(cEs2.size());
+  //vector<PhrapInput> vPI(cEs2.size());
+  auto i = cEs2.begin();
+  unsigned thread_id = 0;
+  while( i != cEs2.end() )
+    {
+      vector<thread> vt(pars.NTHREADS);
+      int32_t t = 0;
+      for( ; t < pars.NTHREADS && i != cEs2.end(); ++t,++i )
+	{
+	  //find the chromo
+	  auto __itr = find_if(offsets.begin(),offsets.end(),[&i](const pair<string,pair<uint64_t,uint64_t> > & __p) {
+	      return i->first == __p.first;
+	    });	  
+	  vt[t]=thread(phrapify_t_work,cref(pars),cref(i->second),__itr->second.first,__itr->second.second);
+	}
+      for(int32_t t_i = 0 ; t_i < t ; ++t_i ) vt[t_i].join();
+    }
 }

@@ -14,7 +14,6 @@
 #include <zlib.h>
 #include <common.hpp>
 #include <thread>
-#include <mutex>
 #include <sys/stat.h>
 #include <htslib/sam.h>
 #include <htslib/bgzf.h>
@@ -30,9 +29,6 @@
 
 using namespace std;
 using namespace Sequence;
-
-//The mutex is for the main output file
-mutex ofile_mutex;
 
 using puu = pair<int32_t,int8_t>;
 
@@ -156,6 +152,7 @@ int teclust_main( int argc, char ** argv )
   //rawData = map {chromo x vector {start,strand}}
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
+  auto data_idx = read_index(pars);
   // unsigned ttl = 0;
   // for(auto  i = rawData.begin() ; i != rawData.end() ; ++i )
   //   {
@@ -177,7 +174,6 @@ int teclust_main( int argc, char ** argv )
     }
   else
     {
-      auto data_idx = read_index(pars);
       if(data_idx.empty())
 	{
 	  cerr << "Fatal error: unable to read in bam file index on line "
@@ -303,7 +299,14 @@ int teclust_main( int argc, char ** argv )
   gzclose(gzout);
 
   //Output the input to phrap, if desired
-  phrapify( pars, out.str() );
+  if( pars.NTHREADS==1)
+    {
+      phrapify( pars, out.str() );
+    }
+  else
+    {
+      phrapify_t(pars,data_idx,out.str());
+    }
 
   return 0;
 }
