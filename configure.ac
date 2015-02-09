@@ -40,21 +40,19 @@ dnl check for things that we need
 dnl Do C++11 threads require -pthread for linking?
 
 AC_MSG_CHECKING(that C++11 threads compile without the -pthread option)
-AC_TRY_COMPILE(
+AC_TRY_LINK(
 [
 #include <thread>
 #include <vector>
+void foo(int id){}
 ],
 [
-void foo(int id)
-{
-}
 std::vector<std::thread> vt(2);
-vt[0]=std::thread t0(foo,0);
-vt[1]=std::thread t1(foo,1);
+vt[0]=std::thread(foo,0);
+vt[1]=std::thread(foo,1);
 for( unsigned i = 0 ; i < vt.size() ; ++i ) vt[i].join();
 ],
-[AC_MSG_RESULT(pthread not needed)
+[AC_MSG_RESULT(pthread not needed)]
 ],
 [AC_MSG_RESULT(pthread needed)]
 dnl AC_DEFINE([NEED_PTHREAD],[],"adding -pthread to compiler/linker flags")
