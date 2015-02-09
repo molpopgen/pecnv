@@ -12,7 +12,7 @@ AC_C_CONST
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 
-AM_MAINTAINER_MODE([enable])
+AM_MAINTAINER_MODE([disable])
 
 AC_LANG(C++)
 AC_CONFIG_FILES([Makefile src/Makefile scripts/Makefile])
