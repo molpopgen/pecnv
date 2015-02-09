@@ -59,6 +59,9 @@ pecnv.sh -S line99 -i INFILE -r dmel-all-chromosome-r5.1_simplenames.fasta -c $C
 ##Get the 99th quantile of the insert size distribution
 u99=`pecnv_insert_qtile pecnv_output/pecnv_bamfile.mdist.gz 0.99`
 
+##index the bam file (required if you want to run "pecnv teclust" with multiple threads")
+samtools index pecnv_output/pecnv_bamfile_sorted.bam
+
 ##Run teclust
 pecnv teclust -s line99 -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1.bed -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir
 
