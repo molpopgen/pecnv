@@ -53,6 +53,7 @@ vt[1]=std::thread(foo,1);
 for( unsigned i = 0 ; i < vt.size() ; ++i ) vt[i].join();
 ],
 [AC_MSG_RESULT(pthread not needed)]
+AM_CONDITIONAL([NEED_PTHREAD], test x0 = x1 )
 ],
 [AC_MSG_RESULT(pthread needed)]
 dnl AC_DEFINE([NEED_PTHREAD],[],"adding -pthread to compiler/linker flags")

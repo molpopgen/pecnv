@@ -4504,6 +4504,14 @@ _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: pthread not needed" >&5
 $as_echo "pthread not needed" >&6; }
+ if test x0 = x1 ; then
+  NEED_PTHREAD_TRUE=
+  NEED_PTHREAD_FALSE='#'
+else
+  NEED_PTHREAD_TRUE='#'
+  NEED_PTHREAD_FALSE=
+fi
+
 ]
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: pthread needed" >&5
@@ -5392,6 +5400,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${PROFILING_TRUE}" && test -z "${PROFILING_FALSE}"; then
   as_fn_error $? "conditional \"PROFILING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${NEED_PTHREAD_TRUE}" && test -z "${NEED_PTHREAD_FALSE}"; then
+  as_fn_error $? "conditional \"NEED_PTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${NEED_PTHREAD_TRUE}" && test -z "${NEED_PTHREAD_FALSE}"; then
