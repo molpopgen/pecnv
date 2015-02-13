@@ -228,6 +228,114 @@ void scan_bamfile_t(const unsigned & task_idx,
   data_v[task_idx] = std::move(data);
 }
 
+void scan_bamfile_t_v2(const unsigned & task_idx,
+		       const bamrange & brange,
+		       const teclust_params & p,
+		       const refTEcont & refTEs,
+		       unordered_set<string> * readPairs,
+		       vector< map<string,vector<puu> > > & data_v,
+		       const hts_idx_t * idx)
+{
+  if( refTEs.empty() || p.bamfile.empty() ) return; 
+  struct stat buf;
+  if (stat(p.bamfile.c_str(), &buf) == -1) 
+    {
+      cerr << "Error: "
+	   << p.bamfile
+	   << " does not exist\n";
+    }
+  bamreader reader(p.bamfile.c_str());
+  if(! reader )
+    {
+      cerr << "Error: " 
+	   << p.bamfile
+	   << " could not be opened for reading.\n";
+      exit(0);
+    }
+  map<string,vector< puu > > data;
+  auto lookup = make_lookup(reader);
+
+  unordered_map<string,pair<int32_t,int32_t> > RPlocal; //read pair name x (chrom x position of mate of reads that DO hit known TE)
+  set<pair<int64_t,int64_t> > OFFSETS;
+  reader.seek(brange.beg,SEEK_SET);
+  while( reader.tell() <= brange.end )
+  //while(! reader.eof() && !reader.error() )
+    {
+      bamrecord b = reader.next_record();
+      if(b.empty()) break;
+      auto bref = b.refid();
+      if ( (b.refid()==brange.refid1 && b.pos() >= brange.start-1) ||
+	   ( bref > brange.refid1 && bref < brange.refid2 ) ||
+	   ( bref == brange.refid2 && b.pos() < brange.stop) )
+	{
+	  samflag f(b.flag());
+	  if( !f.query_unmapped && !f.mate_unmapped )
+	    //then both reads are mapped 
+	    {
+	      auto n = editRname(b.read_name());
+	      if( readPairs->find(n) == readPairs->end())
+		{
+		  auto itr = lookup.find(b.refid());
+		  
+		  if(itr == lookup.end())
+		    {
+		      cerr << "Error: reference ID " << b.refid()
+			   << " not found in BAM file header. Line "
+			   << __LINE__ 
+			   << " of " << __FILE__ << '\n';
+		      exit(1);
+		    }
+		  
+		  //Now, does the read overlap a known TE?
+		  int32_t start = b.pos(),stop=b.pos() + alignment_length(b) - 1;
+		  auto CHROM = refTEs.find(itr->second);
+		  if( CHROM != refTEs.end() )
+		    {
+		      bool hitsTE = find_if( CHROM->second.cbegin(),
+					     CHROM->second.cend(),
+					     [&](const teinfo & __t) {
+					       bool A = (start >= __t.start() && start <= __t.stop());
+					       bool B = (stop >= __t.start() && stop <= __t.stop());
+					       return A||B;
+					     }) != CHROM->second.cend();
+		      if( hitsTE )
+			{
+			  /*We can do a check here:
+			    If mate is mapped to same chromo & hits a TE,
+			    we can skip storing it.
+			    We don't have access to it's mates start and stop,
+			    but we can check the start.
+			  */
+			  bool OK = true;
+			  if(b.refid() == b.next_refid())
+			    {
+			      int32_t mstart = b.next_pos();
+			      OK = find_if( CHROM->second.cbegin(),
+					    CHROM->second.cend(),
+					    [&](const teinfo & __t) {
+					      return (mstart >= __t.start() && mstart <= __t.stop());
+					    }) == CHROM->second.cend();
+			    }
+			  if(OK)
+			    {
+			      RPlocal.insert(make_pair(n,make_pair(b.next_refid(),b.next_pos())));
+			      hts_itr_t *iter = bam_itr_queryi(idx,b.next_refid(),b.next_pos(),b.next_pos()+1);
+			      OFFSETS.insert(make_pair(iter->off->u,iter->off->v));
+			      hts_itr_destroy(iter);
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+  //Now, cluster the offsets...
+  auto voffsets = group_offsets(OFFSETS);
+  second_scan(refTEs,lookup,voffsets,RPlocal,&data,reader);
+  //"avoid false sharing"
+  data_v[task_idx] = std::move(data);
+}
+
 refIDlookup
 make_lookup(const bamreader & reader)
 {

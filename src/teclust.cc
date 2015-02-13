@@ -76,12 +76,42 @@ int teclust_main( int argc, char ** argv )
     mapped but does not hit a TE
   */
   auto idx = get_index(pars.bamfile);
+
   if(pars.NTHREADS == 1||idx==nullptr)
     {
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
     }
   else
     {
+      //New method: genome in equal chunks:
+      auto branges = split_genome(pars.bamfile,pars.NTHREADS);
+      vector<thread> vthreads(pars.NTHREADS);
+      vector< map<string,vector< puu > > > tempData(vthreads.size());
+      for( unsigned t = 0 ; t < vthreads.size() ; ++t )
+	{
+	  vthreads[t] = thread(scan_bamfile_t_v2,
+			       t,
+			       branges[t],
+			       pars,
+			       refTEs,
+			       &readPairs,
+			       std::ref(tempData),
+			       idx);
+	}
+      for( unsigned t = 0 ; t < vthreads.size() ; ++t ) vthreads[t].join();
+      //Copy tempData into the main data
+      for(unsigned i = 0 ; i < tempData.size() ; ++i )
+	{
+	  for( auto j = tempData[i].begin() ; j != tempData[i].end() ; ++j )
+	    {
+	      copy(make_move_iterator(j->second.begin()),
+		   make_move_iterator(j->second.end()),
+		   std::back_inserter(rawData[j->first]));
+	    }
+	}
+      
+      //Below is the old threading model based on 1 thread/reference sequence.
+      /*
       if(data_idx.empty())
 	{
 	  cerr << "Fatal error: unable to read in bam file index on line "
@@ -125,6 +155,7 @@ int teclust_main( int argc, char ** argv )
 		   std::back_inserter(rawData[j->first]));
 	    }
 	}
+      */
     }
   hts_idx_destroy(idx);
   //Sort the raw data

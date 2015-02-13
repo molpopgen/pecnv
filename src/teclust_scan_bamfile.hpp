@@ -2,6 +2,7 @@
 #define __TECLUST_SCAN_BAMFILE_HPP__
 
 #include <teclust_objects.hpp>
+#include <htslibUtils.hpp>
 #include <unordered_set>
 #include <map>
 #include <string>
@@ -18,11 +19,19 @@ void scan_bamfile(const teclust_params & p,
 		  const hts_idx_t * idx);
 
 void scan_bamfile_t(const unsigned & task_idx,
-		    const int64_t & begin,
-		    const int64_t & end,
+		    const std::int64_t & begin,
+		    const std::int64_t & end,
 		    const teclust_params & p,
 		    const refTEcont & refTEs,
 		    std::unordered_set<std::string> * readPairs,
 		    std::vector< std::map<std::string,std::vector<std::pair<std::int32_t,std::int8_t> > > > & data_v,
 		    const hts_idx_t * idx);
+
+void scan_bamfile_t_v2(const unsigned & task_idx,
+		       const bamrange & brange,
+		       const teclust_params & p,
+		       const refTEcont & refTEs,
+		       std::unordered_set<std::string> * readPairs,
+		       std::vector< std::map<std::string,std::vector<std::pair<std::int32_t,std::int8_t> > > > & data_v,
+		       const hts_idx_t * idx);
 #endif
