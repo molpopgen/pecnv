@@ -21,6 +21,7 @@ hts_idx_t * get_index(const std::string & bamfilename);
  */
 std::vector<std::pair<std::string,std::pair<std::uint64_t,std::uint64_t> >> read_index(const std::string & bamfilename);
 
+//DANGER: start,stop have offset of 1.
 struct refrange
 {
   std::uint64_t beg,end;
@@ -38,6 +39,7 @@ struct refrange
   }
 };
 
+//DANGER: start,stop have offset of 1.
 struct bamrange
 {
   std::uint64_t beg,end;
