@@ -374,16 +374,16 @@ void phrapify_t_work(const teclust_params & pars,
 }
 
 /*
-  Threaded version
+  Threaded version.  1 thread per sequence in reference genome is the idea here
  */
 void phrapify_t( const teclust_params & pars,
 		 const vector<pair<string,pair<uint64_t,uint64_t> > > & offsets,
 		 const string & clusters )
 {
-  
   if(offsets.empty())
     {
-      cerr << "Warning from phrapify_t: empty offsets vector encountered.  Defaulting to using a single thread";
+      cerr << "Warning from phrapify_t ( line " << __LINE__ 
+	   << " of " __FILE__ << "): empty offsets vector encountered.  Defaulting to using a single thread";
       phrapify(pars,clusters);
     }
   if(pars.phrapdir.empty()) return;
@@ -419,4 +419,31 @@ void phrapify_t( const teclust_params & pars,
 	}
       for(int32_t t_i = 0 ; t_i < t ; ++t_i ) vt[t_i].join();
     }
+}
+
+void phrapify_t_v2( const teclust_params & pars,
+		    const vector<bamrange> & branges,
+		    const string & clusters )
+{
+  if (branges.empty())
+    {
+      cerr << "Warning from phrapify_t_v2 ( line " << __LINE__ 
+	   << " of " __FILE__ << "): empty branges vector encountered.  Defaulting to using a single thread";
+      phrapify(pars,clusters);
+    }
+ if(pars.phrapdir.empty()) return;
+  if(pars.bamfile.empty()) return;
+
+  checkdir(pars);
+
+  //This is the new "filter_edit"
+  vector<clusteredEvent> cEs = parseClusters(clusters,pars);
+
+  //rearrange cEs into a container that is per-reference arm.
+  map<string,vector<clusteredEvent> > cEs2;
+  for( auto i = cEs.begin() ; i != cEs.end() ; ++i )
+    {
+      cEs2[i->chrom].emplace_back(std::move(*i));
+    }
+
 }
