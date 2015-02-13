@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <teclust_objects.hpp>
+#include <htslibUtils.hpp>
 
 void phrapify( const teclust_params & pars,
 	       const std::string & clusters );
