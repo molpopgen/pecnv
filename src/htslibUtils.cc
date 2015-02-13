@@ -80,9 +80,10 @@ bamrange::bamrange( const std::vector<refrange> & ranges ) : beg( numeric_limits
 }
 
 vector<bamrange> split_genome(const std::string & bamfilename,
-		  const unsigned & NTHREADS)
+			      const unsigned & NTHREADS)
 {
   hts_idx_t * idx = get_index(bamfilename);
+  if(idx == nullptr) { return vector<bamrange>(); }
   BGZF * bam = bgzf_open(bamfilename.c_str(),"rb");
   bam_hdr_t * hdr = bam_hdr_read(bam);
 
