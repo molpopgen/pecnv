@@ -19,12 +19,14 @@ using refIDlookup = unordered_map<int32_t,string>;
 
 //DEFINITION OF FUNCTIONS
 refIDlookup make_lookup(const bamreader & reader);
+
 void second_scan( const refTEcont & refTEs,
 		  const refIDlookup & lookup,
 		  const vector<pair<int64_t,int64_t> > & voffsets,
 		  const unordered_map<string,pair<int32_t,int32_t> > & RPlocal,
 		  map<string,vector< puu > > * data,
 		  bamreader & reader);
+
 vector< pair<int64_t,int64_t> > group_offsets( std::set<pair<int64_t,int64_t> > & OFFSETS );
 
 void scan_bamfile(const teclust_params & p,
