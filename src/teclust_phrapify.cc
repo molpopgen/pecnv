@@ -14,6 +14,7 @@
 #include <cstring>
 #include <map>
 #include <thread>
+#include <mutex>
 #include <Sequence/bamreader.hpp>
 #include <Sequence/samfunctions.hpp>
 #include <Sequence/Fasta.hpp>
@@ -24,6 +25,8 @@
 
 using namespace std;
 using namespace Sequence;
+
+mutex output_mutex;
 
 struct clusteredEvent
 {
@@ -175,7 +178,6 @@ getRnames( const teclust_params & pars,
 	   const int64_t * begin = nullptr,
 	   const int64_t * end = nullptr)
 {
-
   bamreader reader(pars.bamfile.c_str());
 
   if(! reader )
@@ -210,6 +212,54 @@ getRnames( const teclust_params & pars,
     }
   
   return rv;
+}
+
+//for new threading approach
+void getRnames_v2( ReadCollection & rc,
+		   const bamrange & brange,
+		   const teclust_params & pars,
+		   const vector<clusteredEvent> & cEs )
+{
+  ReadCollection rv;
+
+  bamreader reader(pars.bamfile.c_str());
+
+  if(! reader )
+    {
+      cerr << "Error: could not open " << pars.bamfile
+	   << " for reading. Line " << __LINE__
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+
+  reader.seek(brange.beg,SEEK_SET);
+  while( reader.tell() <= brange.end )
+    {
+      bamrecord b = reader.next_record();
+      if(b.empty()) break;
+      auto bref = b.refid();
+      if ( (b.refid()==brange.refid1 && b.pos() >= brange.start-1) ||
+	   ( bref > brange.refid1 && bref < brange.refid2 ) ||
+	   ( bref == brange.refid2 && b.pos() < brange.stop) )
+	{
+	  samflag bf(b.flag());
+	  if(!bf.query_unmapped)
+	    {
+	      int side = -1;//-1 = not known, 0 = left, 1 = right
+	      string chrom = (reader.ref_cbegin() + b.refid())->first; //Get the string representing this read's chromosome
+	      //Is the alignment start position of this read w/in ISIZE
+	      //of a (filtered) cluster?
+	      auto cluster  = find_if(cEs.cbegin(),cEs.cend(),
+				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
+	      if( cluster != cEs.cend() )
+		{
+		  rv.insert(editRname(b.read_name()));
+		}
+	    }
+	}
+    }
+  //Avoiding "false sharing"
+  rc = std::move(rv);
 }
 
 PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & cEs,
@@ -272,6 +322,71 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
   return rv;
 }
 
+void seqQual_v2( PhrapInput & pi,
+		 const bamrange & brange,
+		 const teclust_params & pars, const vector<clusteredEvent> & cEs,
+		 const ReadCollection & r )
+{
+   bamreader reader(pars.bamfile.c_str());
+
+  if(! reader )
+    {
+      cerr << "Error: could not open " << pars.bamfile
+	   << " for reading. Line " << __LINE__
+	   << " of " << __FILE__ << '\n';
+      exit(1);
+    }
+
+  PhrapInput rv(cEs.size());
+  reader.seek(brange.beg,SEEK_SET);
+  while( reader.tell() <= brange.end )
+    {
+      bamrecord b = reader.next_record();
+      if(b.empty()) break;
+      auto bref = b.refid();
+      if ( (b.refid()==brange.refid1 && b.pos() >= brange.start-1) ||
+	   ( bref > brange.refid1 && bref < brange.refid2 ) ||
+	   ( bref == brange.refid2 && b.pos() < brange.stop) )
+	{
+	  string n = editRname(b.read_name());
+	  if ( r.find(n) != r.end() )
+	    {
+	      samflag bf(b.flag()); 
+	      int side = -1;//-1 = not known, 0 = left, 1 = right
+	      string chrom = (reader.ref_cbegin() + b.refid())->first; //Get the string representing this read's chromosome
+	      //Is the alignment start position of this read w/in ISIZE
+	      //of a (filtered) cluster?
+	      auto cluster  = find_if(cEs.cbegin(),cEs.cend(),
+				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
+	      while( cluster != cEs.cend() )
+		{
+		  auto rvitr = rv.begin() + (cluster-cEs.cbegin());
+	       	  string qstring;
+		  for_each(b.qual_cbegin(),b.qual_cend(),
+			   [&](const int8_t & __i) {
+			     qstring += to_string(int(__i+33)) + ' ';
+			   });
+		  if(side==0)
+		    {
+		      rvitr->first.first.push_back(Fasta(n,b.seq()));
+		      rvitr->first.second.push_back(Fasta(n,qstring));
+		    }
+		  else if (side == 1)
+		    {
+		      rvitr->second.first.push_back(Fasta(n,b.seq()));
+		      rvitr->second.second.push_back(Fasta(n,qstring));
+		    }
+		  side = -1;
+		  cluster = find_if(cluster+1,cEs.cend(),
+				    bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
+		}
+	    }
+	}
+    }
+  pi = std::move(rv); 
+}
+
+
 string baseName(const string & basedir,
 		const string & chrom,
 		const int32_t & first,
@@ -286,7 +401,11 @@ string baseName(const string & basedir,
 void write2file(const string & filename,
 		const vector<Fasta> & vf )
 {
-  ofstream out(filename.c_str());
+  struct stat buf;
+  bool exists = (stat(filename.c_str(),&buf) == 0) ? true:false;
+  //open in append if file already exists
+  ofstream out(filename.c_str(),(exists == true) ? ios_base::app : ios_base::out);
+  //ofstream out(filename.c_str());//,(exists == true) ? ios_base::app : ios_base::out);
   if(!out) 
     {
       cerr << "Error: could not open "
@@ -298,6 +417,7 @@ void write2file(const string & filename,
   copy(vf.cbegin(),vf.cend(),ostream_iterator<const Fasta>(out,"\n"));
 }
 
+//I should just be able to lock with a mutex here, right??
 void output( const teclust_params & pars,
 	     const vector<clusteredEvent> & cEs,
 	     const PhrapInput & pI )
@@ -421,6 +541,33 @@ void phrapify_t( const teclust_params & pars,
     }
 }
 
+/*
+void getRnames_v2( ReadCollection & rc,
+		   const bamrange & brange,
+		   const teclust_params & pars,
+		   const vector<clusteredEvent> & cEs )
+void seqQual_v2( PhrapInput & pi,
+		 const bamrange & brange,
+		 const teclust_params & pars, const vector<clusteredEvent> & cEs,
+		 const ReadCollection & r )
+*/
+void phrapify_t_work_v2(ReadCollection & rc,
+			PhrapInput & pi,
+			const bamrange & brange,
+			const teclust_params & pars, 
+			const vector<clusteredEvent> & cEs)
+{
+  getRnames_v2(rc,brange,pars,cEs);
+  seqQual_v2(pi,brange,pars,cEs,rc);
+  /*
+    prevent threads from writing to the same file,
+    which could happen if the reference is divided up 
+    into enough chunks
+  */
+  lock_guard<mutex> lockit(output_mutex);
+  output(pars,cEs,pi);
+}
+
 void phrapify_t_v2( const teclust_params & pars,
 		    const vector<bamrange> & branges,
 		    const string & clusters )
@@ -439,11 +586,14 @@ void phrapify_t_v2( const teclust_params & pars,
   //This is the new "filter_edit"
   vector<clusteredEvent> cEs = parseClusters(clusters,pars);
 
-  //rearrange cEs into a container that is per-reference arm.
-  map<string,vector<clusteredEvent> > cEs2;
-  for( auto i = cEs.begin() ; i != cEs.end() ; ++i )
-    {
-      cEs2[i->chrom].emplace_back(std::move(*i));
-    }
+  vector<ReadCollection> vRC(pars.NTHREADS);
+  vector<PhrapInput> vPI(pars.NTHREADS);
+  vector<thread> vthreads(pars.NTHREADS);
 
+  for( unsigned t = 0 ; t < vthreads.size() ; ++t )
+    {
+      vthreads[t] = thread(phrapify_t_work_v2,
+			   std::ref(vRC[t]),std::ref(vPI[t]),branges[t],pars,cEs);
+    }
+  for(unsigned t=0;t<vthreads.size();++t) vthreads[t].join();
 }

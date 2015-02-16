@@ -77,6 +77,7 @@ int teclust_main( int argc, char ** argv )
   */
   auto idx = get_index(pars.bamfile);
 
+  auto branges = split_genome(pars.bamfile,pars.NTHREADS);
   if(pars.NTHREADS == 1||idx==nullptr)
     {
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
@@ -84,7 +85,6 @@ int teclust_main( int argc, char ** argv )
   else
     {
       //New method: genome in equal chunks:
-      auto branges = split_genome(pars.bamfile,pars.NTHREADS);
       vector<thread> vthreads(pars.NTHREADS);
       vector< map<string,vector< puu > > > tempData(vthreads.size());
       for( unsigned t = 0 ; t < vthreads.size() ; ++t )
@@ -240,7 +240,8 @@ int teclust_main( int argc, char ** argv )
     }
   else
     {
-      phrapify_t(pars,data_idx,out.str());
+      //phrapify_t(pars,data_idx,out.str());
+      phrapify_t_v2(pars,branges,out.str());
     }
 
   return 0;
