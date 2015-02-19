@@ -7,6 +7,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <zlib.h>
 
 using namespace std;
