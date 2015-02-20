@@ -66,6 +66,14 @@ int teclust_main( int argc, char ** argv )
     Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
   */
   //rawData = map {chromo x vector {start,strand}}
+  auto idx = get_index(pars.bamfile);
+  if(idx == nullptr)
+    {
+      cerr << "Error: bai index for " << pars.bamfile
+	   << " not found. Line " << __LINE__
+	   << " of " << __FILE__ << '\n';
+      exit(EXIT_FAILURE);
+    }
   map<string,vector< puu > > rawData;
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
   auto data_idx = read_index(pars.bamfile);
@@ -75,8 +83,6 @@ int teclust_main( int argc, char ** argv )
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  auto idx = get_index(pars.bamfile);
-
   auto branges = split_genome(pars.bamfile,pars.NTHREADS);
   if(pars.NTHREADS == 1||idx==nullptr)
     {
