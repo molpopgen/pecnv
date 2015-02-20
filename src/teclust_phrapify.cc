@@ -298,11 +298,11 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
 	  while( cluster != cEs.cend() )
 	    {
 	      auto rvitr = rv.begin() + (cluster-cEs.cbegin());
-	       	  string qstring;
-		  for_each(b.qual_cbegin(),b.qual_cend(),
-			   [&](const int8_t & __i) {
-			     qstring += to_string(int(__i+33)) + ' ';
-			   });
+	      string qstring;
+	      for_each(b.qual_cbegin(),b.qual_cend(),
+		       [&](const int8_t & __i) {
+			 qstring += to_string(int(__i+33)) + ' ';
+		       });
 	      if(side==0)
 		{
 		  rvitr->first.first.push_back(Fasta(n,b.seq()));
