@@ -133,7 +133,9 @@ vector<clusteredEvent> parseClusters(const string & clusters,const teclust_param
 
 using LeftRights = pair<unordered_set<string>,
 			unordered_set<string> >;
-using ReadCollection = unordered_set<string>;
+//using ReadCollection = unordered_set<string>;
+using ReadCollection = unordered_set<int64_t>;
+//using ReadCollection = unordered_set< pair<int32_t,int32_t> >;
 using PhrapInput = vector< pair<pair< vector<Fasta>, vector<Fasta> >,
 				pair< vector<Fasta>, vector<Fasta> > > >;
 
@@ -206,7 +208,12 @@ getRnames( const teclust_params & pars,
 				  bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
 	  if( cluster != cEs.cend() )
 	    {
-	      rv.insert(editRname(b.read_name()));
+	      //rv.insert(editRname(b.read_name()));
+	      int64_t c = b.refid();
+	      c=(c<<32)|b.pos();
+	      //c|=b.pos();
+	      rv.insert(c);
+	      //rv.insert(make_pair(b.refid(),b.pos()));
 	    }
 	}
     }
@@ -253,7 +260,12 @@ void getRnames_v2( ReadCollection & rc,
 				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
 	      if( cluster != cEs.cend() )
 		{
-		  rv.insert(editRname(b.read_name()));
+		  //rv.insert(editRname(b.read_name()));
+		  int64_t c = b.refid();
+		  c=(c<<32)|b.pos();
+		  //c|=b.pos();
+		  rv.insert(c);
+		  //rv.insert(make_pair(b.refid(),b.pos()));
 		}
 	    }
 	}
@@ -286,7 +298,12 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
       bamrecord b = reader.next_record();
       if(b.empty()) break;
       string n = editRname(b.read_name());
-      if ( r.find(n) != r.end() )
+      //if ( r.find(n) != r.end() )
+      int64_t c = b.refid();
+      c=(c<<32);
+      c|=b.pos();
+      //if(r.find(make_pair(b.refid(),b.pos())) != r.end() )
+      if(r.find(c) != r.end())
 	{
 	  samflag bf(b.flag()); 
 	  int side = -1;//-1 = not known, 0 = left, 1 = right
@@ -349,7 +366,12 @@ void seqQual_v2( PhrapInput & pi,
 	   ( bref == brange.refid2 && b.pos() < brange.stop) )
 	{
 	  string n = editRname(b.read_name());
-	  if ( r.find(n) != r.end() )
+	  //if ( r.find(n) != r.end() )
+	  int64_t c = b.refid();
+	  c=(c<<32);
+	  c|=b.pos();
+	  //if(r.find(make_pair(b.refid(),b.pos())) != r.end() )
+	  if(r.find(c) != r.end() )
 	    {
 	      samflag bf(b.flag()); 
 	      int side = -1;//-1 = not known, 0 = left, 1 = right
