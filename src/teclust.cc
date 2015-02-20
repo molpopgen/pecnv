@@ -304,7 +304,7 @@ unordered_set<string> procUMM(const teclust_params & pars,
     }
 
   unordered_set<string> mTE; //"M" reads that map to a known TE in the refernce.  
-
+  int32_t rbuff[4];
   if (!reftes.empty() )
     {
       do
@@ -326,7 +326,8 @@ unordered_set<string> procUMM(const teclust_params & pars,
 		   << " of " << __FILE__ << '\n';
 	      exit(1);
 	    }
-	  alnInfo alndata(gzin);
+	  //alnInfo alndata(gzin);
+	  gzread(gzin,&rbuff[0],(2*sizeof(int32_t)+2*sizeof(int8_t)+2*sizeof(int16_t))/sizeof(char));
 	  //Don't re-process a read if we already know it has a mapping to a TE
 	  if( mTE.find(name.first) == mTE.end() )
 	    {
@@ -342,8 +343,10 @@ unordered_set<string> procUMM(const teclust_params & pars,
 		  else if( find_if(__itr->second.cbegin(),
 				   __itr->second.cend(),
 				   [&](const teinfo & __t) {
-				     return ( (alndata.start >= __t.start() && alndata.start <= __t.stop()) ||
-					      (alndata.stop >= __t.start() && alndata.stop <= __t.stop()) );
+				     //return ( (alndata.start >= __t.start() && alndata.start <= __t.stop()) ||
+				     //(alndata.stop >= __t.start() && alndata.stop <= __t.stop()) );
+				     return ( (rbuff[0] >= __t.start() && rbuff[0] <= __t.stop()) ||
+				     (rbuff[1] >= __t.start() && rbuff[1] <= __t.stop()) );
 				   }) != __itr->second.cend() )
 		    {
 		      //Then read hits a known TE
@@ -386,17 +389,20 @@ unordered_set<string> procUMM(const teclust_params & pars,
 	       << " of " << __FILE__ << '\n';
 	  exit(1);
 	}
-      alnInfo alndata(gzin);
+      //alnInfo alndata(gzin);
+      gzread(gzin,&rbuff[0],(2*sizeof(int32_t)+2*sizeof(int8_t)+2*sizeof(int16_t))/sizeof(char));
+      int8_t strand = (rbuff[2]>>8);
       if( reftes.empty() || (!reftes.empty() && mTE.find(name.first) != mTE.end()) )
 	{
 	  auto itr = data->find(chrom.first);
 	  if( itr == data->end() )
 	    {
-	      data->insert(make_pair(chrom.first,vector<puu>(1,make_pair(alndata.start,alndata.strand))));
+	      //data->insert(make_pair(chrom.first,vector<puu>(1,make_pair(alndata.start,alndata.strand))));
+	      data->insert(make_pair(chrom.first,vector<puu>(1,make_pair(rbuff[0],strand))));
 	    }
 	  else
 	    {
-	      itr->second.push_back(make_pair(alndata.start,alndata.strand));
+	      itr->second.push_back(make_pair(rbuff[0],strand));
 	    }
 	}
     }
