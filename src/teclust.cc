@@ -71,7 +71,9 @@ int teclust_main( int argc, char ** argv )
     {
       cerr << "Error: bai index for " << pars.bamfile
 	   << " not found. Line " << __LINE__
-	   << " of " << __FILE__ << '\n';
+	   << " of " << __FILE__ << ".\n"
+	   << "The expected file name is "
+	   << pars.bamfile << ".bai\n";
       exit(EXIT_FAILURE);
     }
   map<string,vector< puu > > rawData;
