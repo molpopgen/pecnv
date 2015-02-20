@@ -5,6 +5,7 @@
 using namespace std;
 using namespace Sequence;
 
+
 int gzwriteCstr(gzFile of, const string & s)
 {
   int rv1 = gzputs(of,s.c_str()); //this does NOT write the \0
@@ -48,6 +49,15 @@ alnInfo::alnInfo( gzFile in) : start(-1),
 			     mm( -1 ),
 			     ngap( -1 )
 {
+  int32_t rbuff[4];
+  gzread(in,&rbuff[0],(2*sizeof(int32_t)+2*sizeof(int8_t)+2*sizeof(int16_t))/sizeof(char));
+  start = rbuff[0];
+  stop = rbuff[1];
+  mapq = rbuff[2] & ((1<<rbuff[2])-1);
+  strand = (rbuff[2]>>8);
+  mm = (rbuff[2]>>16);
+  ngap = int16_t(rbuff[3]);
+  /*
   int rv = gzread(in,&start,sizeof(int32_t));
   if( rv <= 0 ) return;
   rv = gzread(in,&stop,sizeof(int32_t));
@@ -60,6 +70,7 @@ alnInfo::alnInfo( gzFile in) : start(-1),
   if( rv <= 0 ) return;
   rv = gzread(in,&ngap,sizeof(int16_t));
   if( rv <= 0 ) return;
+  */
 }
 
 alnInfo::alnInfo( const int32_t & __start,
