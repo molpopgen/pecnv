@@ -4512,7 +4512,7 @@ else
   NEED_PTHREAD_FALSE=
 fi
 
-]
+
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: pthread needed" >&5
 $as_echo "pthread needed" >&6; }

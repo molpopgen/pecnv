@@ -54,7 +54,7 @@ for( unsigned i = 0 ; i < vt.size() ; ++i ) vt[i].join();
 ],
 [AC_MSG_RESULT(pthread not needed)]
 AM_CONDITIONAL([NEED_PTHREAD], test x0 = x1 )
-],
+,
 [AC_MSG_RESULT(pthread needed)]
 dnl AC_DEFINE([NEED_PTHREAD],[],"adding -pthread to compiler/linker flags")
 AM_CONDITIONAL([NEED_PTHREAD], test x1 = x1 )
@@ -65,10 +65,10 @@ AC_CHECK_HEADER(htslib/bgzf.h,FOUND_HTSLIB_HEADERS=1,[AC_MSG_ERROR([htslib/bgzf.
 AM_CONDITIONAL([HAVE_HTSLIB],test x$FOUND_HTSLIB_HEADERS = x1 )
 
 dnl specific libsequence features
-AC_CHECK_HEADER(Sequence/bamrecord.hpp,,[AC_MSG_ERROR([Sequence/bamrecord.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
-AC_CHECK_HEADER(Sequence/bamreader.hpp,,[AC_MSG_ERROR([Sequence/bamreader.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
-AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
-AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.3 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/bamrecord.hpp,,[AC_MSG_ERROR([Sequence/bamrecord.hpp not found.  libsequence >= 1.8.4 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/bamreader.hpp,,[AC_MSG_ERROR([Sequence/bamreader.hpp not found.  libsequence >= 1.8.4 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/samflag.hpp,,[AC_MSG_ERROR([Sequence/samflag.hpp not found.  libsequence >= 1.8.4 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
+AC_CHECK_HEADER(Sequence/IOhelp.hpp,,[AC_MSG_ERROR([Sequence/IOhelp.hpp not found.  libsequence >= 1.8.4 is required.  Please obtain correct version from http://molpopgen.org/software Exiting.])])
 AC_CHECK_HEADER(boost/program_options.hpp,,[AC_MSG_ERROR([boost/program_options.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
 AC_CHECK_HEADER(boost/iostreams/filter/gzip.hpp,,[AC_MSG_ERROR([boost/iostreams/filter/gzip.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
 AC_CHECK_HEADER(boost/iostreams/filtering_stream.hpp,,[AC_MSG_ERROR([boost/iostreams/filter/filtering_stream.hpp not found.  Please install boost, either via your favorite package manager or from http://www.boost.org])])
