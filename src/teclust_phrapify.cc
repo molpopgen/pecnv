@@ -268,8 +268,6 @@ ReadCollection getRnames_v2( const bamrange * brange,
 	}
     }
   return rv;
-  //Avoiding "false sharing"
-  //rc = std::move(rv);
 }
 
 PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & cEs,
@@ -337,11 +335,10 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
   return rv;
 }
 
-PhrapInput seqQual_v2( //PhrapInput & pi,
-		 const bamrange * brange,
-		 const teclust_params * pars, 
-		 const vector<clusteredEvent> * cEs,
-		 const ReadCollection * r )
+PhrapInput seqQual_v2( const bamrange * brange,
+		       const teclust_params * pars, 
+		       const vector<clusteredEvent> * cEs,
+		       const ReadCollection * r )
 {
    bamreader reader(pars->bamfile.c_str());
 
@@ -405,7 +402,6 @@ PhrapInput seqQual_v2( //PhrapInput & pi,
 	}
     }
   return rv;
-  //pi = std::move(rv); 
 }
 
 
@@ -573,9 +569,7 @@ void seqQual_v2( PhrapInput & pi,
 		 const teclust_params & pars, const vector<clusteredEvent> & cEs,
 		 const ReadCollection & r )
 */
-void phrapify_t_work_v2(//ReadCollection & rc,
-			//PhrapInput & pi,
-			const bamrange * brange,
+void phrapify_t_work_v2(const bamrange * brange,
 			const teclust_params * pars, 
 			const vector<clusteredEvent> * cEs)
 {
