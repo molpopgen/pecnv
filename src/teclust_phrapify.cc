@@ -221,31 +221,31 @@ getRnames( const teclust_params & pars,
 }
 
 //for new threading approach
-ReadCollection getRnames_v2( const bamrange & brange,
-			     const teclust_params & pars,
-			     const vector<clusteredEvent> & cEs )
+ReadCollection getRnames_v2( const bamrange * brange,
+			     const teclust_params * pars,
+			     const vector<clusteredEvent> * cEs )
 {
   ReadCollection rv;
 
-  bamreader reader(pars.bamfile.c_str());
+  bamreader reader(pars->bamfile.c_str());
 
   if(! reader )
     {
-      cerr << "Error: could not open " << pars.bamfile
+      cerr << "Error: could not open " << pars->bamfile
 	   << " for reading. Line " << __LINE__
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
 
-  reader.seek(brange.beg,SEEK_SET);
-  while( reader.tell() <= brange.end )
+  reader.seek(brange->beg,SEEK_SET);
+  while( reader.tell() <= brange->end )
     {
       bamrecord b = reader.next_record();
       if(b.empty()) break;
       auto bref = b.refid();
-      if ( (b.refid()==brange.refid1 && b.pos() >= brange.start-1) ||
-	   ( bref > brange.refid1 && bref < brange.refid2 ) ||
-	   ( bref == brange.refid2 && b.pos() < brange.stop) )
+      if ( (b.refid()==brange->refid1 && b.pos() >= brange->start-1) ||
+	   ( bref > brange->refid1 && bref < brange->refid2 ) ||
+	   ( bref == brange->refid2 && b.pos() < brange->stop) )
 	{
 	  samflag bf(b.flag());
 	  if(!bf.query_unmapped)
@@ -254,9 +254,9 @@ ReadCollection getRnames_v2( const bamrange & brange,
 	      string chrom = (reader.ref_cbegin() + b.refid())->first; //Get the string representing this read's chromosome
 	      //Is the alignment start position of this read w/in ISIZE
 	      //of a (filtered) cluster?
-	      auto cluster  = find_if(cEs.cbegin(),cEs.cend(),
-				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
-	      if( cluster != cEs.cend() )
+	      auto cluster  = find_if(cEs->cbegin(),cEs->cend(),
+				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars->INSERTSIZE,chrom,&side));
+	      if( cluster != cEs->cend() )
 		{
 		  //rv.insert(editRname(b.read_name()));
 		  int64_t c = b.refid();
@@ -338,31 +338,31 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
 }
 
 PhrapInput seqQual_v2( //PhrapInput & pi,
-		 const bamrange & brange,
-		 const teclust_params & pars, 
-		 const vector<clusteredEvent> & cEs,
-		 const ReadCollection & r )
+		 const bamrange * brange,
+		 const teclust_params * pars, 
+		 const vector<clusteredEvent> * cEs,
+		 const ReadCollection * r )
 {
-   bamreader reader(pars.bamfile.c_str());
+   bamreader reader(pars->bamfile.c_str());
 
   if(! reader )
     {
-      cerr << "Error: could not open " << pars.bamfile
+      cerr << "Error: could not open " << pars->bamfile
 	   << " for reading. Line " << __LINE__
 	   << " of " << __FILE__ << '\n';
       exit(1);
     }
 
-  PhrapInput rv(cEs.size());
-  reader.seek(brange.beg,SEEK_SET);
-  while( reader.tell() <= brange.end )
+  PhrapInput rv(cEs->size());
+  reader.seek(brange->beg,SEEK_SET);
+  while( reader.tell() <= brange->end )
     {
       bamrecord b = reader.next_record();
       if(b.empty()) break;
       auto bref = b.refid();
-      if ( (b.refid()==brange.refid1 && b.pos() >= brange.start-1) ||
-	   ( bref > brange.refid1 && bref < brange.refid2 ) ||
-	   ( bref == brange.refid2 && b.pos() < brange.stop) )
+      if ( (b.refid()==brange->refid1 && b.pos() >= brange->start-1) ||
+	   ( bref > brange->refid1 && bref < brange->refid2 ) ||
+	   ( bref == brange->refid2 && b.pos() < brange->stop) )
 	{
 	  string n = editRname(b.read_name());
 	  //if ( r.find(n) != r.end() )
@@ -370,18 +370,18 @@ PhrapInput seqQual_v2( //PhrapInput & pi,
 	  c=(c<<32);
 	  c|=b.pos();
 	  //if(r.find(make_pair(b.refid(),b.pos())) != r.end() )
-	  if(r.find(c) != r.end() )
+	  if(r->find(c) != r->end() )
 	    {
 	      samflag bf(b.flag()); 
 	      int side = -1;//-1 = not known, 0 = left, 1 = right
 	      string chrom = (reader.ref_cbegin() + b.refid())->first; //Get the string representing this read's chromosome
 	      //Is the alignment start position of this read w/in ISIZE
 	      //of a (filtered) cluster?
-	      auto cluster  = find_if(cEs.cbegin(),cEs.cend(),
-				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
-	      while( cluster != cEs.cend() )
+	      auto cluster  = find_if(cEs->cbegin(),cEs->cend(),
+				      bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars->INSERTSIZE,chrom,&side));
+	      while( cluster != cEs->cend() )
 		{
-		  auto rvitr = rv.begin() + (cluster-cEs.cbegin());
+		  auto rvitr = rv.begin() + (cluster-cEs->cbegin());
 	       	  string qstring;
 		  for_each(b.qual_cbegin(),b.qual_cend(),
 			   [&](const int8_t & __i) {
@@ -398,8 +398,8 @@ PhrapInput seqQual_v2( //PhrapInput & pi,
 		      rvitr->second.second.push_back(Fasta(n,qstring));
 		    }
 		  side = -1;
-		  cluster = find_if(cluster+1,cEs.cend(),
-				    bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars.INSERTSIZE,chrom,&side));
+		  cluster = find_if(cluster+1,cEs->cend(),
+				    bind(Cfinder,placeholders::_1,bf.qstrand,b.pos(),pars->INSERTSIZE,chrom,&side));
 		}
 	    }
 	}
@@ -575,19 +575,19 @@ void seqQual_v2( PhrapInput & pi,
 */
 void phrapify_t_work_v2(//ReadCollection & rc,
 			//PhrapInput & pi,
-			const bamrange & brange,
-			const teclust_params  pars, 
-			const vector<clusteredEvent> & cEs)
+			const bamrange * brange,
+			const teclust_params * pars, 
+			const vector<clusteredEvent> * cEs)
 {
   ReadCollection rc = getRnames_v2(brange,pars,cEs);
-  PhrapInput pi = seqQual_v2(brange,pars,cEs,rc);
+  PhrapInput pi = seqQual_v2(brange,pars,cEs,&rc);
   /*
     prevent threads from writing to the same file,
     which could happen if the reference is divided up 
     into enough chunks
   */
   lock_guard<mutex> lockit(output_mutex);
-  output(pars,cEs,pi);
+  output(*pars,*cEs,pi);
 }
 
 void phrapify_t_v2( const teclust_params & pars,
@@ -612,7 +612,7 @@ void phrapify_t_v2( const teclust_params & pars,
   for( unsigned t = 0 ; t < vthreads.size() ; ++t )
     {
       vthreads[t] = thread(phrapify_t_work_v2,
-			   branges[t],pars,cEs);
+			   &branges[t],&pars,&cEs);
     }
   for(unsigned t=0;t<vthreads.size();++t) vthreads[t].join();
 }
