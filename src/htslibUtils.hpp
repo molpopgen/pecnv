@@ -50,6 +50,7 @@ struct bamrange
   bamrange( const std::vector<refrange> & ranges );
 };
 
-std::vector<bamrange> split_genome(const std::string & bamfilename,
+std::vector<bamrange> split_genome(const hts_idx_t * idx,
+				   const std::string & bamfilename,
 				   const unsigned & NTHREADS);
 #endif

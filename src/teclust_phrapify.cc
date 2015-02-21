@@ -211,7 +211,6 @@ getRnames( const teclust_params & pars,
 	      //rv.insert(editRname(b.read_name()));
 	      int64_t c = b.refid();
 	      c=(c<<32)|b.pos();
-	      //c|=b.pos();
 	      rv.insert(c);
 	      //rv.insert(make_pair(b.refid(),b.pos()));
 	    }
@@ -222,10 +221,9 @@ getRnames( const teclust_params & pars,
 }
 
 //for new threading approach
-void getRnames_v2( ReadCollection & rc,
-		   const bamrange & brange,
-		   const teclust_params & pars,
-		   const vector<clusteredEvent> & cEs )
+ReadCollection getRnames_v2( const bamrange & brange,
+			     const teclust_params & pars,
+			     const vector<clusteredEvent> & cEs )
 {
   ReadCollection rv;
 
@@ -263,15 +261,15 @@ void getRnames_v2( ReadCollection & rc,
 		  //rv.insert(editRname(b.read_name()));
 		  int64_t c = b.refid();
 		  c=(c<<32)|b.pos();
-		  //c|=b.pos();
 		  rv.insert(c);
 		  //rv.insert(make_pair(b.refid(),b.pos()));
 		}
 	    }
 	}
     }
+  return rv;
   //Avoiding "false sharing"
-  rc = std::move(rv);
+  //rc = std::move(rv);
 }
 
 PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & cEs,
@@ -339,9 +337,10 @@ PhrapInput seqQual( const teclust_params & pars, const vector<clusteredEvent> & 
   return rv;
 }
 
-void seqQual_v2( PhrapInput & pi,
+PhrapInput seqQual_v2( //PhrapInput & pi,
 		 const bamrange & brange,
-		 const teclust_params & pars, const vector<clusteredEvent> & cEs,
+		 const teclust_params & pars, 
+		 const vector<clusteredEvent> & cEs,
 		 const ReadCollection & r )
 {
    bamreader reader(pars.bamfile.c_str());
@@ -405,7 +404,8 @@ void seqQual_v2( PhrapInput & pi,
 	    }
 	}
     }
-  pi = std::move(rv); 
+  return rv;
+  //pi = std::move(rv); 
 }
 
 
@@ -576,13 +576,11 @@ void seqQual_v2( PhrapInput & pi,
 void phrapify_t_work_v2(//ReadCollection & rc,
 			//PhrapInput & pi,
 			const bamrange & brange,
-			const teclust_params & pars, 
+			const teclust_params  pars, 
 			const vector<clusteredEvent> & cEs)
 {
-  ReadCollection rc;
-  PhrapInput pi;
-  getRnames_v2(rc,brange,pars,cEs);
-  seqQual_v2(pi,brange,pars,cEs,rc);
+  ReadCollection rc = getRnames_v2(brange,pars,cEs);
+  PhrapInput pi = seqQual_v2(brange,pars,cEs,rc);
   /*
     prevent threads from writing to the same file,
     which could happen if the reference is divided up 

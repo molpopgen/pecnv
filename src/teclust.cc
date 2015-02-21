@@ -59,34 +59,34 @@ void reduce_ends( vector<cluster> & clusters,
 int teclust_main( int argc, char ** argv )
 {
   const teclust_params pars = teclust_parseargs(argc,argv);
-   //Read in the locations of TEs in the reference
-  auto refTEs = read_refdata(pars);
-  /*
-    Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
-    Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
-  */
-  //rawData = map {chromo x vector {start,strand}}
   auto idx = get_index(pars.bamfile);
   if(idx == nullptr)
     {
       cerr << "Error: bai index for " << pars.bamfile
-	   << " not found. Line " << __LINE__
-	   << " of " << __FILE__ << ".\n"
-	   << "The expected file name is "
-	   << pars.bamfile << ".bai\n";
+  	   << " not found. Line " << __LINE__
+  	   << " of " << __FILE__ << ".\n"
+  	   << "The expected file name is "
+  	   << pars.bamfile << ".bai\n";
       exit(EXIT_FAILURE);
     }
+   //Read in the locations of TEs in the reference
+  auto refTEs = read_refdata(pars);
+  //rawData = map {chromo x vector {start,strand}}
   map<string,vector< puu > > rawData;
+  /*
+    Process the um_u and um_m files from the sample.  if refTEs is empty, parsedUMM contains the info for all U/M pairs.
+    Otherwise, it contains only the info from U/M pairs where the M read hits a known TE in the reference.
+  */
   unordered_set<string> readPairs = procUMM(pars,refTEs,&rawData);
-  auto data_idx = read_index(pars.bamfile);
+  //auto data_idx = read_index(pars.bamfile);
   /*
     Scan the BAM file to look for reads whose
     primary alignment hits a known TE in
     the reference, and whose mate is 
     mapped but does not hit a TE
   */
-  auto branges = split_genome(pars.bamfile,pars.NTHREADS);
-  if(pars.NTHREADS == 1||idx==nullptr)
+  auto branges = split_genome(idx,pars.bamfile,pars.NTHREADS);
+  if(pars.NTHREADS == 1)
     {
       scan_bamfile(pars,refTEs,&readPairs,&rawData,idx);
     }
@@ -248,7 +248,6 @@ int teclust_main( int argc, char ** argv )
     }
   else
     {
-      //phrapify_t(pars,data_idx,out.str());
       phrapify_t_v2(pars,branges,out.str());
     }
 
