@@ -573,12 +573,14 @@ void seqQual_v2( PhrapInput & pi,
 		 const teclust_params & pars, const vector<clusteredEvent> & cEs,
 		 const ReadCollection & r )
 */
-void phrapify_t_work_v2(ReadCollection & rc,
-			PhrapInput & pi,
+void phrapify_t_work_v2(//ReadCollection & rc,
+			//PhrapInput & pi,
 			const bamrange & brange,
 			const teclust_params & pars, 
 			const vector<clusteredEvent> & cEs)
 {
+  ReadCollection rc;
+  PhrapInput pi;
   getRnames_v2(rc,brange,pars,cEs);
   seqQual_v2(pi,brange,pars,cEs,rc);
   /*
@@ -607,15 +609,12 @@ void phrapify_t_v2( const teclust_params & pars,
 
   //This is the new "filter_edit"
   vector<clusteredEvent> cEs = parseClusters(clusters,pars);
-
-  vector<ReadCollection> vRC(pars.NTHREADS);
-  vector<PhrapInput> vPI(pars.NTHREADS);
   vector<thread> vthreads(pars.NTHREADS);
 
   for( unsigned t = 0 ; t < vthreads.size() ; ++t )
     {
       vthreads[t] = thread(phrapify_t_work_v2,
-			   std::ref(vRC[t]),std::ref(vPI[t]),branges[t],pars,cEs);
+			   branges[t],pars,cEs);
     }
   for(unsigned t=0;t<vthreads.size();++t) vthreads[t].join();
 }
