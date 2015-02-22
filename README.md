@@ -9,6 +9,12 @@ This package also contains a C++ implementation of the transposable element (TE)
 
 * Cridland, J.M., S.J. MacDonald, A.D. Long, and K.R Thornton (2013) Abundance and Distribution of Transposable Elements in Two _Drosophila_ QTL Mapping Resources  Molecular Biology and Evolution __30__: 2311-2327. PMID 23883524 [Manuscript](http://mbe.oxfordjournals.org/content/30/10/2311.full)
 
+#BAM files
+
+These programs have been extensively tested on bam files generated using "bwa aln".  It is not known how they perform on the output of "bwa mem", which has a different output format.  The distinction between "aln" and "mem" is critical for TE detection, as the latter algorithm reports non-unique read mappings very differently!  
+
+__Please refer to the original papers cited above for our suggestions on how to generate bam file using bwa aln.__
+
 #A note on version numbers
 
 1. Release 0.1.0 = the precise version used in Rogers et al. and Cridland et al.
@@ -23,7 +29,6 @@ This package also contains a C++ implementation of the transposable element (TE)
 ##Tentative plan for future releases
 
 1. Bugfixes, better documentation, etc.
-
 
 #Installation
 
