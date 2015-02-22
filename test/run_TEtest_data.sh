@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
+#CPU should be roughly 1/2 the number of cores on your machine, to align each read file.
 CPU=4
+#PHRAPCPU is also use to tell teclust how many cores to use
 PHRAPCPU=8
 
 command_exists () {
@@ -63,7 +65,7 @@ u99=`pecnv_insert_qtile pecnv_output/pecnv_bamfile.mdist.gz 0.99`
 samtools index pecnv_output/pecnv_bamfile_sorted.bam
 
 ##Run teclust
-pecnv teclust -s line99 -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1.bed -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir
+pecnv teclust -s line99 -b pecnv_output/pecnv_bamfile_sorted.bam -t TE_position_r5.1.bed -o teclust_output.gz -u pecnv_output/pecnv_bamfile.um_u.csv.gz -m pecnv_output/pecnv_bamfile.um_m.csv.gz -i $u99 -p phrapdir  --threads $PHRAPCPU
 
 ##If we have the right stuff on the system, assemble in parallel using phrap
 CANASSEMBLE=1

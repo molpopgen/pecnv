@@ -256,6 +256,12 @@ The Cridland et al. method is implemented in the subcommand teclust, with some a
 
 The minimal input for this program is the output of the pecnv.sh pipeline, which needs to be run first.  Specifically, the "um_u" and "um_m" files described above are needed.
 
+The teclust module requires a bam file index.  The index file name is required to be the same as the bam file name plus the ".bai" suffix.  If this index file is not found, the module will exit with an error message.  To generate such an index, use [samtools](http://htslib.org):
+
+~~~{.sh}
+samtools index bamfile
+~~~
+
 There is a test script in the test subdirectory of the source code repository.  See the README.md in that directory for more details.
 
 The usage information for the program is:
@@ -297,11 +303,7 @@ Usage: tclust -h to see help:
 
 ##How many threads to use?
 
-The teclust module is capable of multiple execution threads.  The way this works is to split the job up so that each thread is working on a difference sequence of the reference genome.  Thus, the optimal number of threads depends quite a bit on the number of sequences in the reference.  For example, the _Drosophila melanogaster_  r5.1 genome has 14 sequences in the FASTA reference file.  However, only five of them are long sequences in any sense of the word.  For a species like this, asking the program to use 64 threads would be wasteful.  Many other systems, however, will have thousands of sequences in their reference genome's FASTA files.  For such genomes, requesting as many cores as possible will probably be helpful.  For such cases, you will see a small performance bottleneck if < nthreads sequences are large, as the first batch of threads will contain some very fast jobs mixed up with some that take a lot longer to complete.
-
-For the test data, processing using 8 cores is about 6x faster than single-core execution on my test server.
-
-Please note that processing using multiple threads requires that you generate a bam file index.  The test script has been updated to do this for you (via a call to "samtools index").
+The teclust module is capable of multiple execution threads. The program first scans the bam file index to determine which reference sequences are present and where they are located in the bam file.  Then, for _k_ threads, the bam file is divided up into _k_ equal-sized chunks (in units of base pairs), modulo any remainder that are added to the first thread's work load.  Thus, you should see better and better performance using more and more cores, with the caveat that if coverage/number of events varies a lot from region to region, some threads will still finish much faster than others.  This new threading method has made it possible to process very large data sets from species such as maize.
 
 ##Various ways to do it
 
