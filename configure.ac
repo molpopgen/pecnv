@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 
-AC_INIT(pecnv, [0.1.7], [https://github.com/molpopgen/pecnv])
+AC_INIT(pecnv, [0.1.8], [https://github.com/molpopgen/pecnv])
 AC_CONFIG_SRCDIR([src/process_readmappings.cc])
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
