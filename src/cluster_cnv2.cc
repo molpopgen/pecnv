@@ -273,10 +273,8 @@ cluster_cnv_params clusterCNV_parseargs(int argc, char ** argv)
       cerr << desc << '\n';
       exit(1);
     }
-  if(!vm.count("mqual"))
-    {
-      rv.min_mqual = int8_t(mqual);
-    }
+
+  rv.min_mqual = int8_t(mqual);
 
   rv.infiles = vm["infiles"].as<vector<string> >();
 
